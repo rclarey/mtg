@@ -92,3 +92,13 @@ pub type GameState {
     current_step: Step,
   )
 }
+
+// Error type for invalid game actions
+pub type Error {
+  InvalidAction(String)
+}
+
+// Action type for game actions
+pub type Action {
+  PassPriority
+}
