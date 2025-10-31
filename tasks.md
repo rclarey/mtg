@@ -2,7 +2,7 @@
 
 ## Phase 1: Minimal Working Skeleton
 
-- [ ] **Define basic type structures** - Create minimal types for Card, Player, GameState, Zone enums, Phase/Step enums
+- [x] **Define basic type structures** - Create minimal types for Card, Player, GameState, Zone enums, Phase/Step enums
 
 - [ ] **Define Action and Error types** - Create Action type with one simple action (e.g., PassPriority) and Error type with one error case
 
