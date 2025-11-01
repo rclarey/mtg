@@ -8,6 +8,38 @@ pub fn main() -> Nil {
   io.println("Hello from mtg_engine!")
 }
 
+// Initialize a new game with two players
+pub fn init_game() -> GameState {
+  let player1 =
+    types.Player(
+      id: 1,
+      life: 20,
+      hand: [],
+      battlefield: [],
+      graveyard: [],
+      library: [],
+      exile: [],
+    )
+
+  let player2 =
+    types.Player(
+      id: 2,
+      life: 20,
+      hand: [],
+      battlefield: [],
+      graveyard: [],
+      library: [],
+      exile: [],
+    )
+
+  types.GameState(
+    players: [player1, player2],
+    active_player_id: 1,
+    priority_player_id: 1,
+    current_step: types.Untap,
+  )
+}
+
 // Main dispatch function - handles all game actions
 pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
   case action {

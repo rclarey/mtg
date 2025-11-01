@@ -73,7 +73,7 @@ pub type Card {
 // Player state
 pub type Player {
   Player(
-    id: String,
+    id: Int,
     life: Int,
     hand: List(Card),
     battlefield: List(Card),
@@ -87,8 +87,8 @@ pub type Player {
 pub type GameState {
   GameState(
     players: List(Player),
-    active_player_id: String,
-    priority_player_id: String,
+    active_player_id: Int,
+    priority_player_id: Int,
     current_step: Step,
   )
 }

@@ -8,7 +8,7 @@
 
 - [x] **Implement basic dispatch function** - Create dispatch function that handles the one simple action and returns Result(GameState, Error)
 
-- [ ] **Implement game initialization** - Create function to set up a minimal game state (two players, initial phase)
+- [x] **Implement game initialization** - Create function to set up a minimal game state (two players, initial phase)
 
 - [ ] **Write initial tests** - Test that game initializes and dispatch can handle the basic action
 

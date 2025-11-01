@@ -20,7 +20,7 @@ This project implements a Magic: The Gathering game engine as a finite state mac
 
 ## Project Structure
 
-- Code is split into different modules by concern
+- Code is in the `src` directory and is split into different modules by concern
 - There is a main function `dispatch` which takes an action and returns an updated game state, or if the action is invalid it returns an error
 
 ## Core Architecture
@@ -36,11 +36,11 @@ All game actions flow through dispatch, which validates the action and returns e
 
 ### **tasks.md** - Source of Truth for Implementation Tasks
 Contains the complete implementation plan organized in phases with checkable markdown tasks.
-Check off tasks in plan.md by changing `- [ ]` to `- [x]` as they're completed.
+Check off tasks in tasks.md by changing `- [ ]` to `- [x]` as they're completed.
 
 ## Getting Started
 
 1. Review this file for the project specification
-2. Check plan.md to see current progress and next tasks
+2. Check tasks.md to see current progress and next tasks
 3. Implement tasks sequentially following the phase order
 4. Mark tasks complete as you finish them
