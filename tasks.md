@@ -10,7 +10,7 @@
 
 - [x] **Implement game initialization** - Create function to set up a minimal game state (two players, initial phase)
 
-- [ ] **Write initial tests** - Test that game initializes and dispatch can handle the basic action
+- [x] **Write initial tests** - Test that game initializes and dispatch can handle the basic action
 
 ## Phase 2: Turn Structure
 
