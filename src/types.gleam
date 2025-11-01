@@ -95,6 +95,7 @@ pub type GameState {
 
 // Error type for invalid game actions
 pub type Error {
+  InvariantBroken(String)
   InvalidAction(String)
 }
 

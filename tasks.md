@@ -6,7 +6,7 @@
 
 - [x] **Define Action and Error types** - Create Action type with one simple action (e.g., PassPriority) and Error type with one error case
 
-- [ ] **Implement basic dispatch function** - Create dispatch function that handles the one simple action and returns Result(GameState, Error)
+- [x] **Implement basic dispatch function** - Create dispatch function that handles the one simple action and returns Result(GameState, Error)
 
 - [ ] **Implement game initialization** - Create function to set up a minimal game state (two players, initial phase)
 
