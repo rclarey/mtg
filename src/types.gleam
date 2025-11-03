@@ -90,12 +90,13 @@ pub type GameState {
     active_player_id: Int,
     priority_player_id: Int,
     current_step: Step,
+    consecutive_passes: Int,
+    turn_number: Int,
   )
 }
 
 // Error type for invalid game actions
 pub type Error {
-  InvariantBroken(String)
   InvalidAction(String)
 }
 

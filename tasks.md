@@ -14,13 +14,13 @@
 
 ## Phase 2: Turn Structure
 
-- [ ] **Add phase/step advancement** - Implement action to advance to next phase/step and update dispatch to handle it
+- [x] **Add phase/step advancement** - Implement action to advance to next phase/step and update dispatch to handle it
 
-- [ ] **Test phase advancement** - Verify phases advance in correct order through a full turn cycle
+- [x] **Test phase advancement** - Verify phases advance in correct order through a full turn cycle
 
-- [ ] **Add basic priority passing** - Implement priority system and automatic phase advancement when both players pass
+- [x] **Add basic priority passing** - Implement priority system and automatic phase advancement when both players pass
 
-- [ ] **Test priority system** - Verify priority passes correctly between players
+- [x] **Test priority system** - Verify priority passes correctly between players
 
 ## Phase 3: Mana System
 
