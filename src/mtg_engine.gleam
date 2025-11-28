@@ -1,5 +1,7 @@
+import gleam/bool
 import gleam/io
 import gleam/list
+import gleam/result
 
 import types.{type Action, type Error, type GameState, type Player}
 
@@ -24,6 +26,7 @@ pub fn init_game() -> GameState {
       id: 1,
       life: 20,
       mana_pool: empty_mana_pool,
+      lands_played_this_turn: 0,
       hand: [],
       battlefield: [],
       graveyard: [],
@@ -36,6 +39,7 @@ pub fn init_game() -> GameState {
       id: 2,
       life: 20,
       mana_pool: empty_mana_pool,
+      lands_played_this_turn: 0,
       hand: [],
       battlefield: [],
       graveyard: [],
@@ -59,6 +63,8 @@ pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
     types.PassPriority -> Ok(handle_pass_priority(state))
     types.ProduceMana(player_id, mana) ->
       Ok(handle_produce_mana(state, player_id, mana))
+    types.PlayLand(player_id, card_id) ->
+      handle_play_land(state, player_id, card_id)
   }
 }
 
@@ -72,6 +78,15 @@ fn update_player(
     [p, ..rest] if p.id == player_id -> [f(p), ..rest]
     [p, ..rest] -> [p, ..update_player(rest, player_id, f)]
   }
+}
+
+// Find a player by ID, returning an error if not found
+fn find_player(
+  players: List(types.Player),
+  player_id: Int,
+) -> Result(types.Player, types.Error) {
+  list.find(players, fn(p) { p.id == player_id })
+  |> result.replace_error(types.InvalidAction("Player not found"))
 }
 
 // Add mana to a player's pool
@@ -174,10 +189,12 @@ fn advance_step(state: GameState) -> GameState {
         False -> state.turn_number
       }
 
+      // Reset lands_played_this_turn for the active player
+      let players_with_reset_lands = reset_all_lands_played(cleared_players)
+
       // Since Untap has no priority, immediately advance to Upkeep
       types.GameState(
-        ..state,
-        players: cleared_players,
+        players: players_with_reset_lands,
         active_player_id: next_active_player.id,
         priority_player_id: next_active_player.id,
         current_step: types.Upkeep,
@@ -238,4 +255,82 @@ fn handle_pass_priority(state: GameState) -> GameState {
       )
     }
   }
+}
+
+// Reset lands_played_this_turn for a player
+fn reset_lands_played(player: types.Player) -> types.Player {
+  types.Player(..player, lands_played_this_turn: 0)
+}
+
+// Reset lands_played_this_turn for all players
+fn reset_all_lands_played(players: List(types.Player)) -> List(types.Player) {
+  list.map(players, reset_lands_played)
+}
+
+// Find a card in a list by its ID
+fn find_card(
+  cards: List(types.Card),
+  card_id: String,
+) -> Result(types.Card, Nil) {
+  list.find(cards, fn(card) { card.id == card_id })
+}
+
+// Remove a card from a list by its ID
+fn remove_card(cards: List(types.Card), card_id: String) -> List(types.Card) {
+  list.filter(cards, fn(card) { card.id != card_id })
+}
+
+// Handle playing a land from hand to battlefield
+fn handle_play_land(
+  state: GameState,
+  player_id: Int,
+  card_id: String,
+) -> Result(GameState, types.Error) {
+  use <- bool.guard(
+    state.current_step != types.PreCombatMain
+      && state.current_step != types.PostCombatMain,
+    Error(types.InvalidAction("Can only play a land during a main phase")),
+  )
+  use <- bool.guard(
+    player_id != state.active_player_id,
+    Error(types.InvalidAction("Only the active player can play a land")),
+  )
+  use <- bool.guard(
+    player_id != state.priority_player_id,
+    Error(types.InvalidAction("Can only play a land when you have priority")),
+  )
+
+  // Find the player
+  use player <- result.try(find_player(state.players, player_id))
+
+  // Validate: stack must be empty (for now, we assume stack is always empty since we don't have spells yet)
+  // This will be extended in later phases when we add the stack
+  // Validate: land-per-turn limit
+  use <- bool.guard(
+    player.lands_played_this_turn >= 1,
+    Error(types.InvalidAction("Already played a land this turn")),
+  )
+
+  use card <- result.try(
+    find_card(player.hand, card_id)
+    |> result.replace_error(types.InvalidAction("Card not found in hand")),
+  )
+  use <- bool.guard(
+    card.card_type != types.Land,
+    Error(types.InvalidAction("Card is not a land")),
+  )
+
+  // All validations passed, play the land
+  let new_hand = remove_card(player.hand, card_id)
+  let new_battlefield = [card, ..player.battlefield]
+  let updated_player =
+    types.Player(
+      ..player,
+      hand: new_hand,
+      battlefield: new_battlefield,
+      lands_played_this_turn: player.lands_played_this_turn + 1,
+    )
+  let new_players =
+    update_player(state.players, player_id, fn(_) { updated_player })
+  Ok(types.GameState(..state, players: new_players))
 }

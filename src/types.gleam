@@ -88,6 +88,7 @@ pub type Player {
     id: Int,
     life: Int,
     mana_pool: ManaProduced,
+    lands_played_this_turn: Int,
     hand: List(Card),
     battlefield: List(Card),
     graveyard: List(Card),
@@ -117,4 +118,5 @@ pub type Error {
 pub type Action {
   PassPriority
   ProduceMana(player_id: Int, mana: ManaProduced)
+  PlayLand(player_id: Int, card_id: String)
 }

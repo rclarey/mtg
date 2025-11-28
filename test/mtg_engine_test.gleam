@@ -1,4 +1,5 @@
 import gleam/list
+import gleam/option
 import gleeunit
 import mtg_engine
 import types
@@ -451,7 +452,8 @@ pub fn mana_persists_within_step_test() {
     mtg_engine.dispatch(game_with_mana, types.PassPriority)
 
   // Mana should still be in player 1's pool
-  let assert Ok(player1) = list.find(game_after_pass.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) =
+    list.find(game_after_pass.players, fn(p) { p.id == 1 })
   assert player1.mana_pool.white == 2
   assert player1.mana_pool.blue == 1
 }
@@ -474,7 +476,8 @@ pub fn mana_empties_on_step_change_test() {
     mtg_engine.dispatch(game, types.ProduceMana(1, mana))
 
   // Verify mana is in pool
-  let assert Ok(player1) = list.find(game_with_mana.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) =
+    list.find(game_with_mana.players, fn(p) { p.id == 1 })
   assert player1.mana_pool.white == 3
   assert player1.mana_pool.blue == 2
   assert player1.mana_pool.black == 1
@@ -533,8 +536,10 @@ pub fn mana_empties_for_all_players_test() {
   let game_after_step = pass_both(game_both_mana)
 
   // Both players' mana should be cleared
-  let assert Ok(p1_after) = list.find(game_after_step.players, fn(p) { p.id == 1 })
-  let assert Ok(p2_after) = list.find(game_after_step.players, fn(p) { p.id == 2 })
+  let assert Ok(p1_after) =
+    list.find(game_after_step.players, fn(p) { p.id == 1 })
+  let assert Ok(p2_after) =
+    list.find(game_after_step.players, fn(p) { p.id == 2 })
   assert p1_after.mana_pool.white == 0
   assert p2_after.mana_pool.red == 0
   assert p2_after.mana_pool.green == 0
@@ -552,7 +557,8 @@ pub fn empty_pools_remain_empty_test() {
   let game_after_step = pass_both(game)
 
   // Pools should still be empty
-  let assert Ok(p1_after) = list.find(game_after_step.players, fn(p) { p.id == 1 })
+  let assert Ok(p1_after) =
+    list.find(game_after_step.players, fn(p) { p.id == 1 })
   assert p1_after.mana_pool.white == 0
   assert p1_after.mana_pool.blue == 0
   assert p1_after.mana_pool.black == 0
@@ -634,4 +640,236 @@ pub fn mana_empties_on_turn_transition_test() {
   assert p1_after.mana_pool.red == 0
   assert p1_after.mana_pool.green == 0
   assert p1_after.mana_pool.colorless == 0
+}
+
+// Play Land Tests
+
+// Helper function to create a test land card
+fn create_test_land(id: String, name: String) -> types.Card {
+  types.Card(
+    id: id,
+    name: name,
+    card_type: types.Land,
+    mana_cost: [],
+    power: option.None,
+    toughness: option.None,
+  )
+}
+
+// Helper function to create a test creature card
+fn create_test_creature(id: String, name: String) -> types.Card {
+  types.Card(
+    id: id,
+    name: name,
+    card_type: types.Creature,
+    mana_cost: [types.Green],
+    power: option.Some(2),
+    toughness: option.Some(2),
+  )
+}
+
+// Helper function to add a card to a player's hand
+fn add_card_to_hand(
+  game: types.GameState,
+  player_id: Int,
+  card: types.Card,
+) -> types.GameState {
+  types.GameState(
+    ..game,
+    players: list.map(game.players, fn(p) {
+      case p.id == player_id {
+        True -> types.Player(..p, hand: [card, ..p.hand])
+        False -> p
+      }
+    }),
+  )
+}
+
+// Test playing a land successfully
+pub fn play_land_success_test() {
+  let game = mtg_engine.init_game()
+  let land = create_test_land("land1", "Forest")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+
+  // Verify land moved from hand to battlefield
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert list.length(player1.hand) == 0
+  assert list.length(player1.battlefield) == 1
+  assert list.any(player1.battlefield, fn(c) { c.id == "land1" })
+
+  // Verify lands_played_this_turn incremented
+  assert player1.lands_played_this_turn == 1
+}
+
+// Test land-per-turn limit
+pub fn play_land_already_played_this_turn_test() {
+  let game = mtg_engine.init_game()
+  let land1 = create_test_land("land1", "Forest")
+  let land2 = create_test_land("land2", "Mountain")
+
+  // Add both lands to player 1's hand
+  let game = add_card_to_hand(game, 1, land1)
+  let game = add_card_to_hand(game, 1, land2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Play first land successfully
+  let assert Ok(game_after_land1) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+
+  // Try to play second land - should fail
+  let result = mtg_engine.dispatch(game_after_land1, types.PlayLand(1, "land2"))
+  assert result == Error(types.InvalidAction("Already played a land this turn"))
+}
+
+// Test playing land in wrong phase
+pub fn play_land_wrong_phase_test() {
+  let game = mtg_engine.init_game()
+  let land = create_test_land("land1", "Forest")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Try to play in Upkeep (wrong phase)
+  let game = pass_until(types.Upkeep, game)
+
+  let result = mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+  assert result
+    == Error(types.InvalidAction("Can only play a land during a main phase"))
+}
+
+// Test playing land from PostCombatMain phase
+pub fn play_land_postcombat_main_test() {
+  let game = mtg_engine.init_game()
+  let land = create_test_land("land1", "Island")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PostCombatMain
+  let game = pass_until(types.PostCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+
+  // Verify land moved to battlefield
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert list.length(player1.battlefield) == 1
+}
+
+// Test only active player can play land
+pub fn play_land_not_active_player_test() {
+  let game = mtg_engine.init_game()
+  let land = create_test_land("land1", "Plains")
+
+  // Add land to player 2's hand
+  let game = add_card_to_hand(game, 2, land)
+
+  // Advance to PreCombatMain (player 1 is active)
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Player 2 tries to play land - should fail
+  let result = mtg_engine.dispatch(game, types.PlayLand(2, "land1"))
+  assert result
+    == Error(types.InvalidAction("Only the active player can play a land"))
+}
+
+// Test card not in hand
+pub fn play_land_not_in_hand_test() {
+  let game = mtg_engine.init_game()
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Try to play a land that's not in hand
+  let result = mtg_engine.dispatch(game, types.PlayLand(1, "nonexistent"))
+  assert result == Error(types.InvalidAction("Card not found in hand"))
+}
+
+// Test card is not a land
+pub fn play_land_not_a_land_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Try to play creature as land - should fail
+  let result = mtg_engine.dispatch(game, types.PlayLand(1, "creature1"))
+  assert result == Error(types.InvalidAction("Card is not a land"))
+}
+
+// Test lands_played_this_turn resets on new turn
+pub fn lands_played_resets_on_new_turn_test() {
+  let game = mtg_engine.init_game()
+  let land1 = create_test_land("land1", "Forest")
+  let land2 = create_test_land("land2", "Mountain")
+
+  // Add lands to player 1's hand
+  let game = add_card_to_hand(game, 1, land1)
+  let game = add_card_to_hand(game, 1, land2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Play first land
+  let assert Ok(game_after_land1) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+
+  // Verify lands_played_this_turn is 1
+  let assert Ok(p1) = list.find(game_after_land1.players, fn(p) { p.id == 1 })
+  assert p1.lands_played_this_turn == 1
+
+  // Advance to end of turn and into next player's turn
+  let game = pass_until(types.Cleanup, game_after_land1)
+  let game = pass_both(game)
+
+  // Complete player 2's turn
+  let game = pass_until(types.Cleanup, game)
+  let game = pass_both(game)
+
+  // Now player 1's turn 2 - lands_played_this_turn should be reset
+  let assert Ok(p1_turn2) = list.find(game.players, fn(p) { p.id == 1 })
+  assert p1_turn2.lands_played_this_turn == 0
+
+  // Should be able to play second land now
+  let game = pass_until(types.PreCombatMain, game)
+  let assert Ok(_new_game) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land2"))
+}
+
+// Test must have priority to play land
+pub fn play_land_without_priority_test() {
+  let game = mtg_engine.init_game()
+  let land = create_test_land("land1", "Swamp")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Pass priority so player 2 has priority
+  let assert Ok(game_p2_priority) =
+    mtg_engine.dispatch(game, types.PassPriority)
+  assert game_p2_priority.priority_player_id == 2
+
+  // Try to play land as player 1 without priority - should fail
+  let result = mtg_engine.dispatch(game_p2_priority, types.PlayLand(1, "land1"))
+  assert result
+    == Error(types.InvalidAction("Can only play a land when you have priority"))
 }

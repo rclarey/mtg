@@ -36,9 +36,9 @@
 
 ## Phase 4: Playing Lands
 
-- [ ] **Add play land action** - Implement action to play land from hand to battlefield with basic validation
+- [x] **Add play land action** - Implement action to play land from hand to battlefield with basic validation
 
-- [ ] **Test land playing** - Verify lands move from hand to battlefield, land-per-turn limit works
+- [x] **Test land playing** - Verify lands move from hand to battlefield, land-per-turn limit works
 
 - [ ] **Add land tap/untap** - Implement tapping lands for mana as an action
 
