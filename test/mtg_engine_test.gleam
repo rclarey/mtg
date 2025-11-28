@@ -44,7 +44,8 @@ pub fn pass_priority_advances_from_player_1_to_2_test() {
 pub fn pass_priority_wraps_from_player_2_to_1_test() {
   let game = mtg_engine.init_game()
   let assert Ok(game_p2) = mtg_engine.dispatch(game, types.PassPriority)
-  let assert Ok(game_p1_again) = mtg_engine.dispatch(game_p2, types.PassPriority)
+  let assert Ok(game_p1_again) =
+    mtg_engine.dispatch(game_p2, types.PassPriority)
 
   assert game_p1_again.priority_player_id == 1
 }
@@ -64,7 +65,8 @@ pub fn both_players_pass_advances_step_test() {
 
   // Both players pass in Untap (which should advance through to Upkeep)
   let assert Ok(game_p2) = mtg_engine.dispatch(game, types.PassPriority)
-  let assert Ok(game_advanced) = mtg_engine.dispatch(game_p2, types.PassPriority)
+  let assert Ok(game_advanced) =
+    mtg_engine.dispatch(game_p2, types.PassPriority)
 
   // Should advance from Untap -> Upkeep
   assert game_advanced.current_step == types.Upkeep
@@ -79,7 +81,8 @@ pub fn step_advancement_resets_consecutive_passes_test() {
   let assert Ok(game_p2) = mtg_engine.dispatch(game, types.PassPriority)
   assert game_p2.consecutive_passes == 1
 
-  let assert Ok(game_advanced) = mtg_engine.dispatch(game_p2, types.PassPriority)
+  let assert Ok(game_advanced) =
+    mtg_engine.dispatch(game_p2, types.PassPriority)
   assert game_advanced.consecutive_passes == 0
 }
 
@@ -106,8 +109,10 @@ pub fn first_turn_skips_draw_step_test() {
   assert game_upkeep.current_step == types.Upkeep
 
   // Advance through Upkeep -> Draw (which should skip to PreCombatMain on turn 1)
-  let assert Ok(game_p2_2) = mtg_engine.dispatch(game_upkeep, types.PassPriority)
-  let assert Ok(game_after_draw) = mtg_engine.dispatch(game_p2_2, types.PassPriority)
+  let assert Ok(game_p2_2) =
+    mtg_engine.dispatch(game_upkeep, types.PassPriority)
+  let assert Ok(game_after_draw) =
+    mtg_engine.dispatch(game_p2_2, types.PassPriority)
 
   // Should skip Draw and go to PreCombatMain
   assert game_after_draw.current_step == types.PreCombatMain
@@ -115,9 +120,9 @@ pub fn first_turn_skips_draw_step_test() {
 }
 
 fn pass_both(state: types.GameState) {
-    let assert Ok(s1) = mtg_engine.dispatch(state, types.PassPriority)
-    let assert Ok(s2) = mtg_engine.dispatch(s1, types.PassPriority)
-    s2
+  let assert Ok(s1) = mtg_engine.dispatch(state, types.PassPriority)
+  let assert Ok(s2) = mtg_engine.dispatch(s1, types.PassPriority)
+  s2
 }
 
 fn pass_until(target_step: types.Step, state: types.GameState) {
@@ -194,7 +199,8 @@ pub fn turn_transition_to_player_2_test() {
   let game = pass_both(game)
 
   assert game.current_step == types.Upkeep
-  assert game.turn_number == 1 // Still turn 1, player 2 hasn't finished yet
+  assert game.turn_number == 1
+  // Still turn 1, player 2 hasn't finished yet
   assert game.active_player_id == 2
   assert game.priority_player_id == 2
 }
@@ -211,14 +217,16 @@ pub fn turn_number_increments_after_full_round_test() {
 
   // Complete player 1's turn
   let game = pass_until(types.Cleanup, game)
-  let game = pass_both(game) // Cleanup -> Player 2's Upkeep
+  let game = pass_both(game)
+  // Cleanup -> Player 2's Upkeep
 
   assert game.turn_number == 1
   assert game.active_player_id == 2
 
   // Complete player 2's turn
   let game = pass_until(types.Cleanup, game)
-  let game = pass_both(game) // Cleanup -> Back to Player 1's Upkeep
+  let game = pass_both(game)
+  // Cleanup -> Back to Player 1's Upkeep
 
   // Now turn number should increment since we're back to player 1
   assert game.turn_number == 2
@@ -233,7 +241,8 @@ pub fn player_2_has_draw_step_test() {
 
   // Advance through player 1's entire first turn
   let game = pass_until(types.Cleanup, game)
-  let game = pass_both(game) // Cleanup -> Player 2's Upkeep
+  let game = pass_both(game)
+  // Cleanup -> Player 2's Upkeep
 
   assert game.turn_number == 1
   assert game.active_player_id == 2
@@ -255,11 +264,13 @@ pub fn turn_2_has_draw_step_test() {
   // Complete full round to reach turn 2
   // Player 1's turn 1
   let game = pass_until(types.Cleanup, game)
-  let game = pass_both(game) // Cleanup -> Player 2's Upkeep
+  let game = pass_both(game)
+  // Cleanup -> Player 2's Upkeep
 
   // Player 2's turn 1
   let game = pass_until(types.Cleanup, game)
-  let game = pass_both(game) // Cleanup -> Player 1's turn 2 Upkeep
+  let game = pass_both(game)
+  // Cleanup -> Player 1's turn 2 Upkeep
 
   assert game.turn_number == 2
   assert game.active_player_id == 1
@@ -272,4 +283,83 @@ pub fn turn_2_has_draw_step_test() {
   // Draw -> PreCombatMain
   let game = pass_both(game)
   assert game.current_step == types.PreCombatMain
+}
+
+// Mana Production Tests
+
+// Test producing a single color of mana
+pub fn produce_single_white_mana_test() {
+  let game = mtg_engine.init_game()
+  let mana = types.ManaProduced(white: 1, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+
+  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Find player 1 and check mana pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 1
+  assert player1.mana_pool.blue == 0
+  assert player1.mana_pool.black == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.colorless == 0
+}
+
+// Test producing multiple colors at once
+pub fn produce_multiple_colors_mana_test() {
+  let game = mtg_engine.init_game()
+  let mana = types.ManaProduced(white: 1, blue: 2, black: 0, red: 0, green: 1, colorless: 0)
+
+  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 1
+  assert player1.mana_pool.blue == 2
+  assert player1.mana_pool.green == 1
+}
+
+// Test mana accumulates with multiple productions
+pub fn mana_accumulates_test() {
+  let game = mtg_engine.init_game()
+  let mana1 = types.ManaProduced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0)
+  let mana2 = types.ManaProduced(white: 0, blue: 0, black: 0, red: 2, green: 0, colorless: 0)
+
+  let assert Ok(game_after_1) = mtg_engine.dispatch(game, types.ProduceMana(1, mana1))
+  let assert Ok(game_after_2) = mtg_engine.dispatch(game_after_1, types.ProduceMana(1, mana2))
+
+  let assert Ok(player1) = list.find(game_after_2.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.red == 3
+}
+
+// Test producing mana for different players
+pub fn produce_mana_different_players_test() {
+  let game = mtg_engine.init_game()
+  let mana_p1 = types.ManaProduced(white: 2, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+  let mana_p2 = types.ManaProduced(white: 0, blue: 3, black: 0, red: 0, green: 0, colorless: 0)
+
+  let assert Ok(game_after_p1) = mtg_engine.dispatch(game, types.ProduceMana(1, mana_p1))
+  let assert Ok(game_after_p2) = mtg_engine.dispatch(game_after_p1, types.ProduceMana(2, mana_p2))
+
+  let assert Ok(player1) = list.find(game_after_p2.players, fn(p) { p.id == 1 })
+  let assert Ok(player2) = list.find(game_after_p2.players, fn(p) { p.id == 2 })
+
+  assert player1.mana_pool.white == 2
+  assert player1.mana_pool.blue == 0
+  assert player2.mana_pool.white == 0
+  assert player2.mana_pool.blue == 3
+}
+
+// Test producing zero mana (edge case)
+pub fn produce_zero_mana_test() {
+  let game = mtg_engine.init_game()
+  let mana = types.ManaProduced(white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+
+  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 0
+  assert player1.mana_pool.blue == 0
+  assert player1.mana_pool.black == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.colorless == 0
 }

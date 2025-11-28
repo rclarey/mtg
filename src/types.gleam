@@ -57,9 +57,9 @@ pub type CardType {
 pub type ManaCost =
   List(Color)
 
-// Mana pool tracking each color of mana
-pub type ManaPool {
-  ManaPool(
+// Mana production/pool tracking each color of mana
+pub type ManaProduced {
+  ManaProduced(
     white: Int,
     blue: Int,
     black: Int,
@@ -87,7 +87,7 @@ pub type Player {
   Player(
     id: Int,
     life: Int,
-    mana_pool: ManaPool,
+    mana_pool: ManaProduced,
     hand: List(Card),
     battlefield: List(Card),
     graveyard: List(Card),
@@ -116,4 +116,5 @@ pub type Error {
 // Action type for game actions
 pub type Action {
   PassPriority
+  ProduceMana(player_id: Int, mana: ManaProduced)
 }

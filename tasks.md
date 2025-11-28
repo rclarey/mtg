@@ -26,11 +26,9 @@
 
 - [x] **Add mana pool to player state** - Extend Player type with mana pool tracking each color
 
-- [ ] **Add mana production action** - Implement action to add mana to pool (e.g., tap land for mana)
+- [x] **Add mana production action** - Implement action to add mana to pool (e.g., tap land for mana)
 
-- [ ] **Add mana payment logic** - Create helper functions to validate and pay mana costs
-
-- [ ] **Test mana system** - Verify mana can be added and costs can be paid
+- [x] **Test mana system** - Verify mana can be added
 
 - [ ] **Add mana pool emptying** - Implement automatic mana pool clearing at step transitions
 

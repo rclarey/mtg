@@ -10,7 +10,14 @@ pub fn main() -> Nil {
 // Initialize a new game with two players
 pub fn init_game() -> GameState {
   let empty_mana_pool =
-    types.ManaPool(white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 
   let player1 =
     types.Player(
@@ -50,7 +57,50 @@ pub fn init_game() -> GameState {
 pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
   case action {
     types.PassPriority -> Ok(handle_pass_priority(state))
+    types.ProduceMana(player_id, mana) ->
+      Ok(handle_produce_mana(state, player_id, mana))
   }
+}
+
+fn update_player(
+  players: List(types.Player),
+  player_id: Int,
+  f: fn(types.Player) -> types.Player,
+) -> List(types.Player) {
+  case players {
+    [] -> []
+    [p, ..rest] if p.id == player_id -> [f(p), ..rest]
+    [p, ..rest] -> [p, ..update_player(rest, player_id, f)]
+  }
+}
+
+// Add mana to a player's pool
+fn add_mana(
+  pool: types.ManaProduced,
+  produced: types.ManaProduced,
+) -> types.ManaProduced {
+  types.ManaProduced(
+    white: pool.white + produced.white,
+    blue: pool.blue + produced.blue,
+    black: pool.black + produced.black,
+    red: pool.red + produced.red,
+    green: pool.green + produced.green,
+    colorless: pool.colorless + produced.colorless,
+  )
+}
+
+// Handle producing mana for a player
+fn handle_produce_mana(
+  state: GameState,
+  player_id: Int,
+  mana: types.ManaProduced,
+) -> GameState {
+  types.GameState(
+    ..state,
+    players: update_player(state.players, player_id, fn(p) {
+      types.Player(..p, mana_pool: add_mana(p.mana_pool, mana))
+    }),
+  )
 }
 
 // Get the next step in the turn sequence
