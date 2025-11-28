@@ -46,7 +46,7 @@
 
 ## Phase 5: Casting and Resolving Creatures
 
-- [ ] **Add stack to game state** - Extend GameState with stack zone
+- [x] **Add stack to game state** - Extend GameState with stack zone
 
 - [ ] **Add cast creature action** - Implement casting creatures (pay cost, put on stack)
 

@@ -84,6 +84,15 @@ pub type Card {
   )
 }
 
+// Stack item representation - represents a spell or ability on the stack
+pub type StackItem {
+  StackItem(
+    card: Card,
+    controller_id: Int,
+    // Targets will be added in later phases when targeting is implemented
+  )
+}
+
 // Player state
 pub type Player {
   Player(
@@ -108,6 +117,7 @@ pub type GameState {
     current_step: Step,
     consecutive_passes: Int,
     turn_number: Int,
+    stack: List(StackItem),
   )
 }
 

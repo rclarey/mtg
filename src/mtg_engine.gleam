@@ -54,6 +54,7 @@ pub fn init_game() -> GameState {
     current_step: types.Untap,
     consecutive_passes: 0,
     turn_number: 1,
+    stack: [],
   )
 }
 
@@ -203,6 +204,7 @@ fn advance_step(state: GameState) -> GameState {
 
       // Since Untap has no priority, immediately advance to Upkeep
       types.GameState(
+        ..state,
         players: players_with_untapped,
         active_player_id: next_active_player.id,
         priority_player_id: next_active_player.id,

@@ -32,6 +32,17 @@ pub fn init_game_test() {
 
   // Verify consecutive_passes starts at 0
   assert game.consecutive_passes == 0
+
+  // Verify stack starts empty
+  assert game.stack == []
+}
+
+// Test stack initialization
+pub fn stack_starts_empty_test() {
+  let game = mtg_engine.init_game()
+
+  // Verify stack is an empty list
+  assert game.stack == []
 }
 
 // Test PassPriority action
