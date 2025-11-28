@@ -48,9 +48,9 @@
 
 - [x] **Add stack to game state** - Extend GameState with stack zone
 
-- [ ] **Add cast creature action** - Implement casting creatures (pay cost, put on stack)
+- [x] **Add cast creature action** - Implement casting creatures (pay cost, put on stack)
 
-- [ ] **Test creature casting** - Verify mana is paid and spell goes on stack
+- [x] **Test creature casting** - Verify mana is paid and spell goes on stack
 
 - [ ] **Add spell resolution** - Implement resolving top spell from stack to battlefield
 

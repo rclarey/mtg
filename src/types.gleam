@@ -54,8 +54,17 @@ pub type CardType {
 }
 
 // Mana cost representation (list of colors)
-pub type ManaCost =
-  List(Color)
+pub type ManaCost {
+  ManaCost(
+    generic: Int,
+    white: Int,
+    blue: Int,
+    black: Int,
+    red: Int,
+    green: Int,
+    colorless: Int,
+  )
+}
 
 // Mana production/pool tracking each color of mana
 pub type ManaProduced {
@@ -132,4 +141,5 @@ pub type Action {
   ProduceMana(player_id: Int, mana: ManaProduced)
   PlayLand(player_id: Int, card_id: String)
   TapLandForMana(player_id: Int, card_id: String)
+  CastCreature(player_id: Int, card_id: String)
 }

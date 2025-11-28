@@ -68,6 +68,8 @@ pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
       handle_play_land(state, player_id, card_id)
     types.TapLandForMana(player_id, card_id) ->
       handle_tap_land_for_mana(state, player_id, card_id)
+    types.CastCreature(player_id, card_id) ->
+      handle_cast_creature(state, player_id, card_id)
   }
 }
 
@@ -304,7 +306,7 @@ fn find_card(
   card_id: String,
 ) -> Result(types.Card, types.Error) {
   list.find(cards, fn(card) { card.id == card_id })
-  |> result.replace_error(types.InvalidAction("Card not found on battlefield"))
+  |> result.replace_error(types.InvalidAction("Card not found"))
 }
 
 // Remove a card from a list by its ID
@@ -461,10 +463,7 @@ fn handle_play_land(
     Error(types.InvalidAction("Already played a land this turn")),
   )
 
-  use card <- result.try(
-    find_card(player.hand, card_id)
-    |> result.replace_error(types.InvalidAction("Card not found in hand")),
-  )
+  use card <- result.try(find_card(player.hand, card_id))
   use <- bool.guard(
     card.card_type != types.Land,
     Error(types.InvalidAction("Card is not a land")),
@@ -485,4 +484,159 @@ fn handle_play_land(
   let new_players =
     update_player(state.players, player_id, fn(_) { updated_player })
   Ok(types.GameState(..state, players: new_players))
+}
+
+const not_enough_mana = Error(
+  types.InvalidAction("Not enough mana to cast this spell"),
+)
+
+// Deduct mana cost from a mana pool
+fn pay_mana_cost(
+  pool: types.ManaProduced,
+  cost: types.ManaCost,
+) -> Result(types.ManaProduced, types.Error) {
+  // Check if we have enough of each specific color
+  use <- bool.guard(
+    pool.white < cost.white
+      || pool.blue < cost.blue
+      || pool.black < cost.black
+      || pool.red < cost.red
+      || pool.green < cost.green
+      || pool.colorless < cost.colorless,
+    not_enough_mana,
+  )
+
+  // First, pay the specific colored costs
+  let after_specific =
+    types.ManaProduced(
+      white: pool.white - cost.white,
+      blue: pool.blue - cost.blue,
+      black: pool.black - cost.black,
+      red: pool.red - cost.red,
+      green: pool.green - cost.green,
+      colorless: pool.colorless - cost.colorless,
+    )
+
+  // Then pay the generic cost from remaining mana
+  pay_generic_from_pool(after_specific, cost.generic)
+}
+
+// Helper function to pay generic mana cost from any available mana
+fn pay_generic_from_pool(
+  pool: types.ManaProduced,
+  generic_cost: Int,
+) -> Result(types.ManaProduced, types.Error) {
+  // Base case: no generic cost to pay
+  use <- bool.guard(generic_cost <= 0, Ok(pool))
+
+  // TODO some smarter heuristic for deducting mana
+  // For now try to deduct from each mana type in WUBRG order
+  use <- bool.guard(
+    pool.white > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, white: pool.white - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- bool.guard(
+    pool.blue > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, blue: pool.blue - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- bool.guard(
+    pool.black > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, black: pool.black - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- bool.guard(
+    pool.red > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, red: pool.red - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- bool.guard(
+    pool.green > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, green: pool.green - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- bool.guard(
+    pool.colorless > 0,
+    pay_generic_from_pool(
+      types.ManaProduced(..pool, colorless: pool.colorless - 1),
+      generic_cost - 1,
+    ),
+  )
+
+  not_enough_mana
+}
+
+// Handle casting a creature spell
+fn handle_cast_creature(
+  state: GameState,
+  player_id: Int,
+  card_id: String,
+) -> Result(GameState, types.Error) {
+  // Validate: must be active player
+  use <- bool.guard(
+    player_id != state.active_player_id,
+    Error(types.InvalidAction("Only the active player can cast spells")),
+  )
+
+  // Validate: must have priority
+  use <- bool.guard(
+    player_id != state.priority_player_id,
+    Error(types.InvalidAction("Can only cast spells when you have priority")),
+  )
+
+  // Validate: must be in a main phase (sorcery-speed for creatures)
+  use <- bool.guard(
+    state.current_step != types.PreCombatMain
+      && state.current_step != types.PostCombatMain,
+    Error(types.InvalidAction("Can only cast creatures during a main phase")),
+  )
+
+  // Validate: stack must be empty (sorcery-speed restriction)
+  use <- bool.guard(
+    state.stack != [],
+    Error(types.InvalidAction("Can only cast creatures when the stack is empty")),
+  )
+
+  // Find the player
+  use player <- result.try(find_player(state.players, player_id))
+
+  // Validate: card must be in hand
+  use card <- result.try(find_card(player.hand, card_id))
+
+  // Validate: card must be a creature
+  use <- bool.guard(
+    card.card_type != types.Creature,
+    Error(types.InvalidAction("Card is not a creature")),
+  )
+
+  // Try to pay the mana cost
+  use new_mana_pool <- result.try(pay_mana_cost(
+    player.mana_pool,
+    card.mana_cost,
+  ))
+  let new_hand = remove_card(player.hand, card_id)
+
+  Ok(
+    types.GameState(
+      ..state,
+      players: update_player(state.players, player_id, fn(_) {
+        types.Player(..player, hand: new_hand, mana_pool: new_mana_pool)
+      }),
+      stack: [
+        types.StackItem(card: card, controller_id: player_id),
+        ..state.stack
+      ],
+    ),
+  )
 }
