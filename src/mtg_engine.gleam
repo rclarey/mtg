@@ -65,6 +65,8 @@ pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
       Ok(handle_produce_mana(state, player_id, mana))
     types.PlayLand(player_id, card_id) ->
       handle_play_land(state, player_id, card_id)
+    types.TapLandForMana(player_id, card_id) ->
+      handle_tap_land_for_mana(state, player_id, card_id)
   }
 }
 
@@ -189,12 +191,19 @@ fn advance_step(state: GameState) -> GameState {
         False -> state.turn_number
       }
 
-      // Reset lands_played_this_turn for the active player
+      // Reset lands_played_this_turn for all players
       let players_with_reset_lands = reset_all_lands_played(cleared_players)
+
+      // Untap all permanents for the new active player (Untap step)
+      let players_with_untapped =
+        untap_active_player_permanents(
+          players_with_reset_lands,
+          next_active_player.id,
+        )
 
       // Since Untap has no priority, immediately advance to Upkeep
       types.GameState(
-        players: players_with_reset_lands,
+        players: players_with_untapped,
         active_player_id: next_active_player.id,
         priority_player_id: next_active_player.id,
         current_step: types.Upkeep,
@@ -267,17 +276,156 @@ fn reset_all_lands_played(players: List(types.Player)) -> List(types.Player) {
   list.map(players, reset_lands_played)
 }
 
+// Untap all permanents for a player
+fn untap_all_permanents(player: types.Player) -> types.Player {
+  let untapped_battlefield =
+    list.map(player.battlefield, fn(card) { types.Card(..card, tapped: False) })
+  types.Player(..player, battlefield: untapped_battlefield)
+}
+
+// Untap all permanents for the active player
+fn untap_active_player_permanents(
+  players: List(types.Player),
+  active_player_id: Int,
+) -> List(types.Player) {
+  list.map(players, fn(player) {
+    case player.id == active_player_id {
+      True -> untap_all_permanents(player)
+      False -> player
+    }
+  })
+}
+
 // Find a card in a list by its ID
 fn find_card(
   cards: List(types.Card),
   card_id: String,
-) -> Result(types.Card, Nil) {
+) -> Result(types.Card, types.Error) {
   list.find(cards, fn(card) { card.id == card_id })
+  |> result.replace_error(types.InvalidAction("Card not found on battlefield"))
 }
 
 // Remove a card from a list by its ID
 fn remove_card(cards: List(types.Card), card_id: String) -> List(types.Card) {
   list.filter(cards, fn(card) { card.id != card_id })
+}
+
+// Get mana produced by a land based on its name
+fn get_land_mana_production(land_name: String) -> types.ManaProduced {
+  case land_name {
+    "Forest" ->
+      types.ManaProduced(
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      )
+    "Mountain" ->
+      types.ManaProduced(
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 1,
+        green: 0,
+        colorless: 0,
+      )
+    "Island" ->
+      types.ManaProduced(
+        white: 0,
+        blue: 1,
+        black: 0,
+        red: 0,
+        green: 0,
+        colorless: 0,
+      )
+    "Plains" ->
+      types.ManaProduced(
+        white: 1,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 0,
+        colorless: 0,
+      )
+    "Swamp" ->
+      types.ManaProduced(
+        white: 0,
+        blue: 0,
+        black: 1,
+        red: 0,
+        green: 0,
+        colorless: 0,
+      )
+    _ ->
+      types.ManaProduced(
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 0,
+        colorless: 0,
+      )
+  }
+}
+
+// Update a card's tapped state in a list
+fn update_card_tapped(
+  cards: List(types.Card),
+  card_id: String,
+  tapped: Bool,
+) -> List(types.Card) {
+  list.map(cards, fn(card) {
+    case card.id == card_id {
+      True -> types.Card(..card, tapped: tapped)
+      False -> card
+    }
+  })
+}
+
+// Handle tapping a land for mana
+fn handle_tap_land_for_mana(
+  state: GameState,
+  player_id: Int,
+  card_id: String,
+) -> Result(GameState, types.Error) {
+  // Find the player
+  use player <- result.try(find_player(state.players, player_id))
+
+  // Find the card on the battlefield
+  use card <- result.try(find_card(player.battlefield, card_id))
+
+  // Validate: card must be a land
+  use <- bool.guard(
+    card.card_type != types.Land,
+    Error(types.InvalidAction("Card is not a land")),
+  )
+
+  // Validate: card must be untapped
+  use <- bool.guard(
+    card.tapped,
+    Error(types.InvalidAction("Land is already tapped")),
+  )
+
+  // Tap the land
+  let new_battlefield = update_card_tapped(player.battlefield, card_id, True)
+
+  // Determine mana production based on land name
+  let mana = get_land_mana_production(card.name)
+
+  // Add mana to player's pool
+  let updated_player =
+    types.Player(
+      ..player,
+      battlefield: new_battlefield,
+      mana_pool: add_mana(player.mana_pool, mana),
+    )
+
+  let new_players =
+    update_player(state.players, player_id, fn(_) { updated_player })
+
+  Ok(types.GameState(..state, players: new_players))
 }
 
 // Handle playing a land from hand to battlefield
@@ -322,7 +470,9 @@ fn handle_play_land(
 
   // All validations passed, play the land
   let new_hand = remove_card(player.hand, card_id)
-  let new_battlefield = [card, ..player.battlefield]
+  // Land enters battlefield untapped
+  let untapped_card = types.Card(..card, tapped: False)
+  let new_battlefield = [untapped_card, ..player.battlefield]
   let updated_player =
     types.Player(
       ..player,

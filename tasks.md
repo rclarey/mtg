@@ -40,9 +40,9 @@
 
 - [x] **Test land playing** - Verify lands move from hand to battlefield, land-per-turn limit works
 
-- [ ] **Add land tap/untap** - Implement tapping lands for mana as an action
+- [x] **Add land tap/untap** - Implement tapping lands for mana as an action
 
-- [ ] **Test land tapping** - Verify lands tap, produce mana, and untap during untap step
+- [x] **Test land tapping** - Verify lands tap, produce mana, and untap during untap step
 
 ## Phase 5: Casting and Resolving Creatures
 

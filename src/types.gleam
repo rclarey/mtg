@@ -79,6 +79,8 @@ pub type Card {
     // Optional fields for creatures
     power: Option(Int),
     toughness: Option(Int),
+    // Track tapped state for permanents on battlefield
+    tapped: Bool,
   )
 }
 
@@ -119,4 +121,5 @@ pub type Action {
   PassPriority
   ProduceMana(player_id: Int, mana: ManaProduced)
   PlayLand(player_id: Int, card_id: String)
+  TapLandForMana(player_id: Int, card_id: String)
 }

@@ -653,6 +653,7 @@ fn create_test_land(id: String, name: String) -> types.Card {
     mana_cost: [],
     power: option.None,
     toughness: option.None,
+    tapped: False,
   )
 }
 
@@ -665,6 +666,7 @@ fn create_test_creature(id: String, name: String) -> types.Card {
     mana_cost: [types.Green],
     power: option.Some(2),
     toughness: option.Some(2),
+    tapped: False,
   )
 }
 
@@ -702,7 +704,7 @@ pub fn play_land_success_test() {
 
   // Verify land moved from hand to battlefield
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  assert list.length(player1.hand) == 0
+  assert player1.hand == []
   assert list.length(player1.battlefield) == 1
   assert list.any(player1.battlefield, fn(c) { c.id == "land1" })
 
@@ -872,4 +874,294 @@ pub fn play_land_without_priority_test() {
   let result = mtg_engine.dispatch(game_p2_priority, types.PlayLand(1, "land1"))
   assert result
     == Error(types.InvalidAction("Can only play a land when you have priority"))
+}
+
+// Land Tapping Tests
+
+// Helper function to add a land directly to battlefield
+fn add_land_to_battlefield(
+  game: types.GameState,
+  player_id: Int,
+  land: types.Card,
+) -> types.GameState {
+  types.GameState(
+    ..game,
+    players: list.map(game.players, fn(p) {
+      case p.id == player_id {
+        True -> types.Player(..p, battlefield: [land, ..p.battlefield])
+        False -> p
+      }
+    }),
+  )
+}
+
+// Test tapping a Forest for green mana
+pub fn tap_forest_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to battlefield
+  let game = add_land_to_battlefield(game, 1, forest)
+
+  // Tap the forest for mana
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Verify forest is tapped
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(tapped_forest) =
+    list.find(player1.battlefield, fn(c) { c.id == "land1" })
+  assert tapped_forest.tapped == True
+
+  // Verify green mana was added to pool
+  assert player1.mana_pool.green == 1
+  assert player1.mana_pool.white == 0
+  assert player1.mana_pool.blue == 0
+  assert player1.mana_pool.black == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.colorless == 0
+}
+
+// Test tapping a Mountain for red mana
+pub fn tap_mountain_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let mountain = create_test_land("land1", "Mountain")
+
+  // Add mountain to battlefield
+  let game = add_land_to_battlefield(game, 1, mountain)
+
+  // Tap the mountain for mana
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Verify red mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.red == 1
+  assert player1.mana_pool.green == 0
+}
+
+// Test tapping an Island for blue mana
+pub fn tap_island_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let island = create_test_land("land1", "Island")
+
+  // Add island to battlefield
+  let game = add_land_to_battlefield(game, 1, island)
+
+  // Tap the island for mana
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Verify blue mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.blue == 1
+}
+
+// Test tapping a Plains for white mana
+pub fn tap_plains_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let plains = create_test_land("land1", "Plains")
+
+  // Add plains to battlefield
+  let game = add_land_to_battlefield(game, 1, plains)
+
+  // Tap the plains for mana
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Verify white mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 1
+}
+
+// Test tapping a Swamp for black mana
+pub fn tap_swamp_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let swamp = create_test_land("land1", "Swamp")
+
+  // Add swamp to battlefield
+  let game = add_land_to_battlefield(game, 1, swamp)
+
+  // Tap the swamp for mana
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Verify black mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.black == 1
+}
+
+// Test cannot tap already tapped land
+pub fn tap_already_tapped_land_test() {
+  let game = mtg_engine.init_game()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to battlefield
+  let game = add_land_to_battlefield(game, 1, forest)
+
+  // Tap the forest once
+  let assert Ok(game_after_tap) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+
+  // Try to tap it again - should fail
+  let result =
+    mtg_engine.dispatch(game_after_tap, types.TapLandForMana(1, "land1"))
+  assert result == Error(types.InvalidAction("Land is already tapped"))
+}
+
+// Test cannot tap land not on battlefield
+pub fn tap_land_not_on_battlefield_test() {
+  let game = mtg_engine.init_game()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to hand instead of battlefield
+  let game = add_card_to_hand(game, 1, forest)
+
+  // Try to tap it - should fail
+  let result = mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+  assert result == Error(types.InvalidAction("Card not found on battlefield"))
+}
+
+// Test cannot tap non-land permanent
+pub fn tap_non_land_for_mana_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to battlefield
+  let game = add_land_to_battlefield(game, 1, creature)
+
+  // Try to tap it for mana - should fail
+  let result = mtg_engine.dispatch(game, types.TapLandForMana(1, "creature1"))
+  assert result == Error(types.InvalidAction("Card is not a land"))
+}
+
+// Test land enters battlefield untapped
+pub fn land_enters_untapped_test() {
+  let game = mtg_engine.init_game()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to player 1's hand
+  let game = add_card_to_hand(game, 1, forest)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.PlayLand(1, "land1"))
+
+  // Verify land is on battlefield and untapped
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(land_on_battlefield) =
+    list.find(player1.battlefield, fn(c) { c.id == "land1" })
+  assert land_on_battlefield.tapped == False
+}
+
+// Test lands untap during untap step
+pub fn lands_untap_during_untap_step_test() {
+  let game = mtg_engine.init_game()
+  let forest = create_test_land("land1", "Forest")
+  let mountain = create_test_land("land2", "Mountain")
+
+  // Add lands to battlefield
+  let game = add_land_to_battlefield(game, 1, forest)
+  let game = add_land_to_battlefield(game, 1, mountain)
+
+  // Tap both lands
+  let assert Ok(game_after_tap1) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+  let assert Ok(game_after_tap2) =
+    mtg_engine.dispatch(game_after_tap1, types.TapLandForMana(1, "land2"))
+
+  // Verify both lands are tapped
+  let assert Ok(p1) = list.find(game_after_tap2.players, fn(p) { p.id == 1 })
+  let assert Ok(land1) = list.find(p1.battlefield, fn(c) { c.id == "land1" })
+  let assert Ok(land2) = list.find(p1.battlefield, fn(c) { c.id == "land2" })
+  assert land1.tapped == True
+  assert land2.tapped == True
+
+  // Advance to end of turn
+  let game = pass_until(types.Cleanup, game_after_tap2)
+
+  // Advance to next player's turn (which skips through Untap step)
+  let game = pass_both(game)
+
+  // Advance back to player 1's turn (this will trigger untap)
+  let game = pass_until(types.Cleanup, game)
+  let game = pass_both(game)
+
+  // Verify lands are now untapped
+  let assert Ok(p1_after) = list.find(game.players, fn(p) { p.id == 1 })
+  let assert Ok(land1_after) =
+    list.find(p1_after.battlefield, fn(c) { c.id == "land1" })
+  let assert Ok(land2_after) =
+    list.find(p1_after.battlefield, fn(c) { c.id == "land2" })
+  assert land1_after.tapped == False
+  assert land2_after.tapped == False
+}
+
+// Test tapping multiple lands accumulates mana
+pub fn tap_multiple_lands_accumulates_mana_test() {
+  let game = mtg_engine.init_game()
+  let forest1 = create_test_land("land1", "Forest")
+  let forest2 = create_test_land("land2", "Forest")
+  let mountain = create_test_land("land3", "Mountain")
+
+  // Add lands to battlefield
+  let game = add_land_to_battlefield(game, 1, forest1)
+  let game = add_land_to_battlefield(game, 1, forest2)
+  let game = add_land_to_battlefield(game, 1, mountain)
+
+  // Tap all three lands
+  let assert Ok(game_after_tap1) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+  let assert Ok(game_after_tap2) =
+    mtg_engine.dispatch(game_after_tap1, types.TapLandForMana(1, "land2"))
+  let assert Ok(game_after_tap3) =
+    mtg_engine.dispatch(game_after_tap2, types.TapLandForMana(1, "land3"))
+
+  // Verify mana accumulated correctly
+  let assert Ok(player1) =
+    list.find(game_after_tap3.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.green == 2
+  assert player1.mana_pool.red == 1
+}
+
+// Test only active player's lands untap
+pub fn only_active_player_lands_untap_test() {
+  let game = mtg_engine.init_game()
+  let forest_p1 = create_test_land("land1", "Forest")
+  let mountain_p2 = create_test_land("land2", "Mountain")
+
+  // Add lands to both players' battlefields
+  let game = add_land_to_battlefield(game, 1, forest_p1)
+  let game = add_land_to_battlefield(game, 2, mountain_p2)
+
+  // Tap both lands
+  let assert Ok(game_after_tap1) =
+    mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
+  let assert Ok(game_after_tap2) =
+    mtg_engine.dispatch(game_after_tap1, types.TapLandForMana(2, "land2"))
+
+  // Verify both are tapped
+  let assert Ok(p1) = list.find(game_after_tap2.players, fn(p) { p.id == 1 })
+  let assert Ok(p2) = list.find(game_after_tap2.players, fn(p) { p.id == 2 })
+  let assert Ok(land1) = list.find(p1.battlefield, fn(c) { c.id == "land1" })
+  let assert Ok(land2) = list.find(p2.battlefield, fn(c) { c.id == "land2" })
+  assert land1.tapped == True
+  assert land2.tapped == True
+
+  // Advance to next player's turn (player 2)
+  let game = pass_until(types.Cleanup, game_after_tap2)
+  let game = pass_both(game)
+
+  // Player 2's lands should untap, player 1's should stay tapped
+  let assert Ok(p1_after) = list.find(game.players, fn(p) { p.id == 1 })
+  let assert Ok(p2_after) = list.find(game.players, fn(p) { p.id == 2 })
+  let assert Ok(land1_after) =
+    list.find(p1_after.battlefield, fn(c) { c.id == "land1" })
+  let assert Ok(land2_after) =
+    list.find(p2_after.battlefield, fn(c) { c.id == "land2" })
+  assert land1_after.tapped == True
+  assert land2_after.tapped == False
 }
