@@ -1,13 +1,8 @@
 # MTG Engine - Project Overview
 
-This project implements a Magic: The Gathering game engine as a finite state machine using functional reactive programming in Gleam.
-
 ## Project Outline
 
 - Implements a game of Magic the Gathering by strictly following the rules outlined at https://media.wizards.com/2025/downloads/MagicCompRules%2020250919.txt
-  - Supports Lands, Instants, Sorceries, Creatures, Artifacts, and Enchantments
-  - Supports combat (declaring attackers, declaring blockers, applying combat damage)
-  - Supports basic keywords for Creatures
 - Rejects invalid game actions
 - Updates the game state as valid game actions occur
 
@@ -20,8 +15,8 @@ This project implements a Magic: The Gathering game engine as a finite state mac
 
 ## Project Structure
 
-- Code is in the `src` directory and is split into different modules by concern
-- There is a main function `dispatch` which takes an action and returns an updated game state, or if the action is invalid it returns an error
+- code is in the `src` directory
+- tests are in the `test` directory
 
 ## Core Architecture
 
