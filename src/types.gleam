@@ -57,6 +57,18 @@ pub type CardType {
 pub type ManaCost =
   List(Color)
 
+// Mana pool tracking each color of mana
+pub type ManaPool {
+  ManaPool(
+    white: Int,
+    blue: Int,
+    black: Int,
+    red: Int,
+    green: Int,
+    colorless: Int,
+  )
+}
+
 // Card representation
 pub type Card {
   Card(
@@ -75,6 +87,7 @@ pub type Player {
   Player(
     id: Int,
     life: Int,
+    mana_pool: ManaPool,
     hand: List(Card),
     battlefield: List(Card),
     graveyard: List(Card),

@@ -9,10 +9,14 @@ pub fn main() -> Nil {
 
 // Initialize a new game with two players
 pub fn init_game() -> GameState {
+  let empty_mana_pool =
+    types.ManaPool(white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+
   let player1 =
     types.Player(
       id: 1,
       life: 20,
+      mana_pool: empty_mana_pool,
       hand: [],
       battlefield: [],
       graveyard: [],
@@ -24,6 +28,7 @@ pub fn init_game() -> GameState {
     types.Player(
       id: 2,
       life: 20,
+      mana_pool: empty_mana_pool,
       hand: [],
       battlefield: [],
       graveyard: [],

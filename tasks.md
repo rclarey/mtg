@@ -24,7 +24,7 @@
 
 ## Phase 3: Mana System
 
-- [ ] **Add mana pool to player state** - Extend Player type with mana pool tracking each color
+- [x] **Add mana pool to player state** - Extend Player type with mana pool tracking each color
 
 - [ ] **Add mana production action** - Implement action to add mana to pool (e.g., tap land for mana)
 
