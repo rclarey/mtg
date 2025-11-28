@@ -89,6 +89,26 @@ fn add_mana(
   )
 }
 
+// Clear a player's mana pool (rule 106.4: mana pools empty at end of each step/phase)
+fn clear_mana_pool(player: types.Player) -> types.Player {
+  types.Player(
+    ..player,
+    mana_pool: types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    ),
+  )
+}
+
+// Clear all players' mana pools
+fn clear_all_mana_pools(players: List(types.Player)) -> List(types.Player) {
+  list.map(players, clear_mana_pool)
+}
+
 // Handle producing mana for a player
 fn handle_produce_mana(
   state: GameState,
@@ -139,6 +159,9 @@ fn advance_step(state: GameState) -> GameState {
   let next_step = get_next_step(state.current_step)
   let assert Ok(first_player) = list.first(state.players)
 
+  // Clear all mana pools when transitioning between steps (rule 106.4)
+  let cleared_players = clear_all_mana_pools(state.players)
+
   // Check if we're transitioning to a new turn (next step is Untap)
   case next_step {
     types.Untap -> {
@@ -154,6 +177,7 @@ fn advance_step(state: GameState) -> GameState {
       // Since Untap has no priority, immediately advance to Upkeep
       types.GameState(
         ..state,
+        players: cleared_players,
         active_player_id: next_active_player.id,
         priority_player_id: next_active_player.id,
         current_step: types.Upkeep,
@@ -166,6 +190,7 @@ fn advance_step(state: GameState) -> GameState {
     ->
       types.GameState(
         ..state,
+        players: cleared_players,
         current_step: types.PreCombatMain,
         priority_player_id: state.active_player_id,
         consecutive_passes: 0,
@@ -173,6 +198,7 @@ fn advance_step(state: GameState) -> GameState {
     types.Draw ->
       types.GameState(
         ..state,
+        players: cleared_players,
         current_step: types.Draw,
         priority_player_id: state.active_player_id,
         consecutive_passes: 0,
@@ -182,6 +208,7 @@ fn advance_step(state: GameState) -> GameState {
       // Priority goes to active player when entering a new step
       types.GameState(
         ..state,
+        players: cleared_players,
         current_step: next_step,
         priority_player_id: state.active_player_id,
         consecutive_passes: 0,

@@ -290,9 +290,18 @@ pub fn turn_2_has_draw_step_test() {
 // Test producing a single color of mana
 pub fn produce_single_white_mana_test() {
   let game = mtg_engine.init_game()
-  let mana = types.ManaProduced(white: 1, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+  let mana =
+    types.ManaProduced(
+      white: 1,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 
-  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
 
   // Find player 1 and check mana pool
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
@@ -307,9 +316,18 @@ pub fn produce_single_white_mana_test() {
 // Test producing multiple colors at once
 pub fn produce_multiple_colors_mana_test() {
   let game = mtg_engine.init_game()
-  let mana = types.ManaProduced(white: 1, blue: 2, black: 0, red: 0, green: 1, colorless: 0)
+  let mana =
+    types.ManaProduced(
+      white: 1,
+      blue: 2,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
 
-  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
 
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
   assert player1.mana_pool.white == 1
@@ -320,11 +338,29 @@ pub fn produce_multiple_colors_mana_test() {
 // Test mana accumulates with multiple productions
 pub fn mana_accumulates_test() {
   let game = mtg_engine.init_game()
-  let mana1 = types.ManaProduced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0)
-  let mana2 = types.ManaProduced(white: 0, blue: 0, black: 0, red: 2, green: 0, colorless: 0)
+  let mana1 =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 1,
+      green: 0,
+      colorless: 0,
+    )
+  let mana2 =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 2,
+      green: 0,
+      colorless: 0,
+    )
 
-  let assert Ok(game_after_1) = mtg_engine.dispatch(game, types.ProduceMana(1, mana1))
-  let assert Ok(game_after_2) = mtg_engine.dispatch(game_after_1, types.ProduceMana(1, mana2))
+  let assert Ok(game_after_1) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana1))
+  let assert Ok(game_after_2) =
+    mtg_engine.dispatch(game_after_1, types.ProduceMana(1, mana2))
 
   let assert Ok(player1) = list.find(game_after_2.players, fn(p) { p.id == 1 })
   assert player1.mana_pool.red == 3
@@ -333,11 +369,29 @@ pub fn mana_accumulates_test() {
 // Test producing mana for different players
 pub fn produce_mana_different_players_test() {
   let game = mtg_engine.init_game()
-  let mana_p1 = types.ManaProduced(white: 2, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
-  let mana_p2 = types.ManaProduced(white: 0, blue: 3, black: 0, red: 0, green: 0, colorless: 0)
+  let mana_p1 =
+    types.ManaProduced(
+      white: 2,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
+  let mana_p2 =
+    types.ManaProduced(
+      white: 0,
+      blue: 3,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 
-  let assert Ok(game_after_p1) = mtg_engine.dispatch(game, types.ProduceMana(1, mana_p1))
-  let assert Ok(game_after_p2) = mtg_engine.dispatch(game_after_p1, types.ProduceMana(2, mana_p2))
+  let assert Ok(game_after_p1) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana_p1))
+  let assert Ok(game_after_p2) =
+    mtg_engine.dispatch(game_after_p1, types.ProduceMana(2, mana_p2))
 
   let assert Ok(player1) = list.find(game_after_p2.players, fn(p) { p.id == 1 })
   let assert Ok(player2) = list.find(game_after_p2.players, fn(p) { p.id == 2 })
@@ -351,9 +405,18 @@ pub fn produce_mana_different_players_test() {
 // Test producing zero mana (edge case)
 pub fn produce_zero_mana_test() {
   let game = mtg_engine.init_game()
-  let mana = types.ManaProduced(white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 
-  let assert Ok(new_game) = mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(new_game) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
 
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
   assert player1.mana_pool.white == 0
@@ -362,4 +425,213 @@ pub fn produce_zero_mana_test() {
   assert player1.mana_pool.red == 0
   assert player1.mana_pool.green == 0
   assert player1.mana_pool.colorless == 0
+}
+
+// Mana Pool Emptying Tests
+
+// Test mana persists within a step (doesn't empty on priority pass)
+pub fn mana_persists_within_step_test() {
+  let game = mtg_engine.init_game()
+  let mana =
+    types.ManaProduced(
+      white: 2,
+      blue: 1,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
+
+  // Produce mana for player 1
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Player 1 passes priority (but stays in same step)
+  let assert Ok(game_after_pass) =
+    mtg_engine.dispatch(game_with_mana, types.PassPriority)
+
+  // Mana should still be in player 1's pool
+  let assert Ok(player1) = list.find(game_after_pass.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 2
+  assert player1.mana_pool.blue == 1
+}
+
+// Test mana empties when step advances
+pub fn mana_empties_on_step_change_test() {
+  let game = mtg_engine.init_game()
+  let mana =
+    types.ManaProduced(
+      white: 3,
+      blue: 2,
+      black: 1,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
+
+  // Produce mana for player 1 in Untap step
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Verify mana is in pool
+  let assert Ok(player1) = list.find(game_with_mana.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 3
+  assert player1.mana_pool.blue == 2
+  assert player1.mana_pool.black == 1
+
+  // Both players pass to advance to Upkeep
+  let game_after_step = pass_both(game_with_mana)
+  assert game_after_step.current_step == types.Upkeep
+
+  // Mana should be cleared
+  let assert Ok(player1_after) =
+    list.find(game_after_step.players, fn(p) { p.id == 1 })
+  assert player1_after.mana_pool.white == 0
+  assert player1_after.mana_pool.blue == 0
+  assert player1_after.mana_pool.black == 0
+  assert player1_after.mana_pool.red == 0
+  assert player1_after.mana_pool.green == 0
+  assert player1_after.mana_pool.colorless == 0
+}
+
+// Test mana empties for all players on step change
+pub fn mana_empties_for_all_players_test() {
+  let game = mtg_engine.init_game()
+  let mana_p1 =
+    types.ManaProduced(
+      white: 3,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
+  let mana_p2 =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 2,
+      green: 1,
+      colorless: 0,
+    )
+
+  // Produce mana for both players
+  let assert Ok(game_p1_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana_p1))
+  let assert Ok(game_both_mana) =
+    mtg_engine.dispatch(game_p1_mana, types.ProduceMana(2, mana_p2))
+
+  // Verify both have mana
+  let assert Ok(p1) = list.find(game_both_mana.players, fn(p) { p.id == 1 })
+  let assert Ok(p2) = list.find(game_both_mana.players, fn(p) { p.id == 2 })
+  assert p1.mana_pool.white == 3
+  assert p2.mana_pool.red == 2
+  assert p2.mana_pool.green == 1
+
+  // Advance to next step
+  let game_after_step = pass_both(game_both_mana)
+
+  // Both players' mana should be cleared
+  let assert Ok(p1_after) = list.find(game_after_step.players, fn(p) { p.id == 1 })
+  let assert Ok(p2_after) = list.find(game_after_step.players, fn(p) { p.id == 2 })
+  assert p1_after.mana_pool.white == 0
+  assert p2_after.mana_pool.red == 0
+  assert p2_after.mana_pool.green == 0
+}
+
+// Test empty pools remain empty (edge case)
+pub fn empty_pools_remain_empty_test() {
+  let game = mtg_engine.init_game()
+
+  // Verify pools start empty
+  let assert Ok(p1) = list.find(game.players, fn(p) { p.id == 1 })
+  assert p1.mana_pool.white == 0
+
+  // Advance to next step
+  let game_after_step = pass_both(game)
+
+  // Pools should still be empty
+  let assert Ok(p1_after) = list.find(game_after_step.players, fn(p) { p.id == 1 })
+  assert p1_after.mana_pool.white == 0
+  assert p1_after.mana_pool.blue == 0
+  assert p1_after.mana_pool.black == 0
+  assert p1_after.mana_pool.red == 0
+  assert p1_after.mana_pool.green == 0
+  assert p1_after.mana_pool.colorless == 0
+}
+
+// Test mana empties across multiple step transitions
+pub fn mana_empties_across_multiple_steps_test() {
+  let game = mtg_engine.init_game()
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 5,
+      colorless: 0,
+    )
+
+  // Produce mana
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Advance through Untap -> Upkeep
+  let game = pass_both(game_with_mana)
+  assert game.current_step == types.Upkeep
+
+  // Mana should be cleared
+  let assert Ok(p1) = list.find(game.players, fn(p) { p.id == 1 })
+  assert p1.mana_pool.green == 0
+
+  // Produce more mana in Upkeep
+  let assert Ok(game_with_mana2) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Advance through Upkeep -> PreCombatMain (Draw skipped on turn 1)
+  let game = pass_both(game_with_mana2)
+  assert game.current_step == types.PreCombatMain
+
+  // Mana should be cleared again
+  let assert Ok(p1_after) = list.find(game.players, fn(p) { p.id == 1 })
+  assert p1_after.mana_pool.green == 0
+}
+
+// Test mana empties when transitioning turns
+pub fn mana_empties_on_turn_transition_test() {
+  let game = mtg_engine.init_game()
+  let mana =
+    types.ManaProduced(
+      white: 10,
+      blue: 10,
+      black: 10,
+      red: 10,
+      green: 10,
+      colorless: 10,
+    )
+
+  // Advance to end of turn and produce lots of mana
+  let game = pass_until(types.Cleanup, game)
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Verify mana is there
+  let assert Ok(p1) = list.find(game_with_mana.players, fn(p) { p.id == 1 })
+  assert p1.mana_pool.white == 10
+
+  // Advance to next player's turn
+  let game_next_turn = pass_both(game_with_mana)
+  assert game_next_turn.active_player_id == 2
+
+  // Player 1's mana should be cleared
+  let assert Ok(p1_after) =
+    list.find(game_next_turn.players, fn(p) { p.id == 1 })
+  assert p1_after.mana_pool.white == 0
+  assert p1_after.mana_pool.blue == 0
+  assert p1_after.mana_pool.black == 0
+  assert p1_after.mana_pool.red == 0
+  assert p1_after.mana_pool.green == 0
+  assert p1_after.mana_pool.colorless == 0
 }

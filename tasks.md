@@ -30,9 +30,9 @@
 
 - [x] **Test mana system** - Verify mana can be added
 
-- [ ] **Add mana pool emptying** - Implement automatic mana pool clearing at step transitions
+- [x] **Add mana pool emptying** - Implement automatic mana pool clearing at step transitions
 
-- [ ] **Test mana pool emptying** - Verify mana empties at correct times
+- [x] **Test mana pool emptying** - Verify mana empties at correct times
 
 ## Phase 4: Playing Lands
 
