@@ -70,6 +70,7 @@ pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
       handle_tap_land_for_mana(state, player_id, card_id)
     types.CastCreature(player_id, card_id) ->
       handle_cast_creature(state, player_id, card_id)
+    types.ResolveSpell -> handle_resolve_spell(state)
   }
 }
 
@@ -639,4 +640,35 @@ fn handle_cast_creature(
       ],
     ),
   )
+}
+
+// Handle resolving a spell from the stack
+fn handle_resolve_spell(state: GameState) -> Result(GameState, types.Error) {
+  // Validate: stack must not be empty
+  use <- bool.guard(
+    state.stack == [],
+    Error(types.InvalidAction("Cannot resolve spell from empty stack")),
+  )
+
+  // Get the top item from the stack
+  let assert [top_item, ..remaining_stack] = state.stack
+
+  // For now, we only handle creature spells
+  // In the future, this will be extended for other spell types
+  use <- bool.guard(
+    top_item.card.card_type != types.Creature,
+    Error(types.InvalidAction("Can only resolve creature spells currently")),
+  )
+
+  // Move the creature from the stack to the battlefield
+  // Creatures enter the battlefield untapped
+  let creature_card = types.Card(..top_item.card, tapped: False)
+
+  // Update the controller's battlefield
+  let new_players =
+    update_player(state.players, top_item.controller_id, fn(player) {
+      types.Player(..player, battlefield: [creature_card, ..player.battlefield])
+    })
+
+  Ok(types.GameState(..state, players: new_players, stack: remaining_stack))
 }

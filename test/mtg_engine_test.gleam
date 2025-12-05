@@ -1805,3 +1805,282 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
   assert player1.mana_pool.green == 0
   assert player1.mana_pool.red == 0
 }
+
+// Spell Resolution Tests
+
+// Test resolving a creature spell from the stack
+pub fn resolve_creature_spell_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(game_after_cast.stack) == 1
+
+  // Resolve the spell
+  let assert Ok(game_after_resolve) =
+    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+
+  // Verify creature moved from stack to battlefield
+  assert game_after_resolve.stack == []
+  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
+    p.id == 1
+  })
+  assert list.length(player1.battlefield) == 1
+
+  // Verify creature is on battlefield with correct properties
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
+  assert creature_on_battlefield.name == "Grizzly Bears"
+  assert creature_on_battlefield.power == option.Some(2)
+  assert creature_on_battlefield.toughness == option.Some(2)
+}
+
+// Test creature enters battlefield untapped
+pub fn creature_enters_untapped_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Resolve the spell
+  let assert Ok(game_after_resolve) =
+    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+
+  // Verify creature is untapped on battlefield
+  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
+    p.id == 1
+  })
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
+  assert creature_on_battlefield.tapped == False
+}
+
+// Test cannot resolve from empty stack
+pub fn resolve_empty_stack_test() {
+  let game = mtg_engine.init_game()
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Try to resolve from empty stack - should fail
+  let result = mtg_engine.dispatch(game, types.ResolveSpell)
+  assert result
+    == Error(types.InvalidAction("Cannot resolve spell from empty stack"))
+}
+
+// Test resolving puts creature on controller's battlefield
+pub fn resolve_creature_to_controller_battlefield_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Resolve the spell
+  let assert Ok(game_after_resolve) =
+    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+
+  // Verify creature is on player 1's battlefield only
+  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
+    p.id == 1
+  })
+  let assert Ok(player2) = list.find(game_after_resolve.players, fn(p) {
+    p.id == 2
+  })
+  assert list.length(player1.battlefield) == 1
+  assert player2.battlefield == []
+  assert list.any(player1.battlefield, fn(c) { c.id == "creature1" })
+}
+
+// Test resolving multiple creatures in sequence
+pub fn resolve_multiple_creatures_test() {
+  let game = mtg_engine.init_game()
+  let creature1 = create_test_creature("creature1", "Grizzly Bears")
+  let creature2 =
+    types.Card(
+      id: "creature2",
+      name: "Another Bear",
+      card_type: types.Creature,
+      mana_cost: types.ManaCost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(2),
+      toughness: option.Some(2),
+      tapped: False,
+    )
+
+  // Add creatures to player 1's hand
+  let game = add_card_to_hand(game, 1, creature1)
+  let game = add_card_to_hand(game, 1, creature2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast first creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 2,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast1) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Verify first creature is on stack
+  assert list.length(game_after_cast1.stack) == 1
+
+  // Resolve first creature
+  let assert Ok(game_after_resolve1) =
+    mtg_engine.dispatch(game_after_cast1, types.ResolveSpell)
+
+  // Verify stack is empty and creature is on battlefield
+  assert game_after_resolve1.stack == []
+  let assert Ok(p1_after_first) =
+    list.find(game_after_resolve1.players, fn(p) { p.id == 1 })
+  assert list.length(p1_after_first.battlefield) == 1
+
+  // Cast second creature
+  let assert Ok(game_after_cast2) =
+    mtg_engine.dispatch(game_after_resolve1, types.CastCreature(1, "creature2"))
+
+  // Verify second creature is on stack
+  assert list.length(game_after_cast2.stack) == 1
+
+  // Resolve second creature
+  let assert Ok(game_after_resolve2) =
+    mtg_engine.dispatch(game_after_cast2, types.ResolveSpell)
+
+  // Verify both creatures are on battlefield
+  let assert Ok(p1_final) = list.find(game_after_resolve2.players, fn(p) {
+    p.id == 1
+  })
+  assert list.length(p1_final.battlefield) == 2
+  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature2" })
+}
+
+// Test creature retains power and toughness when resolving
+pub fn resolve_creature_retains_stats_test() {
+  let game = mtg_engine.init_game()
+  let creature =
+    types.Card(
+      id: "creature1",
+      name: "Big Creature",
+      card_type: types.Creature,
+      mana_cost: types.ManaCost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(5),
+      toughness: option.Some(4),
+      tapped: False,
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Resolve the spell
+  let assert Ok(game_after_resolve) =
+    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+
+  // Verify creature has correct stats
+  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
+    p.id == 1
+  })
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
+  assert creature_on_battlefield.power == option.Some(5)
+  assert creature_on_battlefield.toughness == option.Some(4)
+}

@@ -52,9 +52,9 @@
 
 - [x] **Test creature casting** - Verify mana is paid and spell goes on stack
 
-- [ ] **Add spell resolution** - Implement resolving top spell from stack to battlefield
+- [x] **Add spell resolution** - Implement resolving top spell from stack to battlefield
 
-- [ ] **Test creature resolution** - Verify creatures enter battlefield with correct stats
+- [x] **Test creature resolution** - Verify creatures enter battlefield with correct stats
 
 - [ ] **Add summoning sickness** - Track when creatures can attack/tap
 
