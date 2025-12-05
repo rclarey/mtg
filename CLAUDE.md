@@ -3,6 +3,7 @@
 ## Project Outline
 
 - Implements a game of Magic the Gathering by strictly following the rules outlined at https://media.wizards.com/2025/downloads/MagicCompRules%2020250919.txt
+  - When you need to reference these rules use a subagent to summarize the specific rule relevant to the current task
 - Rejects invalid game actions
 - Updates the game state as valid game actions occur
 
@@ -12,6 +13,8 @@
 - Written in idiomatic Gleam
   - Refer to https://tour.gleam.run/everything/ for how to write Gleam
   - Refer to the pages linked on https://hexdocs.pm/gleam_stdlib/ for Gleam standard library documentation
+  - Follow existing patterns in the code
+  - Use `result.try` and `bool.guard` instead of nested pattern matching wherever possible
 
 ## Project Structure
 
