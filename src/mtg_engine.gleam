@@ -1,6 +1,7 @@
 import gleam/bool
 import gleam/io
 import gleam/list
+import gleam/option
 import gleam/result
 
 import types.{type Action, type Error, type GameState, type Player}
@@ -494,8 +495,13 @@ fn handle_play_land(
 
   // All validations passed, play the land
   let new_hand = remove_card(player.hand, card_id)
-  // Land enters battlefield untapped
-  let untapped_card = types.Card(..card, tapped: False)
+  // Land enters battlefield untapped and record when it entered
+  let untapped_card =
+    types.Card(
+      ..card,
+      tapped: False,
+      entered_battlefield_turn: option.Some(state.turn_number),
+    )
   let new_battlefield = [untapped_card, ..player.battlefield]
   let updated_player =
     types.Player(
@@ -664,6 +670,29 @@ fn handle_cast_creature(
   )
 }
 
+// Check if a creature has summoning sickness
+// Rule 302.6: A creature can't attack or use tap abilities unless it has been
+// under its controller's control continuously since their most recent turn began
+//
+// This function should be used to validate:
+// - Declaring attackers (Phase 6)
+// - Activated abilities with tap symbol (future phases)
+//
+// Usage: has_summoning_sickness(creature, state.turn_number)
+pub fn has_summoning_sickness(
+  creature: types.Card,
+  current_turn: Int,
+) -> Bool {
+  case creature.entered_battlefield_turn {
+    option.None -> False
+    option.Some(entered_turn) -> {
+      // Creature has summoning sickness if it entered this turn
+      // TODO: Add haste keyword support to bypass this check
+      entered_turn >= current_turn
+    }
+  }
+}
+
 // Resolve the top spell from the stack
 fn resolve_top_of_stack(state: GameState) -> Result(GameState, types.Error) {
   // Validate: stack must not be empty
@@ -684,7 +713,13 @@ fn resolve_top_of_stack(state: GameState) -> Result(GameState, types.Error) {
 
   // Move the creature from the stack to the battlefield
   // Creatures enter the battlefield untapped
-  let creature_card = types.Card(..top_item.card, tapped: False)
+  // Record the turn number when the creature entered (for summoning sickness)
+  let creature_card =
+    types.Card(
+      ..top_item.card,
+      tapped: False,
+      entered_battlefield_turn: option.Some(state.turn_number),
+    )
 
   // Update the controller's battlefield
   let new_players =

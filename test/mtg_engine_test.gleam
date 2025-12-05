@@ -673,6 +673,7 @@ fn create_test_land(id: String, name: String) -> types.Card {
     power: option.None,
     toughness: option.None,
     tapped: False,
+    entered_battlefield_turn: option.None,
   )
 }
 
@@ -694,6 +695,7 @@ fn create_test_creature(id: String, name: String) -> types.Card {
     power: option.Some(2),
     toughness: option.Some(2),
     tapped: False,
+    entered_battlefield_turn: option.None,
   )
 }
 
@@ -1260,6 +1262,7 @@ pub fn cast_creature_multicolor_mana_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1536,6 +1539,7 @@ pub fn cast_creature_stack_not_empty_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add both creatures to player 1's hand
@@ -1629,6 +1633,7 @@ pub fn cast_creature_zero_cost_test() {
       power: option.Some(0),
       toughness: option.Some(1),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1667,6 +1672,7 @@ pub fn cast_creature_with_generic_cost_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1724,6 +1730,7 @@ pub fn cast_creature_generic_cost_not_enough_total_mana_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1772,6 +1779,7 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1966,6 +1974,7 @@ pub fn resolve_multiple_creatures_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2040,6 +2049,7 @@ pub fn resolve_creature_retains_stats_test() {
       power: option.Some(5),
       toughness: option.Some(4),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creature to player 1's hand
@@ -2175,6 +2185,7 @@ pub fn automatic_resolution_lifo_order_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
+      entered_battlefield_turn: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2302,4 +2313,105 @@ pub fn priority_after_automatic_resolution_test() {
   let assert Ok(game_after_pass) =
     mtg_engine.dispatch(game_after_resolve, types.PassPriority)
   assert game_after_pass.priority_player_id == 2
+}
+
+// Summoning Sickness Tests
+
+// Test that a creature has summoning sickness when it enters this turn
+pub fn creature_has_summoning_sickness_same_turn_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to hand and advance to main phase
+  let game = add_card_to_hand(game, 1, creature)
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Give player mana to cast
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Cast and resolve the creature
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Get the creature from the battlefield
+  let assert Ok(player) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert [creature_on_battlefield] = player.battlefield
+
+  // Verify the creature has summoning sickness (entered this turn)
+  assert mtg_engine.has_summoning_sickness(
+    creature_on_battlefield,
+    game_after_resolve.turn_number,
+  ) == True
+}
+
+// Test that a creature does NOT have summoning sickness on the next turn
+pub fn creature_no_summoning_sickness_next_turn_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to hand and advance to main phase
+  let game = add_card_to_hand(game, 1, creature)
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Give player mana to cast
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+
+  // Cast and resolve the creature (turn 1, player 1)
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify creature entered on turn 1
+  let turn_entered = game_after_resolve.turn_number
+  assert turn_entered == 1
+
+  // Get the creature from the battlefield
+  let assert Ok(player) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert [creature_on_battlefield] = player.battlefield
+
+  // Verify the creature HAS summoning sickness on the same turn it entered
+  assert mtg_engine.has_summoning_sickness(
+    creature_on_battlefield,
+    turn_entered,
+  ) == True
+
+  // Now test on a later turn - the key is just checking turn_entered < current_turn
+  // If creature entered on turn 1, checking it on turn 2 should return False
+  assert mtg_engine.has_summoning_sickness(
+    creature_on_battlefield,
+    turn_entered + 1,
+  ) == False
+}
+
+// Test that a creature in hand has no summoning sickness (not on battlefield)
+pub fn creature_in_hand_no_summoning_sickness_test() {
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+  let current_turn = 1
+
+  // Creature not on battlefield should have entered_battlefield_turn = None
+  // and thus should return False for summoning sickness check
+  assert mtg_engine.has_summoning_sickness(creature, current_turn) == False
 }

@@ -90,6 +90,9 @@ pub type Card {
     toughness: Option(Int),
     // Track tapped state for permanents on battlefield
     tapped: Bool,
+    // Track when permanent entered battlefield (for summoning sickness)
+    // None for cards not on battlefield, Some(turn) for permanents
+    entered_battlefield_turn: Option(Int),
   )
 }
 

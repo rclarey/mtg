@@ -56,9 +56,9 @@
 
 - [x] **Test creature resolution** - Verify creatures enter battlefield with correct stats
 
-- [ ] **Add summoning sickness** - Track when creatures can attack/tap
+- [x] **Add summoning sickness** - Track when creatures can attack/tap
 
-- [ ] **Test summoning sickness** - Verify creatures have summoning sickness correctly
+- [x] **Test summoning sickness** - Verify creatures have summoning sickness correctly
 
 ## Phase 6: Basic Combat
 
