@@ -142,5 +142,4 @@ pub type Action {
   PlayLand(player_id: Int, card_id: String)
   TapLandForMana(player_id: Int, card_id: String)
   CastCreature(player_id: Int, card_id: String)
-  ResolveSpell
 }

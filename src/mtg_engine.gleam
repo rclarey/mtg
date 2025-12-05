@@ -61,7 +61,7 @@ pub fn init_game() -> GameState {
 // Main dispatch function - handles all game actions
 pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
   case action {
-    types.PassPriority -> Ok(handle_pass_priority(state))
+    types.PassPriority -> handle_pass_priority(state)
     types.ProduceMana(player_id, mana) ->
       Ok(handle_produce_mana(state, player_id, mana))
     types.PlayLand(player_id, card_id) ->
@@ -70,7 +70,6 @@ pub fn dispatch(state: GameState, action: Action) -> Result(GameState, Error) {
       handle_tap_land_for_mana(state, player_id, card_id)
     types.CastCreature(player_id, card_id) ->
       handle_cast_creature(state, player_id, card_id)
-    types.ResolveSpell -> handle_resolve_spell(state)
   }
 }
 
@@ -248,24 +247,43 @@ fn advance_step(state: GameState) -> GameState {
   }
 }
 
-fn handle_pass_priority(state: GameState) -> GameState {
+fn handle_pass_priority(state: GameState) -> Result(GameState, types.Error) {
   let new_consecutive_passes = state.consecutive_passes + 1
   let num_players = list.length(state.players)
 
   // Check if all players have passed
   case new_consecutive_passes >= num_players {
     True -> {
-      // All players passed, advance to next step
-      advance_step(state)
+      // All players passed - check if there's anything on the stack to resolve
+      case state.stack {
+        [] -> {
+          // Stack is empty, advance to next step
+          Ok(advance_step(state))
+        }
+        _ -> {
+          // Stack has items, resolve the top one and reset priority
+          use resolved_state <- result.try(resolve_top_of_stack(state))
+          // Reset consecutive passes and give priority to active player
+          Ok(
+            types.GameState(
+              ..resolved_state,
+              priority_player_id: resolved_state.active_player_id,
+              consecutive_passes: 0,
+            ),
+          )
+        }
+      }
     }
     False -> {
       // Not all players passed yet, give priority to next player
       let next_player = get_next_player(state, state.priority_player_id)
 
-      types.GameState(
-        ..state,
-        priority_player_id: next_player.id,
-        consecutive_passes: new_consecutive_passes,
+      Ok(
+        types.GameState(
+          ..state,
+          priority_player_id: next_player.id,
+          consecutive_passes: new_consecutive_passes,
+        ),
       )
     }
   }
@@ -456,8 +474,12 @@ fn handle_play_land(
   // Find the player
   use player <- result.try(find_player(state.players, player_id))
 
-  // Validate: stack must be empty (for now, we assume stack is always empty since we don't have spells yet)
-  // This will be extended in later phases when we add the stack
+  // Validate: stack must be empty (playing lands is a special action)
+  use <- bool.guard(
+    state.stack != [],
+    Error(types.InvalidAction("Cannot play a land while the stack is not empty")),
+  )
+
   // Validate: land-per-turn limit
   use <- bool.guard(
     player.lands_played_this_turn >= 1,
@@ -642,8 +664,8 @@ fn handle_cast_creature(
   )
 }
 
-// Handle resolving a spell from the stack
-fn handle_resolve_spell(state: GameState) -> Result(GameState, types.Error) {
+// Resolve the top spell from the stack
+fn resolve_top_of_stack(state: GameState) -> Result(GameState, types.Error) {
   // Validate: stack must not be empty
   use <- bool.guard(
     state.stack == [],

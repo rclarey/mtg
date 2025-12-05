@@ -1837,15 +1837,13 @@ pub fn resolve_creature_spell_test() {
   // Verify creature is on stack
   assert list.length(game_after_cast.stack) == 1
 
-  // Resolve the spell
-  let assert Ok(game_after_resolve) =
-    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature moved from stack to battlefield
   assert game_after_resolve.stack == []
-  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
-    p.id == 1
-  })
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   assert list.length(player1.battlefield) == 1
 
   // Verify creature is on battlefield with correct properties
@@ -1882,14 +1880,12 @@ pub fn creature_enters_untapped_test() {
   let assert Ok(game_after_cast) =
     mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
 
-  // Resolve the spell
-  let assert Ok(game_after_resolve) =
-    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature is untapped on battlefield
-  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
-    p.id == 1
-  })
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert Ok(creature_on_battlefield) =
     list.find(player1.battlefield, fn(c) { c.id == "creature1" })
   assert creature_on_battlefield.tapped == False
@@ -1902,10 +1898,12 @@ pub fn resolve_empty_stack_test() {
   // Advance to PreCombatMain
   let game = pass_until(types.PreCombatMain, game)
 
-  // Try to resolve from empty stack - should fail
-  let result = mtg_engine.dispatch(game, types.ResolveSpell)
-  assert result
-    == Error(types.InvalidAction("Cannot resolve spell from empty stack"))
+  // When both players pass with empty stack, should just advance step
+  // (not error - this is normal behavior)
+  let game_after_pass = pass_both(game)
+
+  // Should have advanced to next step, not errored
+  assert game_after_pass.current_step == types.BeginCombat
 }
 
 // Test resolving puts creature on controller's battlefield
@@ -1934,17 +1932,14 @@ pub fn resolve_creature_to_controller_battlefield_test() {
   let assert Ok(game_after_cast) =
     mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
 
-  // Resolve the spell
-  let assert Ok(game_after_resolve) =
-    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature is on player 1's battlefield only
-  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
-    p.id == 1
-  })
-  let assert Ok(player2) = list.find(game_after_resolve.players, fn(p) {
-    p.id == 2
-  })
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player2) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 2 })
   assert list.length(player1.battlefield) == 1
   assert player2.battlefield == []
   assert list.any(player1.battlefield, fn(c) { c.id == "creature1" })
@@ -1998,9 +1993,8 @@ pub fn resolve_multiple_creatures_test() {
   // Verify first creature is on stack
   assert list.length(game_after_cast1.stack) == 1
 
-  // Resolve first creature
-  let assert Ok(game_after_resolve1) =
-    mtg_engine.dispatch(game_after_cast1, types.ResolveSpell)
+  // Both players pass priority - first creature resolves automatically
+  let game_after_resolve1 = pass_both(game_after_cast1)
 
   // Verify stack is empty and creature is on battlefield
   assert game_after_resolve1.stack == []
@@ -2015,14 +2009,12 @@ pub fn resolve_multiple_creatures_test() {
   // Verify second creature is on stack
   assert list.length(game_after_cast2.stack) == 1
 
-  // Resolve second creature
-  let assert Ok(game_after_resolve2) =
-    mtg_engine.dispatch(game_after_cast2, types.ResolveSpell)
+  // Both players pass priority - second creature resolves automatically
+  let game_after_resolve2 = pass_both(game_after_cast2)
 
   // Verify both creatures are on battlefield
-  let assert Ok(p1_final) = list.find(game_after_resolve2.players, fn(p) {
-    p.id == 1
-  })
+  let assert Ok(p1_final) =
+    list.find(game_after_resolve2.players, fn(p) { p.id == 1 })
   assert list.length(p1_final.battlefield) == 2
   assert list.any(p1_final.battlefield, fn(c) { c.id == "creature1" })
   assert list.any(p1_final.battlefield, fn(c) { c.id == "creature2" })
@@ -2071,16 +2063,243 @@ pub fn resolve_creature_retains_stats_test() {
   let assert Ok(game_after_cast) =
     mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
 
-  // Resolve the spell
-  let assert Ok(game_after_resolve) =
-    mtg_engine.dispatch(game_after_cast, types.ResolveSpell)
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature has correct stats
-  let assert Ok(player1) = list.find(game_after_resolve.players, fn(p) {
-    p.id == 1
-  })
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert Ok(creature_on_battlefield) =
     list.find(player1.battlefield, fn(c) { c.id == "creature1" })
   assert creature_on_battlefield.power == option.Some(5)
   assert creature_on_battlefield.toughness == option.Some(4)
+}
+
+// Automatic Resolution Tests
+
+// Test spell automatically resolves when all players pass priority
+pub fn automatic_resolution_when_all_pass_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(game_after_cast.stack) == 1
+
+  // Both players pass priority - should automatically resolve
+  let game_after_pass = pass_both(game_after_cast)
+
+  // Verify creature resolved automatically to battlefield
+  assert game_after_pass.stack == []
+  let assert Ok(player1) =
+    list.find(game_after_pass.players, fn(p) { p.id == 1 })
+  assert list.length(player1.battlefield) == 1
+  assert list.any(player1.battlefield, fn(c) { c.id == "creature1" })
+}
+
+// Test priority resets to active player after automatic resolution
+pub fn automatic_resolution_resets_priority_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Both players pass priority - should resolve and reset priority
+  let game_after_pass = pass_both(game_after_cast)
+
+  // Priority should go back to active player
+  assert game_after_pass.priority_player_id == game_after_pass.active_player_id
+  assert game_after_pass.priority_player_id == 1
+
+  // Consecutive passes should be reset
+  assert game_after_pass.consecutive_passes == 0
+}
+
+// Test multiple spells resolve in LIFO order
+pub fn automatic_resolution_lifo_order_test() {
+  let game = mtg_engine.init_game()
+  let creature1 = create_test_creature("creature1", "First Bear")
+  let creature2 =
+    types.Card(
+      id: "creature2",
+      name: "Second Bear",
+      card_type: types.Creature,
+      mana_cost: types.ManaCost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(2),
+      toughness: option.Some(2),
+      tapped: False,
+    )
+
+  // Add creatures to player 1's hand
+  let game = add_card_to_hand(game, 1, creature1)
+  let game = add_card_to_hand(game, 1, creature2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast first creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 2,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast1) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Both players pass - first creature resolves
+  let game_after_first_resolve = pass_both(game_after_cast1)
+
+  // Verify first creature resolved
+  assert game_after_first_resolve.stack == []
+  let assert Ok(p1_after_first) =
+    list.find(game_after_first_resolve.players, fn(p) { p.id == 1 })
+  assert list.length(p1_after_first.battlefield) == 1
+
+  // Cast second creature
+  let assert Ok(game_after_cast2) =
+    mtg_engine.dispatch(
+      game_after_first_resolve,
+      types.CastCreature(1, "creature2"),
+    )
+
+  // Both players pass - second creature resolves
+  let game_after_second_resolve = pass_both(game_after_cast2)
+
+  // Verify both creatures are on battlefield
+  let assert Ok(p1_final) =
+    list.find(game_after_second_resolve.players, fn(p) { p.id == 1 })
+  assert list.length(p1_final.battlefield) == 2
+  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature2" })
+}
+
+// Test cannot play land while spell is on stack
+pub fn cannot_play_land_with_stack_not_empty_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+  let land = create_test_land("land1", "Forest")
+
+  // Add both to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Verify stack is not empty
+  assert list.length(game_after_cast.stack) == 1
+
+  // Try to play land - should fail
+  let result = mtg_engine.dispatch(game_after_cast, types.PlayLand(1, "land1"))
+  assert result
+    == Error(types.InvalidAction(
+      "Cannot play a land while the stack is not empty",
+    ))
+}
+
+// Test players get priority after spell resolves
+pub fn priority_after_automatic_resolution_test() {
+  let game = mtg_engine.init_game()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(types.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    types.ManaProduced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    mtg_engine.dispatch(game, types.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
+
+  // Both players pass - creature resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify players can take actions after resolution (priority works)
+  // Priority should be with active player
+  assert game_after_resolve.priority_player_id == 1
+
+  // Player 1 should be able to pass priority
+  let assert Ok(game_after_pass) =
+    mtg_engine.dispatch(game_after_resolve, types.PassPriority)
+  assert game_after_pass.priority_player_id == 2
 }
