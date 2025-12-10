@@ -91,8 +91,8 @@ pub type Card {
     // Track tapped state for permanents on battlefield
     tapped: Bool,
     // Track when permanent entered battlefield (for summoning sickness)
-    // None for cards not on battlefield, Some(turn) for permanents
-    entered_battlefield_turn: Option(Int),
+    // None for cards not on battlefield, Some(cycle) for permanents
+    entered_battlefield_cycle: Option(Int),
   )
 }
 
@@ -128,7 +128,7 @@ pub type GameState {
     priority_player_id: Int,
     current_step: Step,
     consecutive_passes: Int,
-    turn_number: Int,
+    turn_index: Int,
     stack: List(StackItem),
   )
 }

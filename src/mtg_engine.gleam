@@ -10,6 +10,14 @@ pub fn main() -> Nil {
   io.println("Hello from mtg_engine!")
 }
 
+// Calculate the turn cycle from turn_index
+// Turn cycle increments after all players complete their turns
+// With 2 players: turn_index 0,1 = cycle 0; turn_index 2,3 = cycle 1, etc.
+pub fn get_turn_cycle(state: GameState) -> Int {
+  let num_players = list.length(state.players)
+  state.turn_index / num_players
+}
+
 // Initialize a new game with two players
 pub fn init_game() -> GameState {
   let empty_mana_pool =
@@ -54,7 +62,7 @@ pub fn init_game() -> GameState {
     priority_player_id: 1,
     current_step: types.Untap,
     consecutive_passes: 0,
-    turn_number: 1,
+    turn_index: 0,
     stack: [],
   )
 }
@@ -189,12 +197,6 @@ fn advance_step(state: GameState) -> GameState {
       // Move to next player's turn
       let next_active_player = get_next_player(state, state.active_player_id)
 
-      // Increment turn number if we're back to the first player
-      let new_turn_number = case next_active_player.id == first_player.id {
-        True -> state.turn_number + 1
-        False -> state.turn_number
-      }
-
       // Reset lands_played_this_turn for all players
       let players_with_reset_lands = reset_all_lands_played(cleared_players)
 
@@ -213,11 +215,11 @@ fn advance_step(state: GameState) -> GameState {
         priority_player_id: next_active_player.id,
         current_step: types.Upkeep,
         consecutive_passes: 0,
-        turn_number: new_turn_number,
+        turn_index: state.turn_index + 1
       )
     }
     types.Draw
-      if state.turn_number == 1 && state.active_player_id == first_player.id
+      if state.turn_index == 0 && state.active_player_id == first_player.id
     ->
       types.GameState(
         ..state,
@@ -496,11 +498,12 @@ fn handle_play_land(
   // All validations passed, play the land
   let new_hand = remove_card(player.hand, card_id)
   // Land enters battlefield untapped and record when it entered
+  let current_cycle = get_turn_cycle(state)
   let untapped_card =
     types.Card(
       ..card,
       tapped: False,
-      entered_battlefield_turn: option.Some(state.turn_number),
+      entered_battlefield_cycle: option.Some(current_cycle),
     )
   let new_battlefield = [untapped_card, ..player.battlefield]
   let updated_player =
@@ -678,17 +681,17 @@ fn handle_cast_creature(
 // - Declaring attackers (Phase 6)
 // - Activated abilities with tap symbol (future phases)
 //
-// Usage: has_summoning_sickness(creature, state.turn_number)
+// Usage: has_summoning_sickness(creature, get_turn_cycle(state))
 pub fn has_summoning_sickness(
   creature: types.Card,
-  current_turn: Int,
+  current_cycle: Int,
 ) -> Bool {
-  case creature.entered_battlefield_turn {
+  case creature.entered_battlefield_cycle {
     option.None -> False
-    option.Some(entered_turn) -> {
-      // Creature has summoning sickness if it entered this turn
+    option.Some(entered_cycle) -> {
+      // Creature has summoning sickness if it entered this turn cycle
       // TODO: Add haste keyword support to bypass this check
-      entered_turn >= current_turn
+      entered_cycle >= current_cycle
     }
   }
 }
@@ -713,12 +716,13 @@ fn resolve_top_of_stack(state: GameState) -> Result(GameState, types.Error) {
 
   // Move the creature from the stack to the battlefield
   // Creatures enter the battlefield untapped
-  // Record the turn number when the creature entered (for summoning sickness)
+  // Record the turn cycle when the creature entered (for summoning sickness)
+  let current_cycle = get_turn_cycle(state)
   let creature_card =
     types.Card(
       ..top_item.card,
       tapped: False,
-      entered_battlefield_turn: option.Some(state.turn_number),
+      entered_battlefield_cycle: option.Some(current_cycle),
     )
 
   // Update the controller's battlefield

@@ -28,7 +28,7 @@ pub fn init_game_test() {
   assert game.active_player_id == 1
 
   // Verify game starts at turn 1
-  assert game.turn_number == 1
+  assert game.turn_index == 0
 
   // Verify consecutive_passes starts at 0
   assert game.consecutive_passes == 0
@@ -128,7 +128,7 @@ pub fn first_turn_skips_draw_step_test() {
 
   // Should skip Draw and go to PreCombatMain
   assert game_after_draw.current_step == types.PreCombatMain
-  assert game_after_draw.turn_number == 1
+  assert game_after_draw.turn_index == 0
 }
 
 fn pass_both(state: types.GameState) {
@@ -191,8 +191,8 @@ pub fn full_turn_cycle_test() {
   let game = pass_both(game)
   assert game.current_step == types.Cleanup
 
-  // Still turn 1
-  assert game.turn_number == 1
+  // Still turn index 0
+  assert game.turn_index == 0
   assert game.active_player_id == 1
 }
 
@@ -204,21 +204,21 @@ pub fn turn_transition_to_player_2_test() {
   let game = pass_until(types.Cleanup, game)
 
   assert game.current_step == types.Cleanup
-  assert game.turn_number == 1
+  assert game.turn_index == 0
   assert game.active_player_id == 1
 
   // Cleanup -> Untap (skipped) -> Upkeep of player 2's turn
   let game = pass_both(game)
 
   assert game.current_step == types.Upkeep
-  assert game.turn_number == 1
-  // Still turn 1, player 2 hasn't finished yet
+  assert game.turn_index == 1
+  // Turn index increments when moving to next player
   assert game.active_player_id == 2
   assert game.priority_player_id == 2
 }
 
-// Test turn number increments after full round
-pub fn turn_number_increments_after_full_round_test() {
+// Test turn cycle increments after full round
+pub fn turn_index_increments_after_full_round_test() {
   let game = mtg_engine.init_game()
 
   let pass_both = fn(state) {
@@ -232,7 +232,7 @@ pub fn turn_number_increments_after_full_round_test() {
   let game = pass_both(game)
   // Cleanup -> Player 2's Upkeep
 
-  assert game.turn_number == 1
+  assert mtg_engine.get_turn_cycle(game) == 0
   assert game.active_player_id == 2
 
   // Complete player 2's turn
@@ -240,14 +240,14 @@ pub fn turn_number_increments_after_full_round_test() {
   let game = pass_both(game)
   // Cleanup -> Back to Player 1's Upkeep
 
-  // Now turn number should increment since we're back to player 1
-  assert game.turn_number == 2
+  // Now turn cycle should increment since we're back to player 1
+  assert mtg_engine.get_turn_cycle(game) == 1
   assert game.active_player_id == 1
-  // Player 1 still gets draw step on turn 2
+  // Player 1 gets a draw step on the second turn cycle
   assert game.current_step == types.Upkeep
 }
 
-// Test player 2 has draw step (turn 1 draw skip only applies to first player)
+// Test player 2 has draw step (turn_index 0 draw skip only applies to first player)
 pub fn player_2_has_draw_step_test() {
   let game = mtg_engine.init_game()
 
@@ -256,11 +256,11 @@ pub fn player_2_has_draw_step_test() {
   let game = pass_both(game)
   // Cleanup -> Player 2's Upkeep
 
-  assert game.turn_number == 1
+  assert game.turn_index == 1
   assert game.active_player_id == 2
   assert game.current_step == types.Upkeep
 
-  // Player 2 should have a draw step even on turn 1
+  // Player 2 should have a draw step even on turn_index 1
   let game = pass_both(game)
   assert game.current_step == types.Draw
 
@@ -269,26 +269,26 @@ pub fn player_2_has_draw_step_test() {
   assert game.current_step == types.PreCombatMain
 }
 
-// Test turn 2 does not skip draw step
-pub fn turn_2_has_draw_step_test() {
+// Test second turn cycle does not skip draw step
+pub fn second_turn_cycle_has_draw_step_test() {
   let game = mtg_engine.init_game()
 
-  // Complete full round to reach turn 2
-  // Player 1's turn 1
+  // Complete full round to reach turn cycle 1
+  // Player 1's turn (turn_index 0)
   let game = pass_until(types.Cleanup, game)
   let game = pass_both(game)
-  // Cleanup -> Player 2's Upkeep
+  // Cleanup -> Player 2's Upkeep (turn_index 1)
 
-  // Player 2's turn 1
+  // Player 2's turn (turn_index 1)
   let game = pass_until(types.Cleanup, game)
   let game = pass_both(game)
-  // Cleanup -> Player 1's turn 2 Upkeep
+  // Cleanup -> Player 1's turn (turn_index 2) Upkeep
 
-  assert game.turn_number == 2
+  assert mtg_engine.get_turn_cycle(game) == 1
   assert game.active_player_id == 1
   assert game.current_step == types.Upkeep
 
-  // Turn 2 should have draw step
+  // Turn cycle 1 should have draw step
   let game = pass_both(game)
   assert game.current_step == types.Draw
 
@@ -673,7 +673,7 @@ fn create_test_land(id: String, name: String) -> types.Card {
     power: option.None,
     toughness: option.None,
     tapped: False,
-    entered_battlefield_turn: option.None,
+    entered_battlefield_cycle: option.None,
   )
 }
 
@@ -695,7 +695,7 @@ fn create_test_creature(id: String, name: String) -> types.Card {
     power: option.Some(2),
     toughness: option.Some(2),
     tapped: False,
-    entered_battlefield_turn: option.None,
+    entered_battlefield_cycle: option.None,
   )
 }
 
@@ -1262,7 +1262,7 @@ pub fn cast_creature_multicolor_mana_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1539,7 +1539,7 @@ pub fn cast_creature_stack_not_empty_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add both creatures to player 1's hand
@@ -1633,7 +1633,7 @@ pub fn cast_creature_zero_cost_test() {
       power: option.Some(0),
       toughness: option.Some(1),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1672,7 +1672,7 @@ pub fn cast_creature_with_generic_cost_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1730,7 +1730,7 @@ pub fn cast_creature_generic_cost_not_enough_total_mana_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1779,7 +1779,7 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
       power: option.Some(3),
       toughness: option.Some(3),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1974,7 +1974,7 @@ pub fn resolve_multiple_creatures_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2049,7 +2049,7 @@ pub fn resolve_creature_retains_stats_test() {
       power: option.Some(5),
       toughness: option.Some(4),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -2185,7 +2185,7 @@ pub fn automatic_resolution_lifo_order_test() {
       power: option.Some(2),
       toughness: option.Some(2),
       tapped: False,
-      entered_battlefield_turn: option.None,
+      entered_battlefield_cycle: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2349,10 +2349,11 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
     list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert [creature_on_battlefield] = player.battlefield
 
-  // Verify the creature has summoning sickness (entered this turn)
+  // Verify the creature has summoning sickness (entered this turn cycle)
+  let current_cycle = mtg_engine.get_turn_cycle(game_after_resolve)
   assert mtg_engine.has_summoning_sickness(
     creature_on_battlefield,
-    game_after_resolve.turn_number,
+    current_cycle,
   ) == True
 }
 
@@ -2378,31 +2379,31 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
   let assert Ok(game_with_mana) =
     mtg_engine.dispatch(game, types.ProduceMana(1, mana))
 
-  // Cast and resolve the creature (turn 1, player 1)
+  // Cast and resolve the creature (turn_index 0, player 1, cycle 0)
   let assert Ok(game_after_cast) =
     mtg_engine.dispatch(game_with_mana, types.CastCreature(1, "creature1"))
   let game_after_resolve = pass_both(game_after_cast)
 
-  // Verify creature entered on turn 1
-  let turn_entered = game_after_resolve.turn_number
-  assert turn_entered == 1
+  // Verify creature entered on cycle 0
+  let cycle_entered = mtg_engine.get_turn_cycle(game_after_resolve)
+  assert cycle_entered == 0
 
   // Get the creature from the battlefield
   let assert Ok(player) =
     list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert [creature_on_battlefield] = player.battlefield
 
-  // Verify the creature HAS summoning sickness on the same turn it entered
+  // Verify the creature HAS summoning sickness on the same cycle it entered
   assert mtg_engine.has_summoning_sickness(
     creature_on_battlefield,
-    turn_entered,
+    cycle_entered,
   ) == True
 
-  // Now test on a later turn - the key is just checking turn_entered < current_turn
-  // If creature entered on turn 1, checking it on turn 2 should return False
+  // Now test on a later cycle - the key is just checking cycle_entered < current_cycle
+  // If creature entered on cycle 0, checking it on cycle 1 should return False
   assert mtg_engine.has_summoning_sickness(
     creature_on_battlefield,
-    turn_entered + 1,
+    cycle_entered + 1,
   ) == False
 }
 
@@ -2411,7 +2412,7 @@ pub fn creature_in_hand_no_summoning_sickness_test() {
   let creature = create_test_creature("creature1", "Grizzly Bears")
   let current_turn = 1
 
-  // Creature not on battlefield should have entered_battlefield_turn = None
+  // Creature not on battlefield should have entered_battlefield_cycle = None
   // and thus should return False for summoning sickness check
   assert mtg_engine.has_summoning_sickness(creature, current_turn) == False
 }
