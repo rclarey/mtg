@@ -88,11 +88,18 @@ pub type Card {
     // Optional fields for creatures
     power: Option(Int),
     toughness: Option(Int),
-    // Track tapped state for permanents on battlefield
+  )
+}
+
+// Permanent representation - wraps a card on the battlefield with permanent-specific state
+pub type Permanent {
+  Permanent(
+    card: Card,
+    controller_id: Int,
+    // Track tapped state
     tapped: Bool,
     // Track when permanent entered battlefield (for summoning sickness)
-    // None for cards not on battlefield, Some(cycle) for permanents
-    entered_battlefield_cycle: Option(Int),
+    entered_battlefield_cycle: Int,
   )
 }
 
@@ -113,7 +120,7 @@ pub type Player {
     mana_pool: ManaProduced,
     lands_played_this_turn: Int,
     hand: List(Card),
-    battlefield: List(Card),
+    battlefield: List(Permanent),
     graveyard: List(Card),
     library: List(Card),
     exile: List(Card),

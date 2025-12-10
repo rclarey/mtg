@@ -1,7 +1,6 @@
 import gleam/bool
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/result
 
 import types.{type Action, type Error, type GameState, type Player}
@@ -215,7 +214,7 @@ fn advance_step(state: GameState) -> GameState {
         priority_player_id: next_active_player.id,
         current_step: types.Upkeep,
         consecutive_passes: 0,
-        turn_index: state.turn_index + 1
+        turn_index: state.turn_index + 1,
       )
     }
     types.Draw
@@ -305,7 +304,9 @@ fn reset_all_lands_played(players: List(types.Player)) -> List(types.Player) {
 // Untap all permanents for a player
 fn untap_all_permanents(player: types.Player) -> types.Player {
   let untapped_battlefield =
-    list.map(player.battlefield, fn(card) { types.Card(..card, tapped: False) })
+    list.map(player.battlefield, fn(permanent) {
+      types.Permanent(..permanent, tapped: False)
+    })
   types.Player(..player, battlefield: untapped_battlefield)
 }
 
@@ -334,6 +335,27 @@ fn find_card(
 // Remove a card from a list by its ID
 fn remove_card(cards: List(types.Card), card_id: String) -> List(types.Card) {
   list.filter(cards, fn(card) { card.id != card_id })
+}
+
+// Find a permanent on the battlefield by card ID
+fn find_permanent(
+  battlefield: List(types.Permanent),
+  card_id: String,
+) -> Result(types.Permanent, types.Error) {
+  list.find(battlefield, fn(permanent) { permanent.card.id == card_id })
+  |> result.replace_error(types.InvalidAction("Permanent not found"))
+}
+
+fn update_permanent(
+  battlefield: List(types.Permanent),
+  permanent_id: String,
+  f: fn(types.Permanent) -> types.Permanent,
+) -> List(types.Permanent) {
+  case battlefield {
+    [] -> []
+    [p, ..rest] if p.card.id == permanent_id -> [f(p), ..rest]
+    [p, ..rest] -> [p, ..update_permanent(rest, permanent_id, f)]
+  }
 }
 
 // Get mana produced by a land based on its name
@@ -396,20 +418,6 @@ fn get_land_mana_production(land_name: String) -> types.ManaProduced {
   }
 }
 
-// Update a card's tapped state in a list
-fn update_card_tapped(
-  cards: List(types.Card),
-  card_id: String,
-  tapped: Bool,
-) -> List(types.Card) {
-  list.map(cards, fn(card) {
-    case card.id == card_id {
-      True -> types.Card(..card, tapped: tapped)
-      False -> card
-    }
-  })
-}
-
 // Handle tapping a land for mana
 fn handle_tap_land_for_mana(
   state: GameState,
@@ -419,26 +427,29 @@ fn handle_tap_land_for_mana(
   // Find the player
   use player <- result.try(find_player(state.players, player_id))
 
-  // Find the card on the battlefield
-  use card <- result.try(find_card(player.battlefield, card_id))
+  // Find the permanent on the battlefield
+  use permanent <- result.try(find_permanent(player.battlefield, card_id))
 
   // Validate: card must be a land
   use <- bool.guard(
-    card.card_type != types.Land,
+    permanent.card.card_type != types.Land,
     Error(types.InvalidAction("Card is not a land")),
   )
 
-  // Validate: card must be untapped
+  // Validate: permanent must be untapped
   use <- bool.guard(
-    card.tapped,
+    permanent.tapped,
     Error(types.InvalidAction("Land is already tapped")),
   )
 
   // Tap the land
-  let new_battlefield = update_card_tapped(player.battlefield, card_id, True)
+  let new_battlefield =
+    update_permanent(player.battlefield, card_id, fn(p) {
+      types.Permanent(..p, tapped: True)
+    })
 
   // Determine mana production based on land name
-  let mana = get_land_mana_production(card.name)
+  let mana = get_land_mana_production(permanent.card.name)
 
   // Add mana to player's pool
   let updated_player =
@@ -499,13 +510,14 @@ fn handle_play_land(
   let new_hand = remove_card(player.hand, card_id)
   // Land enters battlefield untapped and record when it entered
   let current_cycle = get_turn_cycle(state)
-  let untapped_card =
-    types.Card(
-      ..card,
+  let land_permanent =
+    types.Permanent(
+      card: card,
+      controller_id: player_id,
       tapped: False,
-      entered_battlefield_cycle: option.Some(current_cycle),
+      entered_battlefield_cycle: current_cycle,
     )
-  let new_battlefield = [untapped_card, ..player.battlefield]
+  let new_battlefield = [land_permanent, ..player.battlefield]
   let updated_player =
     types.Player(
       ..player,
@@ -673,7 +685,7 @@ fn handle_cast_creature(
   )
 }
 
-// Check if a creature has summoning sickness
+// Check if a permanent has summoning sickness
 // Rule 302.6: A creature can't attack or use tap abilities unless it has been
 // under its controller's control continuously since their most recent turn began
 //
@@ -681,19 +693,14 @@ fn handle_cast_creature(
 // - Declaring attackers (Phase 6)
 // - Activated abilities with tap symbol (future phases)
 //
-// Usage: has_summoning_sickness(creature, get_turn_cycle(state))
+// Usage: has_summoning_sickness(permanent, get_turn_cycle(state))
 pub fn has_summoning_sickness(
-  creature: types.Card,
+  permanent: types.Permanent,
   current_cycle: Int,
 ) -> Bool {
-  case creature.entered_battlefield_cycle {
-    option.None -> False
-    option.Some(entered_cycle) -> {
-      // Creature has summoning sickness if it entered this turn cycle
-      // TODO: Add haste keyword support to bypass this check
-      entered_cycle >= current_cycle
-    }
-  }
+  // Creature has summoning sickness if it entered this turn cycle
+  // TODO: Add haste keyword support to bypass this check
+  permanent.entered_battlefield_cycle >= current_cycle
 }
 
 // Resolve the top spell from the stack
@@ -718,17 +725,21 @@ fn resolve_top_of_stack(state: GameState) -> Result(GameState, types.Error) {
   // Creatures enter the battlefield untapped
   // Record the turn cycle when the creature entered (for summoning sickness)
   let current_cycle = get_turn_cycle(state)
-  let creature_card =
-    types.Card(
-      ..top_item.card,
+  let creature_permanent =
+    types.Permanent(
+      card: top_item.card,
+      controller_id: top_item.controller_id,
       tapped: False,
-      entered_battlefield_cycle: option.Some(current_cycle),
+      entered_battlefield_cycle: current_cycle,
     )
 
   // Update the controller's battlefield
   let new_players =
     update_player(state.players, top_item.controller_id, fn(player) {
-      types.Player(..player, battlefield: [creature_card, ..player.battlefield])
+      types.Player(..player, battlefield: [
+        creature_permanent,
+        ..player.battlefield
+      ])
     })
 
   Ok(types.GameState(..state, players: new_players, stack: remaining_stack))

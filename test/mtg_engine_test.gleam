@@ -672,8 +672,6 @@ fn create_test_land(id: String, name: String) -> types.Card {
     ),
     power: option.None,
     toughness: option.None,
-    tapped: False,
-    entered_battlefield_cycle: option.None,
   )
 }
 
@@ -694,8 +692,6 @@ fn create_test_creature(id: String, name: String) -> types.Card {
     ),
     power: option.Some(2),
     toughness: option.Some(2),
-    tapped: False,
-    entered_battlefield_cycle: option.None,
   )
 }
 
@@ -735,7 +731,7 @@ pub fn play_land_success_test() {
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
   assert player1.hand == []
   assert list.length(player1.battlefield) == 1
-  assert list.any(player1.battlefield, fn(c) { c.id == "land1" })
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "land1" })
 
   // Verify lands_played_this_turn incremented
   assert player1.lands_played_this_turn == 1
@@ -913,11 +909,19 @@ fn add_land_to_battlefield(
   player_id: Int,
   land: types.Card,
 ) -> types.GameState {
+  let land_permanent =
+    types.Permanent(
+      card: land,
+      controller_id: player_id,
+      tapped: False,
+      entered_battlefield_cycle: 0,
+    )
   types.GameState(
     ..game,
     players: list.map(game.players, fn(p) {
       case p.id == player_id {
-        True -> types.Player(..p, battlefield: [land, ..p.battlefield])
+        True ->
+          types.Player(..p, battlefield: [land_permanent, ..p.battlefield])
         False -> p
       }
     }),
@@ -939,7 +943,7 @@ pub fn tap_forest_for_mana_test() {
   // Verify forest is tapped
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
   let assert Ok(tapped_forest) =
-    list.find(player1.battlefield, fn(c) { c.id == "land1" })
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
   assert tapped_forest.tapped == True
 
   // Verify green mana was added to pool
@@ -1048,7 +1052,7 @@ pub fn tap_land_not_on_battlefield_test() {
 
   // Try to tap it - should fail
   let result = mtg_engine.dispatch(game, types.TapLandForMana(1, "land1"))
-  assert result == Error(types.InvalidAction("Card not found"))
+  assert result == Error(types.InvalidAction("Permanent not found"))
 }
 
 // Test cannot tap non-land permanent
@@ -1082,7 +1086,7 @@ pub fn land_enters_untapped_test() {
   // Verify land is on battlefield and untapped
   let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
   let assert Ok(land_on_battlefield) =
-    list.find(player1.battlefield, fn(c) { c.id == "land1" })
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
   assert land_on_battlefield.tapped == False
 }
 
@@ -1104,8 +1108,10 @@ pub fn lands_untap_during_untap_step_test() {
 
   // Verify both lands are tapped
   let assert Ok(p1) = list.find(game_after_tap2.players, fn(p) { p.id == 1 })
-  let assert Ok(land1) = list.find(p1.battlefield, fn(c) { c.id == "land1" })
-  let assert Ok(land2) = list.find(p1.battlefield, fn(c) { c.id == "land2" })
+  let assert Ok(land1) =
+    list.find(p1.battlefield, fn(perm) { perm.card.id == "land1" })
+  let assert Ok(land2) =
+    list.find(p1.battlefield, fn(perm) { perm.card.id == "land2" })
   assert land1.tapped == True
   assert land2.tapped == True
 
@@ -1122,9 +1128,9 @@ pub fn lands_untap_during_untap_step_test() {
   // Verify lands are now untapped
   let assert Ok(p1_after) = list.find(game.players, fn(p) { p.id == 1 })
   let assert Ok(land1_after) =
-    list.find(p1_after.battlefield, fn(c) { c.id == "land1" })
+    list.find(p1_after.battlefield, fn(perm) { perm.card.id == "land1" })
   let assert Ok(land2_after) =
-    list.find(p1_after.battlefield, fn(c) { c.id == "land2" })
+    list.find(p1_after.battlefield, fn(perm) { perm.card.id == "land2" })
   assert land1_after.tapped == False
   assert land2_after.tapped == False
 }
@@ -1175,8 +1181,10 @@ pub fn only_active_player_lands_untap_test() {
   // Verify both are tapped
   let assert Ok(p1) = list.find(game_after_tap2.players, fn(p) { p.id == 1 })
   let assert Ok(p2) = list.find(game_after_tap2.players, fn(p) { p.id == 2 })
-  let assert Ok(land1) = list.find(p1.battlefield, fn(c) { c.id == "land1" })
-  let assert Ok(land2) = list.find(p2.battlefield, fn(c) { c.id == "land2" })
+  let assert Ok(land1) =
+    list.find(p1.battlefield, fn(perm) { perm.card.id == "land1" })
+  let assert Ok(land2) =
+    list.find(p2.battlefield, fn(perm) { perm.card.id == "land2" })
   assert land1.tapped == True
   assert land2.tapped == True
 
@@ -1188,9 +1196,9 @@ pub fn only_active_player_lands_untap_test() {
   let assert Ok(p1_after) = list.find(game.players, fn(p) { p.id == 1 })
   let assert Ok(p2_after) = list.find(game.players, fn(p) { p.id == 2 })
   let assert Ok(land1_after) =
-    list.find(p1_after.battlefield, fn(c) { c.id == "land1" })
+    list.find(p1_after.battlefield, fn(perm) { perm.card.id == "land1" })
   let assert Ok(land2_after) =
-    list.find(p2_after.battlefield, fn(c) { c.id == "land2" })
+    list.find(p2_after.battlefield, fn(perm) { perm.card.id == "land2" })
   assert land1_after.tapped == True
   assert land2_after.tapped == False
 }
@@ -1261,8 +1269,6 @@ pub fn cast_creature_multicolor_mana_test() {
       ),
       power: option.Some(3),
       toughness: option.Some(3),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1538,8 +1544,6 @@ pub fn cast_creature_stack_not_empty_test() {
       ),
       power: option.Some(2),
       toughness: option.Some(2),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add both creatures to player 1's hand
@@ -1632,8 +1636,6 @@ pub fn cast_creature_zero_cost_test() {
       ),
       power: option.Some(0),
       toughness: option.Some(1),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1671,8 +1673,6 @@ pub fn cast_creature_with_generic_cost_test() {
       ),
       power: option.Some(3),
       toughness: option.Some(3),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1729,8 +1729,6 @@ pub fn cast_creature_generic_cost_not_enough_total_mana_test() {
       ),
       power: option.Some(3),
       toughness: option.Some(3),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1778,8 +1776,6 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
       ),
       power: option.Some(3),
       toughness: option.Some(3),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -1856,10 +1852,10 @@ pub fn resolve_creature_spell_test() {
 
   // Verify creature is on battlefield with correct properties
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
-  assert creature_on_battlefield.name == "Grizzly Bears"
-  assert creature_on_battlefield.power == option.Some(2)
-  assert creature_on_battlefield.toughness == option.Some(2)
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert creature_on_battlefield.card.name == "Grizzly Bears"
+  assert creature_on_battlefield.card.power == option.Some(2)
+  assert creature_on_battlefield.card.toughness == option.Some(2)
 }
 
 // Test creature enters battlefield untapped
@@ -1895,7 +1891,7 @@ pub fn creature_enters_untapped_test() {
   let assert Ok(player1) =
     list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
   assert creature_on_battlefield.tapped == False
 }
 
@@ -1950,7 +1946,7 @@ pub fn resolve_creature_to_controller_battlefield_test() {
     list.find(game_after_resolve.players, fn(p) { p.id == 2 })
   assert list.length(player1.battlefield) == 1
   assert player2.battlefield == []
-  assert list.any(player1.battlefield, fn(c) { c.id == "creature1" })
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
 }
 
 // Test resolving multiple creatures in sequence
@@ -1973,8 +1969,6 @@ pub fn resolve_multiple_creatures_test() {
       ),
       power: option.Some(2),
       toughness: option.Some(2),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2025,8 +2019,8 @@ pub fn resolve_multiple_creatures_test() {
   let assert Ok(p1_final) =
     list.find(game_after_resolve2.players, fn(p) { p.id == 1 })
   assert list.length(p1_final.battlefield) == 2
-  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature1" })
-  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature2" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
 }
 
 // Test creature retains power and toughness when resolving
@@ -2048,8 +2042,6 @@ pub fn resolve_creature_retains_stats_test() {
       ),
       power: option.Some(5),
       toughness: option.Some(4),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creature to player 1's hand
@@ -2080,9 +2072,9 @@ pub fn resolve_creature_retains_stats_test() {
   let assert Ok(player1) =
     list.find(game_after_resolve.players, fn(p) { p.id == 1 })
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(c) { c.id == "creature1" })
-  assert creature_on_battlefield.power == option.Some(5)
-  assert creature_on_battlefield.toughness == option.Some(4)
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert creature_on_battlefield.card.power == option.Some(5)
+  assert creature_on_battlefield.card.toughness == option.Some(4)
 }
 
 // Automatic Resolution Tests
@@ -2124,7 +2116,7 @@ pub fn automatic_resolution_when_all_pass_test() {
   let assert Ok(player1) =
     list.find(game_after_pass.players, fn(p) { p.id == 1 })
   assert list.length(player1.battlefield) == 1
-  assert list.any(player1.battlefield, fn(c) { c.id == "creature1" })
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
 }
 
 // Test priority resets to active player after automatic resolution
@@ -2184,8 +2176,6 @@ pub fn automatic_resolution_lifo_order_test() {
       ),
       power: option.Some(2),
       toughness: option.Some(2),
-      tapped: False,
-      entered_battlefield_cycle: option.None,
     )
 
   // Add creatures to player 1's hand
@@ -2233,8 +2223,8 @@ pub fn automatic_resolution_lifo_order_test() {
   let assert Ok(p1_final) =
     list.find(game_after_second_resolve.players, fn(p) { p.id == 1 })
   assert list.length(p1_final.battlefield) == 2
-  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature1" })
-  assert list.any(p1_final.battlefield, fn(c) { c.id == "creature2" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
 }
 
 // Test cannot play land while spell is on stack
@@ -2352,9 +2342,10 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
   // Verify the creature has summoning sickness (entered this turn cycle)
   let current_cycle = mtg_engine.get_turn_cycle(game_after_resolve)
   assert mtg_engine.has_summoning_sickness(
-    creature_on_battlefield,
-    current_cycle,
-  ) == True
+      creature_on_battlefield,
+      current_cycle,
+    )
+    == True
 }
 
 // Test that a creature does NOT have summoning sickness on the next turn
@@ -2395,24 +2386,35 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
 
   // Verify the creature HAS summoning sickness on the same cycle it entered
   assert mtg_engine.has_summoning_sickness(
-    creature_on_battlefield,
-    cycle_entered,
-  ) == True
+      creature_on_battlefield,
+      cycle_entered,
+    )
+    == True
 
   // Now test on a later cycle - the key is just checking cycle_entered < current_cycle
   // If creature entered on cycle 0, checking it on cycle 1 should return False
   assert mtg_engine.has_summoning_sickness(
-    creature_on_battlefield,
-    cycle_entered + 1,
-  ) == False
+      creature_on_battlefield,
+      cycle_entered + 1,
+    )
+    == False
 }
 
-// Test that a creature in hand has no summoning sickness (not on battlefield)
-pub fn creature_in_hand_no_summoning_sickness_test() {
-  let creature = create_test_creature("creature1", "Grizzly Bears")
-  let current_turn = 1
+// Test that summoning sickness only applies to permanents on the battlefield
+// This test verifies the type system enforces that only permanents can be checked
+pub fn summoning_sickness_only_for_permanents_test() {
+  // Create a permanent that entered on cycle 0
+  let permanent =
+    types.Permanent(
+      card: create_test_creature("creature1", "Grizzly Bears"),
+      controller_id: 1,
+      tapped: False,
+      entered_battlefield_cycle: 0,
+    )
 
-  // Creature not on battlefield should have entered_battlefield_cycle = None
-  // and thus should return False for summoning sickness check
-  assert mtg_engine.has_summoning_sickness(creature, current_turn) == False
+  // Creature should have summoning sickness on the same cycle it entered
+  assert mtg_engine.has_summoning_sickness(permanent, 0) == True
+
+  // Creature should not have summoning sickness on a later cycle
+  assert mtg_engine.has_summoning_sickness(permanent, 1) == False
 }
