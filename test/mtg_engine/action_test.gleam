@@ -1,0 +1,1472 @@
+import gleam/list
+import gleam/option
+import gleeunit
+import mtg_engine/action
+import mtg_engine/card
+import mtg_engine/error
+import mtg_engine/game
+import mtg_engine/mana
+import test_helpers.{
+  add_card_to_hand, add_land_to_battlefield, create_test_creature,
+  create_test_land, pass_both, pass_until,
+}
+
+pub fn main() -> Nil {
+  gleeunit.main()
+}
+
+// Test PassPriority action
+pub fn pass_priority_advances_from_player_1_to_2_test() {
+  let game = game.new()
+  let assert Ok(new_game) = action.dispatch(game, action.PassPriority)
+
+  assert new_game.priority_player_id == 2
+}
+
+pub fn pass_priority_wraps_from_player_2_to_1_test() {
+  let game = game.new()
+  let assert Ok(game_p2) = action.dispatch(game, action.PassPriority)
+  let assert Ok(game_p1_again) = action.dispatch(game_p2, action.PassPriority)
+
+  assert game_p1_again.priority_player_id == 1
+}
+
+// Test consecutive passes tracking
+pub fn pass_priority_increments_consecutive_passes_test() {
+  let game = game.new()
+
+  // First pass
+  let assert Ok(game_after_1) = action.dispatch(game, action.PassPriority)
+  assert game_after_1.consecutive_passes == 1
+}
+
+// Test playing a land successfully
+pub fn play_land_success_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Forest")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
+
+  // Verify land moved from hand to battlefield
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.hand == []
+  assert list.length(player1.battlefield) == 1
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+
+  // Verify lands_played_this_turn incremented
+  assert player1.lands_played_this_turn == 1
+}
+
+// Test land-per-turn limit
+pub fn play_land_already_played_this_turn_test() {
+  let game = game.new()
+  let land1 = create_test_land("land1", "Forest")
+  let land2 = create_test_land("land2", "Mountain")
+
+  // Add both lands to player 1's hand
+  let game = add_card_to_hand(game, 1, land1)
+  let game = add_card_to_hand(game, 1, land2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Play first land successfully
+  let assert Ok(game_after_land1) =
+    action.dispatch(game, action.PlayLand(1, "land1"))
+
+  // Try to play second land - should fail
+  let result = action.dispatch(game_after_land1, action.PlayLand(1, "land2"))
+  assert result == Error(error.InvalidAction("Already played a land this turn"))
+}
+
+// Test playing land in wrong phase
+pub fn play_land_wrong_phase_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Forest")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Try to play in Upkeep (wrong phase)
+  let game = pass_until(game.Upkeep, game)
+
+  let result = action.dispatch(game, action.PlayLand(1, "land1"))
+  assert result
+    == Error(error.InvalidAction("Can only play a land during a main phase"))
+}
+
+// Test playing land from PostCombatMain phase
+pub fn play_land_postcombat_main_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Island")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PostCombatMain
+  let game = pass_until(game.PostCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
+
+  // Verify land moved to battlefield
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert list.length(player1.battlefield) == 1
+}
+
+// Test only active player can play land
+pub fn play_land_not_active_player_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Plains")
+
+  // Add land to player 2's hand
+  let game = add_card_to_hand(game, 2, land)
+
+  // Advance to PreCombatMain (player 1 is active)
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Player 2 tries to play land - should fail
+  let result = action.dispatch(game, action.PlayLand(2, "land1"))
+  assert result
+    == Error(error.InvalidAction("Only the active player can play a land"))
+}
+
+// Test card not in hand
+pub fn play_land_not_in_hand_test() {
+  let game = game.new()
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Try to play a land that's not in hand
+  let result = action.dispatch(game, action.PlayLand(1, "nonexistent"))
+  assert result == Error(error.InvalidAction("Card not found"))
+}
+
+// Test card is not a land
+pub fn play_land_not_a_land_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Try to play creature as land - should fail
+  let result = action.dispatch(game, action.PlayLand(1, "creature1"))
+  assert result == Error(error.InvalidAction("Card is not a land"))
+}
+
+// Test must have priority to play land
+pub fn play_land_without_priority_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Swamp")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Pass priority so player 2 has priority
+  let assert Ok(game_p2_priority) = action.dispatch(game, action.PassPriority)
+  assert game_p2_priority.priority_player_id == 2
+
+  // Try to play land as player 1 without priority - should fail
+  let result = action.dispatch(game_p2_priority, action.PlayLand(1, "land1"))
+  assert result
+    == Error(error.InvalidAction("Can only play a land when you have priority"))
+}
+
+// Test tapping a Forest for green mana
+pub fn tap_forest_for_mana_test() {
+  let game = game.new()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to battlefield
+  let game = add_land_to_battlefield(game, 1, forest)
+
+  // Tap the forest for mana
+  let assert Ok(new_game) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Verify forest is tapped
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(tapped_forest) =
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+  assert tapped_forest.tapped == True
+
+  // Verify green mana was added to pool
+  assert player1.mana_pool.green == 1
+  assert player1.mana_pool.white == 0
+  assert player1.mana_pool.blue == 0
+  assert player1.mana_pool.black == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.colorless == 0
+}
+
+// Test tapping a Mountain for red mana
+pub fn tap_mountain_for_mana_test() {
+  let game = game.new()
+  let mountain = create_test_land("land1", "Mountain")
+
+  // Add mountain to battlefield
+  let game = add_land_to_battlefield(game, 1, mountain)
+
+  // Tap the mountain for mana
+  let assert Ok(new_game) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Verify red mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.red == 1
+  assert player1.mana_pool.green == 0
+}
+
+// Test tapping an Island for blue mana
+pub fn tap_island_for_mana_test() {
+  let game = game.new()
+  let island = create_test_land("land1", "Island")
+
+  // Add island to battlefield
+  let game = add_land_to_battlefield(game, 1, island)
+
+  // Tap the island for mana
+  let assert Ok(new_game) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Verify blue mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.blue == 1
+}
+
+// Test tapping a Plains for white mana
+pub fn tap_plains_for_mana_test() {
+  let game = game.new()
+  let plains = create_test_land("land1", "Plains")
+
+  // Add plains to battlefield
+  let game = add_land_to_battlefield(game, 1, plains)
+
+  // Tap the plains for mana
+  let assert Ok(new_game) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Verify white mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.white == 1
+}
+
+// Test tapping a Swamp for black mana
+pub fn tap_swamp_for_mana_test() {
+  let game = game.new()
+  let swamp = create_test_land("land1", "Swamp")
+
+  // Add swamp to battlefield
+  let game = add_land_to_battlefield(game, 1, swamp)
+
+  // Tap the swamp for mana
+  let assert Ok(new_game) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Verify black mana was added to pool
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.black == 1
+}
+
+// Test cannot tap already tapped land
+pub fn tap_already_tapped_land_test() {
+  let game = game.new()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to battlefield
+  let game = add_land_to_battlefield(game, 1, forest)
+
+  // Tap the forest once
+  let assert Ok(game_after_tap) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+
+  // Try to tap it again - should fail
+  let result =
+    action.dispatch(game_after_tap, action.TapLandForMana(1, "land1"))
+  assert result == Error(error.InvalidAction("Land is already tapped"))
+}
+
+// Test cannot tap land not on battlefield
+pub fn tap_land_not_on_battlefield_test() {
+  let game = game.new()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to hand instead of battlefield
+  let game = add_card_to_hand(game, 1, forest)
+
+  // Try to tap it - should fail
+  let result = action.dispatch(game, action.TapLandForMana(1, "land1"))
+  assert result == Error(error.InvalidAction("Permanent not found"))
+}
+
+// Test cannot tap non-land permanent
+pub fn tap_non_land_for_mana_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to battlefield
+  let game = add_land_to_battlefield(game, 1, creature)
+
+  // Try to tap it for mana - should fail
+  let result = action.dispatch(game, action.TapLandForMana(1, "creature1"))
+  assert result == Error(error.InvalidAction("Card is not a land"))
+}
+
+// Test land enters battlefield untapped
+pub fn land_enters_untapped_test() {
+  let game = game.new()
+  let forest = create_test_land("land1", "Forest")
+
+  // Add forest to player 1's hand
+  let game = add_card_to_hand(game, 1, forest)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Play the land
+  let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
+
+  // Verify land is on battlefield and untapped
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(land_on_battlefield) =
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+  assert land_on_battlefield.tapped == False
+}
+
+// Test tapping multiple lands accumulates mana
+pub fn tap_multiple_lands_accumulates_mana_test() {
+  let game = game.new()
+  let forest1 = create_test_land("land1", "Forest")
+  let forest2 = create_test_land("land2", "Forest")
+  let mountain = create_test_land("land3", "Mountain")
+
+  // Add lands to battlefield
+  let game = add_land_to_battlefield(game, 1, forest1)
+  let game = add_land_to_battlefield(game, 1, forest2)
+  let game = add_land_to_battlefield(game, 1, mountain)
+
+  // Tap all three lands
+  let assert Ok(game_after_tap1) =
+    action.dispatch(game, action.TapLandForMana(1, "land1"))
+  let assert Ok(game_after_tap2) =
+    action.dispatch(game_after_tap1, action.TapLandForMana(1, "land2"))
+  let assert Ok(game_after_tap3) =
+    action.dispatch(game_after_tap2, action.TapLandForMana(1, "land3"))
+
+  // Verify mana accumulated correctly
+  let assert Ok(player1) =
+    list.find(game_after_tap3.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.green == 2
+  assert player1.mana_pool.red == 1
+}
+
+// Test casting a creature successfully
+pub fn cast_creature_success_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add green mana to player 1's pool
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast the creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is no longer in hand
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.hand == []
+
+  // Verify creature is on the stack
+  assert list.length(new_game.stack) == 1
+  let assert Ok(stack_item) = list.first(new_game.stack)
+  assert stack_item.card.id == "creature1"
+  assert stack_item.controller_id == 1
+
+  // Verify mana was paid
+  assert player1.mana_pool.green == 0
+
+  // Verify player retains priority
+  assert new_game.priority_player_id == 1
+}
+
+// Test casting creature with multiple mana colors
+pub fn cast_creature_multicolor_mana_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Multicolor Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 1,
+        black: 0,
+        red: 1,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(3),
+      toughness: option.Some(3),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana to player 1's pool
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 1,
+      black: 0,
+      red: 1,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast the creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify mana was paid correctly
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.blue == 0
+
+  // Verify creature is on stack
+  assert list.length(new_game.stack) == 1
+}
+
+// Test cannot cast creature without enough mana
+pub fn cast_creature_not_enough_mana_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Try to cast without mana - should fail
+  let result = action.dispatch(game, action.CastCreature(1, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Not enough mana to cast this spell"))
+}
+
+// Test cannot cast creature with wrong color mana
+pub fn cast_creature_wrong_mana_color_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add red mana instead of green
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 1,
+      green: 0,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Try to cast - should fail
+  let result =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Not enough mana to cast this spell"))
+}
+
+// Test cannot cast creature in wrong phase
+pub fn cast_creature_wrong_phase_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Stay in Upkeep (wrong phase)
+  let game = pass_until(game.Upkeep, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Try to cast - should fail
+  let result =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Can only cast creatures during a main phase"))
+}
+
+// Test can cast creature in PostCombatMain phase
+pub fn cast_creature_postcombat_main_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PostCombatMain
+  let game = pass_until(game.PostCombatMain, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast the creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(new_game.stack) == 1
+}
+
+// Test cannot cast creature without priority
+pub fn cast_creature_without_priority_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Pass priority to player 2
+  let assert Ok(game_p2_priority) =
+    action.dispatch(game_with_mana, action.PassPriority)
+  assert game_p2_priority.priority_player_id == 2
+
+  // Try to cast as player 1 without priority - should fail
+  let result =
+    action.dispatch(game_p2_priority, action.CastCreature(1, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Can only cast spells when you have priority"))
+}
+
+// Test non-active player cannot cast
+pub fn cast_creature_not_active_player_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 2's hand
+  let game = add_card_to_hand(game, 2, creature)
+
+  // Advance to PreCombatMain (player 1 is active)
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana to player 2
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(2, mana))
+
+  // Player 2 tries to cast - should fail
+  let result =
+    action.dispatch(game_with_mana, action.CastCreature(2, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Only the active player can cast spells"))
+}
+
+// Test card not in hand
+pub fn cast_creature_not_in_hand_test() {
+  let game = game.new()
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Try to cast a card that's not in hand
+  let result =
+    action.dispatch(game_with_mana, action.CastCreature(1, "nonexistent"))
+  assert result == Error(error.InvalidAction("Card not found"))
+}
+
+// Test cannot cast non-creature card
+pub fn cast_creature_not_a_creature_test() {
+  let game = game.new()
+  let land = create_test_land("land1", "Forest")
+
+  // Add land to player 1's hand
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Try to cast land as creature - should fail
+  let result = action.dispatch(game, action.CastCreature(1, "land1"))
+  assert result == Error(error.InvalidAction("Card is not a creature"))
+}
+
+// Test cannot cast creature when stack is not empty (sorcery-speed restriction)
+pub fn cast_creature_stack_not_empty_test() {
+  let game = game.new()
+  let creature1 = create_test_creature("creature1", "Grizzly Bears")
+  let creature2 =
+    card.Card(
+      id: "creature2",
+      name: "Another Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(2),
+      toughness: option.Some(2),
+    )
+
+  // Add both creatures to player 1's hand
+  let game = add_card_to_hand(game, 1, creature1)
+  let game = add_card_to_hand(game, 1, creature2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 2,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast first creature
+  let assert Ok(game_after_cast1) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify stack is not empty
+  assert list.length(game_after_cast1.stack) == 1
+
+  // Try to cast second creature while first is on stack - should fail
+  let result =
+    action.dispatch(game_after_cast1, action.CastCreature(1, "creature2"))
+  assert result
+    == Error(error.InvalidAction(
+      "Can only cast creatures when the stack is empty",
+    ))
+}
+
+// Test player retains priority after casting
+pub fn cast_creature_retains_priority_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Verify player 1 has priority
+  assert game_with_mana.priority_player_id == 1
+
+  // Cast creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify player 1 still has priority
+  assert new_game.priority_player_id == 1
+}
+
+// Test casting creature with zero-cost
+pub fn cast_creature_zero_cost_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Free Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 0,
+        colorless: 0,
+      ),
+      power: option.Some(0),
+      toughness: option.Some(1),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Cast the creature (no mana needed)
+  let assert Ok(new_game) =
+    action.dispatch(game, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(new_game.stack) == 1
+  let assert Ok(stack_item) = list.first(new_game.stack)
+  assert stack_item.card.id == "creature1"
+}
+
+// Test casting creature with generic mana cost (2G for a 3/3)
+pub fn cast_creature_with_generic_cost_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Big Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 2,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(3),
+      toughness: option.Some(3),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana to player 1's pool (1G + 2 of any color)
+  let mana =
+    mana.Produced(
+      white: 1,
+      blue: 1,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast the creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(new_game.stack) == 1
+  let assert Ok(stack_item) = list.first(new_game.stack)
+  assert stack_item.card.id == "creature1"
+
+  // Verify mana was paid (1G + 2 generic paid with white and blue)
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.white == 0
+  assert player1.mana_pool.blue == 0
+}
+
+// Test cannot cast creature with generic cost when not enough total mana
+pub fn cast_creature_generic_cost_not_enough_total_mana_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Big Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 2,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(3),
+      toughness: option.Some(3),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add only 1G (need 2G total, missing 1 generic)
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Try to cast - should fail
+  let result =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+  assert result
+    == Error(error.InvalidAction("Not enough mana to cast this spell"))
+}
+
+// Test casting creature with generic cost using any color
+pub fn cast_creature_generic_cost_paid_with_any_color_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Big Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 2,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(3),
+      toughness: option.Some(3),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana: 1G + 2R (red should be able to pay generic cost)
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 2,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+
+  // Cast the creature
+  let assert Ok(new_game) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(new_game.stack) == 1
+
+  // Verify mana was paid
+  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.red == 0
+}
+
+// Test resolving a creature spell from the stack
+pub fn resolve_creature_spell_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(game_after_cast.stack) == 1
+
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify creature moved from stack to battlefield
+  assert game_after_resolve.stack == []
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  assert list.length(player1.battlefield) == 1
+
+  // Verify creature is on battlefield with correct properties
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert creature_on_battlefield.card.name == "Grizzly Bears"
+  assert creature_on_battlefield.card.power == option.Some(2)
+  assert creature_on_battlefield.card.toughness == option.Some(2)
+}
+
+// Test creature enters battlefield untapped
+pub fn creature_enters_untapped_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify creature is untapped on battlefield
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert creature_on_battlefield.tapped == False
+}
+
+// Test cannot resolve from empty stack
+pub fn resolve_empty_stack_test() {
+  let game = game.new()
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // When both players pass with empty stack, should just advance step
+  // (not error - this is normal behavior)
+  let game_after_pass = pass_both(game)
+
+  // Should have advanced to next step, not errored
+  assert game_after_pass.current_step == game.BeginCombat
+}
+
+// Test resolving puts creature on controller's battlefield
+pub fn resolve_creature_to_controller_battlefield_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify creature is on player 1's battlefield only
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player2) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 2 })
+  assert list.length(player1.battlefield) == 1
+  assert player2.battlefield == []
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+}
+
+// Test resolving multiple creatures in sequence
+pub fn resolve_multiple_creatures_test() {
+  let game = game.new()
+  let creature1 = create_test_creature("creature1", "Grizzly Bears")
+  let creature2 =
+    card.Card(
+      id: "creature2",
+      name: "Another Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(2),
+      toughness: option.Some(2),
+    )
+
+  // Add creatures to player 1's hand
+  let game = add_card_to_hand(game, 1, creature1)
+  let game = add_card_to_hand(game, 1, creature2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast first creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 2,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast1) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify first creature is on stack
+  assert list.length(game_after_cast1.stack) == 1
+
+  // Both players pass priority - first creature resolves automatically
+  let game_after_resolve1 = pass_both(game_after_cast1)
+
+  // Verify stack is empty and creature is on battlefield
+  assert game_after_resolve1.stack == []
+  let assert Ok(p1_after_first) =
+    list.find(game_after_resolve1.players, fn(p) { p.id == 1 })
+  assert list.length(p1_after_first.battlefield) == 1
+
+  // Cast second creature
+  let assert Ok(game_after_cast2) =
+    action.dispatch(game_after_resolve1, action.CastCreature(1, "creature2"))
+
+  // Verify second creature is on stack
+  assert list.length(game_after_cast2.stack) == 1
+
+  // Both players pass priority - second creature resolves automatically
+  let game_after_resolve2 = pass_both(game_after_cast2)
+
+  // Verify both creatures are on battlefield
+  let assert Ok(p1_final) =
+    list.find(game_after_resolve2.players, fn(p) { p.id == 1 })
+  assert list.length(p1_final.battlefield) == 2
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
+}
+
+// Test creature retains power and toughness when resolving
+pub fn resolve_creature_retains_stats_test() {
+  let game = game.new()
+  let creature =
+    card.Card(
+      id: "creature1",
+      name: "Big Creature",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(5),
+      toughness: option.Some(4),
+    )
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass priority - spell resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify creature has correct stats
+  let assert Ok(player1) =
+    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(creature_on_battlefield) =
+    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert creature_on_battlefield.card.power == option.Some(5)
+  assert creature_on_battlefield.card.toughness == option.Some(4)
+}
+
+// Test spell automatically resolves when all players pass priority
+pub fn automatic_resolution_when_all_pass_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify creature is on stack
+  assert list.length(game_after_cast.stack) == 1
+
+  // Both players pass priority - should automatically resolve
+  let game_after_pass = pass_both(game_after_cast)
+
+  // Verify creature resolved automatically to battlefield
+  assert game_after_pass.stack == []
+  let assert Ok(player1) =
+    list.find(game_after_pass.players, fn(p) { p.id == 1 })
+  assert list.length(player1.battlefield) == 1
+  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+}
+
+// Test priority resets to active player after automatic resolution
+pub fn automatic_resolution_resets_priority_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass priority - should resolve and reset priority
+  let game_after_pass = pass_both(game_after_cast)
+
+  // Priority should go back to active player
+  assert game_after_pass.priority_player_id == game_after_pass.active_player_id
+  assert game_after_pass.priority_player_id == 1
+
+  // Consecutive passes should be reset
+  assert game_after_pass.consecutive_passes == 0
+}
+
+// Test multiple spells resolve in LIFO order
+pub fn automatic_resolution_lifo_order_test() {
+  let game = game.new()
+  let creature1 = create_test_creature("creature1", "First Bear")
+  let creature2 =
+    card.Card(
+      id: "creature2",
+      name: "Second Bear",
+      card_type: card.Creature,
+      mana_cost: mana.Cost(
+        generic: 0,
+        white: 0,
+        blue: 0,
+        black: 0,
+        red: 0,
+        green: 1,
+        colorless: 0,
+      ),
+      power: option.Some(2),
+      toughness: option.Some(2),
+    )
+
+  // Add creatures to player 1's hand
+  let game = add_card_to_hand(game, 1, creature1)
+  let game = add_card_to_hand(game, 1, creature2)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast first creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 2,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast1) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass - first creature resolves
+  let game_after_first_resolve = pass_both(game_after_cast1)
+
+  // Verify first creature resolved
+  assert game_after_first_resolve.stack == []
+  let assert Ok(p1_after_first) =
+    list.find(game_after_first_resolve.players, fn(p) { p.id == 1 })
+  assert list.length(p1_after_first.battlefield) == 1
+
+  // Cast second creature
+  let assert Ok(game_after_cast2) =
+    action.dispatch(
+      game_after_first_resolve,
+      action.CastCreature(1, "creature2"),
+    )
+
+  // Both players pass - second creature resolves
+  let game_after_second_resolve = pass_both(game_after_cast2)
+
+  // Verify both creatures are on battlefield
+  let assert Ok(p1_final) =
+    list.find(game_after_second_resolve.players, fn(p) { p.id == 1 })
+  assert list.length(p1_final.battlefield) == 2
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
+}
+
+// Test cannot play land while spell is on stack
+pub fn cannot_play_land_with_stack_not_empty_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+  let land = create_test_land("land1", "Forest")
+
+  // Add both to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+  let game = add_card_to_hand(game, 1, land)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Verify stack is not empty
+  assert list.length(game_after_cast.stack) == 1
+
+  // Try to play land - should fail
+  let result = action.dispatch(game_after_cast, action.PlayLand(1, "land1"))
+  assert result
+    == Error(error.InvalidAction(
+      "Cannot play a land while the stack is not empty",
+    ))
+}
+
+// Test players get priority after spell resolves
+pub fn priority_after_automatic_resolution_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to player 1's hand
+  let game = add_card_to_hand(game, 1, creature)
+
+  // Advance to PreCombatMain
+  let game = pass_until(game.PreCombatMain, game)
+
+  // Add mana and cast the creature
+  let mana =
+    mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
+  let assert Ok(game_with_mana) =
+    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(game_after_cast) =
+    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
+
+  // Both players pass - creature resolves automatically
+  let game_after_resolve = pass_both(game_after_cast)
+
+  // Verify players can take actions after resolution (priority works)
+  // Priority should be with active player
+  assert game_after_resolve.priority_player_id == 1
+
+  // Player 1 should be able to pass priority
+  let assert Ok(game_after_pass) =
+    action.dispatch(game_after_resolve, action.PassPriority)
+  assert game_after_pass.priority_player_id == 2
+}
