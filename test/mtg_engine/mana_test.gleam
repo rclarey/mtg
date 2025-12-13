@@ -107,7 +107,7 @@ pub fn mana_persists_within_step_test() {
 
   // Player 1 passes priority (but stays in same step)
   let assert Ok(game_after_pass) =
-    action.dispatch(game_with_mana, action.PassPriority)
+    action.dispatch(game_with_mana, action.PassPriority(1))
 
   // Mana should still be in player 1's pool
   let assert Ok(player1) = player.find(game_after_pass.players, 1)

@@ -1,4 +1,5 @@
 import gleam/list
+import gleam/option
 import gleeunit
 import mtg_engine/action
 import mtg_engine/game
@@ -28,7 +29,7 @@ pub fn init_game_test() {
   assert game.current_step == game.Untap
 
   // Verify player 1 has priority
-  assert game.priority_player_id == 1
+  assert game.priority_player_id == option.Some(1)
 
   // Verify player 1 is the active player
   assert game.active_player_id == 1
@@ -61,17 +62,17 @@ pub fn both_players_pass_advances_step_test() {
   // Should advance from Untap -> Upkeep
   assert game.current_step == game.Upkeep
   assert game.consecutive_passes == 0
-  assert game.priority_player_id == 1
+  assert game.priority_player_id == option.Some(1)
 }
 
 // Test step advancement resets consecutive passes
 pub fn step_advancement_resets_consecutive_passes_test() {
   let game = game.new()
 
-  let assert Ok(game) = action.dispatch(game, action.PassPriority)
+  let assert Ok(game) = action.dispatch(game, action.PassPriority(1))
   assert game.consecutive_passes == 1
 
-  let assert Ok(game) = action.dispatch(game, action.PassPriority)
+  let assert Ok(game) = action.dispatch(game, action.PassPriority(2))
   assert game.consecutive_passes == 0
 }
 
@@ -83,8 +84,8 @@ pub fn new_step_gives_priority_to_active_player_test() {
   let game = pass_both(game)
 
   assert game.current_step == game.Upkeep
-  assert game.priority_player_id == game.active_player_id
-  assert game.priority_player_id == 1
+  assert game.priority_player_id == option.Some(game.active_player_id)
+  assert game.priority_player_id == option.Some(1)
 }
 
 // Test first turn draw step is skipped
@@ -173,7 +174,7 @@ pub fn turn_transition_to_player_2_test() {
   assert game.turn_index == 1
   // Turn index increments when moving to next player
   assert game.active_player_id == 2
-  assert game.priority_player_id == 2
+  assert game.priority_player_id == option.Some(2)
 }
 
 // Test turn cycle increments after full round

@@ -1,5 +1,6 @@
 import gleam/bool
 import gleam/list
+import gleam/option
 import gleam/result
 import mtg_engine/card
 import mtg_engine/error
@@ -9,11 +10,12 @@ import mtg_engine/permanent
 import mtg_engine/player
 
 pub type Action {
-  PassPriority
+  PassPriority(player_id: Int)
   ProduceMana(player_id: Int, mana: mana.Produced)
   PlayLand(player_id: Int, card_id: String)
   TapLandForMana(player_id: Int, card_id: String)
   CastCreature(player_id: Int, card_id: String)
+  DeclareAttackers(player_id: Int, attacker_ids: List(String))
 }
 
 pub fn dispatch(
@@ -21,7 +23,7 @@ pub fn dispatch(
   action: Action,
 ) -> Result(game.State, error.Error) {
   case action {
-    PassPriority -> handle_pass_priority(state)
+    PassPriority(player_id) -> handle_pass_priority(state, player_id)
     ProduceMana(player_id, mana) ->
       Ok(handle_produce_mana(state, player_id, mana))
     PlayLand(player_id, card_id) -> handle_play_land(state, player_id, card_id)
@@ -29,11 +31,31 @@ pub fn dispatch(
       handle_tap_land_for_mana(state, player_id, card_id)
     CastCreature(player_id, card_id) ->
       handle_cast_creature(state, player_id, card_id)
+    DeclareAttackers(player_id, attacker_ids) ->
+      handle_declare_attackers(state, player_id, attacker_ids)
   }
 }
 
 // Handle passing priority
-fn handle_pass_priority(state: game.State) -> Result(game.State, error.Error) {
+fn handle_pass_priority(
+  state: game.State,
+  player_id: Int,
+) -> Result(game.State, error.Error) {
+  // Check if anyone has priority yet (attackers must be declared first in DeclareAttackers step)
+  use current_priority_player <- result.try(case state.priority_player_id {
+    option.None ->
+      Error(error.InvalidAction(
+        "Must declare attackers before taking other actions",
+      ))
+    option.Some(id) -> Ok(id)
+  })
+
+  // Validate: player must have priority
+  use <- bool.guard(
+    player_id != current_priority_player,
+    Error(error.InvalidAction("Can only pass priority when you have priority")),
+  )
+
   let new_consecutive_passes = state.consecutive_passes + 1
   let num_players = list.length(state.players)
 
@@ -53,7 +75,7 @@ fn handle_pass_priority(state: game.State) -> Result(game.State, error.Error) {
           Ok(
             game.State(
               ..resolved_state,
-              priority_player_id: resolved_state.active_player_id,
+              priority_player_id: option.Some(resolved_state.active_player_id),
               consecutive_passes: 0,
             ),
           )
@@ -62,12 +84,12 @@ fn handle_pass_priority(state: game.State) -> Result(game.State, error.Error) {
     }
     False -> {
       // Not all players passed yet, give priority to next player
-      let next_player = game.next_player(state, state.priority_player_id)
+      let next_player = game.next_player(state, current_priority_player)
 
       Ok(
         game.State(
           ..state,
-          priority_player_id: next_player.id,
+          priority_player_id: option.Some(next_player.id),
           consecutive_passes: new_consecutive_passes,
         ),
       )
@@ -76,6 +98,7 @@ fn handle_pass_priority(state: game.State) -> Result(game.State, error.Error) {
 }
 
 // Handle producing mana for a player
+// Note: This is primarily used for testing. In real gameplay, mana comes from tapping lands.
 fn handle_produce_mana(
   state: game.State,
   player_id: Int,
@@ -95,6 +118,14 @@ fn handle_play_land(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
+  // Check if anyone has priority yet (must be checked first)
+  use <- bool.guard(
+    option.is_none(state.priority_player_id),
+    Error(error.InvalidAction(
+      "Must declare attackers before taking other actions",
+    )),
+  )
+
   use <- bool.guard(
     state.current_step != game.PreCombatMain
       && state.current_step != game.PostCombatMain,
@@ -104,8 +135,10 @@ fn handle_play_land(
     player_id != state.active_player_id,
     Error(error.InvalidAction("Only the active player can play a land")),
   )
+
+  // Check if player has priority
   use <- bool.guard(
-    player_id != state.priority_player_id,
+    state.priority_player_id != option.Some(player_id),
     Error(error.InvalidAction("Can only play a land when you have priority")),
   )
 
@@ -154,6 +187,14 @@ fn handle_tap_land_for_mana(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
+  // Check if anyone has priority yet (attackers must be declared first)
+  use <- bool.guard(
+    option.is_none(state.priority_player_id),
+    Error(error.InvalidAction(
+      "Must declare attackers before taking other actions",
+    )),
+  )
+
   // Find the player
   use p <- result.try(player.find(state.players, player_id))
 
@@ -201,6 +242,14 @@ fn handle_cast_creature(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
+  // Check if anyone has priority yet (must be checked first)
+  use <- bool.guard(
+    option.is_none(state.priority_player_id),
+    Error(error.InvalidAction(
+      "Must declare attackers before taking other actions",
+    )),
+  )
+
   // Validate: must be active player
   use <- bool.guard(
     player_id != state.active_player_id,
@@ -209,7 +258,7 @@ fn handle_cast_creature(
 
   // Validate: must have priority
   use <- bool.guard(
-    player_id != state.priority_player_id,
+    state.priority_player_id != option.Some(player_id),
     Error(error.InvalidAction("Can only cast spells when you have priority")),
   )
 
@@ -251,4 +300,104 @@ fn handle_cast_creature(
       stack: [game.StackItem(card: c, controller_id: player_id), ..state.stack],
     ),
   )
+}
+
+// Handle declaring attackers
+fn handle_declare_attackers(
+  state: game.State,
+  player_id: Int,
+  attacker_ids: List(String),
+) -> Result(game.State, error.Error) {
+  // Validate: must be in DeclareAttackers step
+  use <- bool.guard(
+    state.current_step != game.DeclareAttackers,
+    Error(error.InvalidAction(
+      "Can only declare attackers during DeclareAttackers step",
+    )),
+  )
+
+  // Validate: must be active player
+  use <- bool.guard(
+    player_id != state.active_player_id,
+    Error(error.InvalidAction("Only the active player can declare attackers")),
+  )
+
+  // Validate: attackers must not already be declared this step
+  use <- bool.guard(
+    option.is_some(state.attacking_creatures),
+    Error(error.InvalidAction("Attackers have already been declared this step")),
+  )
+
+  // Find the player
+  use p <- result.try(player.find(state.players, player_id))
+
+  // Get current turn cycle for summoning sickness check
+  let current_cycle = game.turn_cycle(state)
+
+  // Validate each attacker and collect them
+  use validated_attackers <- result.try(validate_attackers(
+    p.battlefield,
+    attacker_ids,
+    current_cycle,
+  ))
+
+  // Tap all attacking creatures
+  let new_battlefield =
+    list.fold(validated_attackers, p.battlefield, fn(battlefield, attacker) {
+      permanent.update(battlefield, attacker.card.id, fn(perm) {
+        permanent.Permanent(..perm, tapped: True)
+      })
+    })
+
+  // Update player's battlefield
+  let updated_player = player.Player(..p, battlefield: new_battlefield)
+  let new_players =
+    player.update(state.players, player_id, fn(_) { updated_player })
+
+  // Update state with attacking creatures and give priority to active player
+  // Reset consecutive passes since this is an action
+  Ok(
+    game.State(
+      ..state,
+      players: new_players,
+      attacking_creatures: option.Some(attacker_ids),
+      priority_player_id: option.Some(player_id),
+      consecutive_passes: 0,
+    ),
+  )
+}
+
+// Helper function to validate all attackers
+fn validate_attackers(
+  battlefield: List(permanent.Permanent),
+  attacker_ids: List(String),
+  current_cycle: Int,
+) -> Result(List(permanent.Permanent), error.Error) {
+  // Validate each attacker
+  list.try_map(attacker_ids, fn(attacker_id) {
+    // Find the permanent on the battlefield
+    use perm <- result.try(permanent.find(battlefield, attacker_id))
+
+    // Validate: must be a creature
+    use <- bool.guard(
+      perm.card.card_type != card.Creature,
+      Error(error.InvalidAction("Only creatures can attack")),
+    )
+
+    // Validate: must be untapped
+    use <- bool.guard(
+      perm.tapped,
+      Error(error.InvalidAction("Cannot attack with tapped creature")),
+    )
+
+    // Validate: must not have summoning sickness
+    use <- bool.guard(
+      permanent.has_summoning_sickness(perm, current_cycle),
+      Error(error.InvalidAction(
+        "Cannot attack with creature that has summoning sickness",
+      )),
+    )
+
+    Ok(perm)
+  })
 }

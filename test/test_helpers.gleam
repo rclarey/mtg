@@ -7,9 +7,27 @@ import mtg_engine/permanent
 import mtg_engine/player
 
 // Helper to pass priority for both players
+// Automatically declares attackers if in DeclareAttackers step and not yet declared
 pub fn pass_both(state: game.State) {
-  let assert Ok(s1) = action.dispatch(state, action.PassPriority)
-  let assert Ok(s2) = action.dispatch(s1, action.PassPriority)
+  // If we're in DeclareAttackers step and attackers not declared, declare no attackers
+  let state = case
+    state.current_step == game.DeclareAttackers
+    && option.is_none(state.attacking_creatures)
+  {
+    True -> {
+      let assert Ok(s) =
+        action.dispatch(state, action.DeclareAttackers(state.active_player_id, []))
+      s
+    }
+    False -> state
+  }
+
+  // Get current priority player
+  let assert option.Some(priority_player_1) = state.priority_player_id
+  let assert Ok(s1) = action.dispatch(state, action.PassPriority(priority_player_1))
+
+  let assert option.Some(priority_player_2) = s1.priority_player_id
+  let assert Ok(s2) = action.dispatch(s1, action.PassPriority(priority_player_2))
   s2
 }
 
@@ -97,6 +115,28 @@ pub fn add_land_to_battlefield(
     ..game,
     players: player.update(game.players, player_id, fn(p) {
       player.Player(..p, battlefield: [land_permanent, ..p.battlefield])
+    }),
+  )
+}
+
+// Helper function to add a creature directly to battlefield
+pub fn add_creature_to_battlefield(
+  game: game.State,
+  player_id: Int,
+  creature: card.Card,
+  entered_cycle: Int,
+) -> game.State {
+  let creature_permanent =
+    permanent.Permanent(
+      card: creature,
+      owner_id: player_id,
+      tapped: False,
+      entered_battlefield_cycle: entered_cycle,
+    )
+  game.State(
+    ..game,
+    players: player.update(game.players, player_id, fn(p) {
+      player.Player(..p, battlefield: [creature_permanent, ..p.battlefield])
     }),
   )
 }

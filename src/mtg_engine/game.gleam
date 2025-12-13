@@ -1,5 +1,6 @@
 import gleam/bool
 import gleam/list
+import gleam/option
 import mtg_engine/card
 import mtg_engine/error
 import mtg_engine/permanent
@@ -46,11 +47,14 @@ pub type State {
   State(
     players: List(player.Player),
     active_player_id: Int,
-    priority_player_id: Int,
+    // None during declare attackers until attackers are declared
+    priority_player_id: option.Option(Int),
     current_step: Step,
     consecutive_passes: Int,
     turn_index: Int,
     stack: List(StackItem),
+    // None means attackers not yet declared, Some([]) means no attackers, Some([ids]) means attackers declared
+    attacking_creatures: option.Option(List(String)),
   )
 }
 
@@ -61,11 +65,12 @@ pub fn new() -> State {
   State(
     players: [player1, player2],
     active_player_id: 1,
-    priority_player_id: 1,
+    priority_player_id: option.Some(1),
     current_step: Untap,
     consecutive_passes: 0,
     turn_index: 0,
     stack: [],
+    attacking_creatures: option.None,
   )
 }
 
@@ -119,10 +124,11 @@ pub fn advance_step(state: State) -> State {
         ..state,
         players: players_with_untapped,
         active_player_id: next_active_player.id,
-        priority_player_id: next_active_player.id,
+        priority_player_id: option.Some(next_active_player.id),
         current_step: Upkeep,
         consecutive_passes: 0,
         turn_index: state.turn_index + 1,
+        attacking_creatures: option.None,
       )
     }
     Draw if state.turn_index == 0 && state.active_player_id == first_player.id ->
@@ -130,7 +136,7 @@ pub fn advance_step(state: State) -> State {
         ..state,
         players: cleared_players,
         current_step: PreCombatMain,
-        priority_player_id: state.active_player_id,
+        priority_player_id: option.Some(state.active_player_id),
         consecutive_passes: 0,
       )
     Draw ->
@@ -138,9 +144,19 @@ pub fn advance_step(state: State) -> State {
         ..state,
         players: cleared_players,
         current_step: Draw,
-        priority_player_id: state.active_player_id,
+        priority_player_id: option.Some(state.active_player_id),
         consecutive_passes: 0,
       )
+    DeclareAttackers -> {
+      // No one has priority until attackers are declared
+      State(
+        ..state,
+        players: cleared_players,
+        current_step: DeclareAttackers,
+        priority_player_id: option.None,
+        consecutive_passes: 0,
+      )
+    }
     _ -> {
       // Normal step advancement within a turn
       // Priority goes to active player when entering a new step
@@ -148,7 +164,7 @@ pub fn advance_step(state: State) -> State {
         ..state,
         players: cleared_players,
         current_step: next_step,
-        priority_player_id: state.active_player_id,
+        priority_player_id: option.Some(state.active_player_id),
         consecutive_passes: 0,
       )
     }
