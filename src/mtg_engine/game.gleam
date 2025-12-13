@@ -194,11 +194,7 @@ pub fn resolve_top_of_stack(state: State) -> Result(State, error.Error) {
   // Record the turn cycle when the creature entered (for summoning sickness)
   let current_cycle = turn_cycle(state)
   let creature_permanent =
-    permanent.from_card(
-      top_item.card,
-      top_item.controller_id,
-      current_cycle,
-    )
+    permanent.from_card(top_item.card, top_item.controller_id, current_cycle)
 
   // Update the controller's battlefield
   let new_players =

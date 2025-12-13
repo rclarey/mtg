@@ -6,6 +6,8 @@ import mtg_engine/card
 import mtg_engine/error
 import mtg_engine/game
 import mtg_engine/mana
+import mtg_engine/permanent
+import mtg_engine/player
 import test_helpers.{
   add_card_to_hand, add_land_to_battlefield, create_test_creature,
   create_test_land, pass_both, pass_until,
@@ -24,11 +26,8 @@ pub fn pass_priority_advances_from_player_1_to_2_test() {
 }
 
 pub fn pass_priority_wraps_from_player_2_to_1_test() {
-  let game = game.new()
-  let assert Ok(game_p2) = action.dispatch(game, action.PassPriority)
-  let assert Ok(game_p1_again) = action.dispatch(game_p2, action.PassPriority)
-
-  assert game_p1_again.priority_player_id == 1
+  let game = pass_both(game.new())
+  assert game.priority_player_id == 1
 }
 
 // Test consecutive passes tracking
@@ -52,13 +51,14 @@ pub fn play_land_success_test() {
   let game = pass_until(game.PreCombatMain, game)
 
   // Play the land
-  let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
+  let assert Ok(game) = action.dispatch(game, action.PlayLand(1, "land1"))
 
   // Verify land moved from hand to battlefield
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game.players, 1)
   assert player1.hand == []
   assert list.length(player1.battlefield) == 1
-  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+  assert permanent.find(player1.battlefield, "land1")
+    == Ok(permanent.from_card(land, player1.id, game.turn_cycle(game)))
 
   // Verify lands_played_this_turn incremented
   assert player1.lands_played_this_turn == 1
@@ -78,11 +78,10 @@ pub fn play_land_already_played_this_turn_test() {
   let game = pass_until(game.PreCombatMain, game)
 
   // Play first land successfully
-  let assert Ok(game_after_land1) =
-    action.dispatch(game, action.PlayLand(1, "land1"))
+  let assert Ok(game) = action.dispatch(game, action.PlayLand(1, "land1"))
 
   // Try to play second land - should fail
-  let result = action.dispatch(game_after_land1, action.PlayLand(1, "land2"))
+  let result = action.dispatch(game, action.PlayLand(1, "land2"))
   assert result == Error(error.InvalidAction("Already played a land this turn"))
 }
 
@@ -114,10 +113,10 @@ pub fn play_land_postcombat_main_test() {
   let game = pass_until(game.PostCombatMain, game)
 
   // Play the land
-  let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
+  let assert Ok(game) = action.dispatch(game, action.PlayLand(1, "land1"))
 
   // Verify land moved to battlefield
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game.players, 1)
   assert list.length(player1.battlefield) == 1
 }
 
@@ -199,19 +198,20 @@ pub fn tap_forest_for_mana_test() {
   let assert Ok(new_game) =
     action.dispatch(game, action.TapLandForMana(1, "land1"))
 
-  // Verify forest is tapped
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  let assert Ok(tapped_forest) =
-    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+  let assert Ok(player1) = player.find(new_game.players, 1)
+  let assert Ok(tapped_forest) = permanent.find(player1.battlefield, "land1")
   assert tapped_forest.tapped == True
 
   // Verify green mana was added to pool
-  assert player1.mana_pool.green == 1
-  assert player1.mana_pool.white == 0
-  assert player1.mana_pool.blue == 0
-  assert player1.mana_pool.black == 0
-  assert player1.mana_pool.red == 0
-  assert player1.mana_pool.colorless == 0
+  assert player1.mana_pool
+    == mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 1,
+      colorless: 0,
+    )
 }
 
 // Test tapping a Mountain for red mana
@@ -227,9 +227,16 @@ pub fn tap_mountain_for_mana_test() {
     action.dispatch(game, action.TapLandForMana(1, "land1"))
 
   // Verify red mana was added to pool
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  assert player1.mana_pool.red == 1
-  assert player1.mana_pool.green == 0
+  let assert Ok(player1) = player.find(new_game.players, 1)
+  assert player1.mana_pool
+    == mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 0,
+      red: 1,
+      green: 0,
+      colorless: 0,
+    )
 }
 
 // Test tapping an Island for blue mana
@@ -245,8 +252,16 @@ pub fn tap_island_for_mana_test() {
     action.dispatch(game, action.TapLandForMana(1, "land1"))
 
   // Verify blue mana was added to pool
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  assert player1.mana_pool.blue == 1
+  let assert Ok(player1) = player.find(new_game.players, 1)
+  assert player1.mana_pool
+    == mana.Produced(
+      white: 0,
+      blue: 1,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 }
 
 // Test tapping a Plains for white mana
@@ -262,8 +277,16 @@ pub fn tap_plains_for_mana_test() {
     action.dispatch(game, action.TapLandForMana(1, "land1"))
 
   // Verify white mana was added to pool
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  assert player1.mana_pool.white == 1
+  let assert Ok(player1) = player.find(new_game.players, 1)
+  assert player1.mana_pool
+    == mana.Produced(
+      white: 1,
+      blue: 0,
+      black: 0,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 }
 
 // Test tapping a Swamp for black mana
@@ -279,8 +302,16 @@ pub fn tap_swamp_for_mana_test() {
     action.dispatch(game, action.TapLandForMana(1, "land1"))
 
   // Verify black mana was added to pool
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
-  assert player1.mana_pool.black == 1
+  let assert Ok(player1) = player.find(new_game.players, 1)
+  assert player1.mana_pool
+    == mana.Produced(
+      white: 0,
+      blue: 0,
+      black: 1,
+      red: 0,
+      green: 0,
+      colorless: 0,
+    )
 }
 
 // Test cannot tap already tapped land
@@ -342,9 +373,9 @@ pub fn land_enters_untapped_test() {
   let assert Ok(new_game) = action.dispatch(game, action.PlayLand(1, "land1"))
 
   // Verify land is on battlefield and untapped
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(new_game.players, 1)
   let assert Ok(land_on_battlefield) =
-    list.find(player1.battlefield, fn(perm) { perm.card.id == "land1" })
+    permanent.find(player1.battlefield, "land1")
   assert land_on_battlefield.tapped == False
 }
 
@@ -369,8 +400,7 @@ pub fn tap_multiple_lands_accumulates_mana_test() {
     action.dispatch(game_after_tap2, action.TapLandForMana(1, "land3"))
 
   // Verify mana accumulated correctly
-  let assert Ok(player1) =
-    list.find(game_after_tap3.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game_after_tap3.players, 1)
   assert player1.mana_pool.green == 2
   assert player1.mana_pool.red == 1
 }
@@ -388,14 +418,7 @@ pub fn cast_creature_success_test() {
 
   // Add green mana to player 1's pool
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -404,7 +427,7 @@ pub fn cast_creature_success_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Verify creature is no longer in hand
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(new_game.players, 1)
   assert player1.hand == []
 
   // Verify creature is on the stack
@@ -449,14 +472,7 @@ pub fn cast_creature_multicolor_mana_test() {
 
   // Add mana to player 1's pool
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 1,
-      black: 0,
-      red: 1,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 1, black: 0, red: 1, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -465,7 +481,7 @@ pub fn cast_creature_multicolor_mana_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Verify mana was paid correctly
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(new_game.players, 1)
   assert player1.mana_pool.green == 0
   assert player1.mana_pool.red == 0
   assert player1.mana_pool.blue == 0
@@ -504,14 +520,7 @@ pub fn cast_creature_wrong_mana_color_test() {
 
   // Add red mana instead of green
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 1,
-      green: 0,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -535,14 +544,7 @@ pub fn cast_creature_wrong_phase_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -566,14 +568,7 @@ pub fn cast_creature_postcombat_main_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -598,14 +593,7 @@ pub fn cast_creature_without_priority_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -634,14 +622,7 @@ pub fn cast_creature_not_active_player_test() {
 
   // Add mana to player 2
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(2, mana))
 
@@ -661,14 +642,7 @@ pub fn cast_creature_not_in_hand_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -725,14 +699,7 @@ pub fn cast_creature_stack_not_empty_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 2,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 2, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -765,14 +732,7 @@ pub fn cast_creature_retains_priority_test() {
 
   // Add mana
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -853,14 +813,7 @@ pub fn cast_creature_with_generic_cost_test() {
 
   // Add mana to player 1's pool (1G + 2 of any color)
   let mana =
-    mana.Produced(
-      white: 1,
-      blue: 1,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 1, blue: 1, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -874,7 +827,7 @@ pub fn cast_creature_with_generic_cost_test() {
   assert stack_item.card.id == "creature1"
 
   // Verify mana was paid (1G + 2 generic paid with white and blue)
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(new_game.players, 1)
   assert player1.mana_pool.green == 0
   assert player1.mana_pool.white == 0
   assert player1.mana_pool.blue == 0
@@ -909,14 +862,7 @@ pub fn cast_creature_generic_cost_not_enough_total_mana_test() {
 
   // Add only 1G (need 2G total, missing 1 generic)
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -956,14 +902,7 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
 
   // Add mana: 1G + 2R (red should be able to pay generic cost)
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 2,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 2, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -975,7 +914,7 @@ pub fn cast_creature_generic_cost_paid_with_any_color_test() {
   assert list.length(new_game.stack) == 1
 
   // Verify mana was paid
-  let assert Ok(player1) = list.find(new_game.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(new_game.players, 1)
   assert player1.mana_pool.green == 0
   assert player1.mana_pool.red == 0
 }
@@ -993,14 +932,7 @@ pub fn resolve_creature_spell_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1014,13 +946,12 @@ pub fn resolve_creature_spell_test() {
 
   // Verify creature moved from stack to battlefield
   assert game_after_resolve.stack == []
-  let assert Ok(player1) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game_after_resolve.players, 1)
   assert list.length(player1.battlefield) == 1
 
   // Verify creature is on battlefield with correct properties
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+    permanent.find(player1.battlefield, "creature1")
   assert creature_on_battlefield.card.name == "Grizzly Bears"
   assert creature_on_battlefield.card.power == option.Some(2)
   assert creature_on_battlefield.card.toughness == option.Some(2)
@@ -1039,14 +970,7 @@ pub fn creature_enters_untapped_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1056,10 +980,9 @@ pub fn creature_enters_untapped_test() {
   let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature is untapped on battlefield
-  let assert Ok(player1) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game_after_resolve.players, 1)
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+    permanent.find(player1.battlefield, "creature1")
   assert creature_on_battlefield.tapped == False
 }
 
@@ -1091,14 +1014,7 @@ pub fn resolve_creature_to_controller_battlefield_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1108,10 +1024,8 @@ pub fn resolve_creature_to_controller_battlefield_test() {
   let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature is on player 1's battlefield only
-  let assert Ok(player1) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
-  let assert Ok(player2) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 2 })
+  let assert Ok(player1) = player.find(game_after_resolve.players, 1)
+  let assert Ok(player2) = player.find(game_after_resolve.players, 2)
   assert list.length(player1.battlefield) == 1
   assert player2.battlefield == []
   assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
@@ -1148,14 +1062,7 @@ pub fn resolve_multiple_creatures_test() {
 
   // Add mana and cast first creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 2,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 2, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast1) =
@@ -1169,8 +1076,7 @@ pub fn resolve_multiple_creatures_test() {
 
   // Verify stack is empty and creature is on battlefield
   assert game_after_resolve1.stack == []
-  let assert Ok(p1_after_first) =
-    list.find(game_after_resolve1.players, fn(p) { p.id == 1 })
+  let assert Ok(p1_after_first) = player.find(game_after_resolve1.players, 1)
   assert list.length(p1_after_first.battlefield) == 1
 
   // Cast second creature
@@ -1184,8 +1090,7 @@ pub fn resolve_multiple_creatures_test() {
   let game_after_resolve2 = pass_both(game_after_cast2)
 
   // Verify both creatures are on battlefield
-  let assert Ok(p1_final) =
-    list.find(game_after_resolve2.players, fn(p) { p.id == 1 })
+  let assert Ok(p1_final) = player.find(game_after_resolve2.players, 1)
   assert list.length(p1_final.battlefield) == 2
   assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
   assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
@@ -1220,14 +1125,7 @@ pub fn resolve_creature_retains_stats_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1237,10 +1135,9 @@ pub fn resolve_creature_retains_stats_test() {
   let game_after_resolve = pass_both(game_after_cast)
 
   // Verify creature has correct stats
-  let assert Ok(player1) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game_after_resolve.players, 1)
   let assert Ok(creature_on_battlefield) =
-    list.find(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+    permanent.find(player1.battlefield, "creature1")
   assert creature_on_battlefield.card.power == option.Some(5)
   assert creature_on_battlefield.card.toughness == option.Some(4)
 }
@@ -1258,14 +1155,7 @@ pub fn automatic_resolution_when_all_pass_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1279,8 +1169,7 @@ pub fn automatic_resolution_when_all_pass_test() {
 
   // Verify creature resolved automatically to battlefield
   assert game_after_pass.stack == []
-  let assert Ok(player1) =
-    list.find(game_after_pass.players, fn(p) { p.id == 1 })
+  let assert Ok(player1) = player.find(game_after_pass.players, 1)
   assert list.length(player1.battlefield) == 1
   assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
 }
@@ -1298,14 +1187,7 @@ pub fn automatic_resolution_resets_priority_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1353,14 +1235,7 @@ pub fn automatic_resolution_lifo_order_test() {
 
   // Add mana and cast first creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 2,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 2, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast1) =
@@ -1372,7 +1247,7 @@ pub fn automatic_resolution_lifo_order_test() {
   // Verify first creature resolved
   assert game_after_first_resolve.stack == []
   let assert Ok(p1_after_first) =
-    list.find(game_after_first_resolve.players, fn(p) { p.id == 1 })
+    player.find(game_after_first_resolve.players, 1)
   assert list.length(p1_after_first.battlefield) == 1
 
   // Cast second creature
@@ -1386,8 +1261,7 @@ pub fn automatic_resolution_lifo_order_test() {
   let game_after_second_resolve = pass_both(game_after_cast2)
 
   // Verify both creatures are on battlefield
-  let assert Ok(p1_final) =
-    list.find(game_after_second_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(p1_final) = player.find(game_after_second_resolve.players, 1)
   assert list.length(p1_final.battlefield) == 2
   assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
   assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
@@ -1408,14 +1282,7 @@ pub fn cannot_play_land_with_stack_not_empty_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =
@@ -1445,14 +1312,7 @@ pub fn priority_after_automatic_resolution_test() {
 
   // Add mana and cast the creature
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
   let assert Ok(game_after_cast) =

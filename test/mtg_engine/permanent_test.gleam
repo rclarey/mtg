@@ -1,9 +1,9 @@
-import gleam/list
 import gleeunit
 import mtg_engine/action
 import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
+import mtg_engine/player
 import test_helpers.{
   add_card_to_hand, create_test_creature, pass_both, pass_until,
 }
@@ -22,14 +22,7 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
 
   // Give player mana to cast
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -39,8 +32,7 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
   let game_after_resolve = pass_both(game_after_cast)
 
   // Get the creature from the battlefield
-  let assert Ok(player) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player) = player.find(game_after_resolve.players, 1)
   let assert [creature_on_battlefield] = player.battlefield
 
   // Verify the creature has summoning sickness (entered this turn cycle)
@@ -63,14 +55,7 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
 
   // Give player mana to cast
   let mana =
-    mana.Produced(
-      white: 0,
-      blue: 0,
-      black: 0,
-      red: 0,
-      green: 1,
-      colorless: 0,
-    )
+    mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(game_with_mana) =
     action.dispatch(game, action.ProduceMana(1, mana))
 
@@ -84,8 +69,7 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
   assert cycle_entered == 0
 
   // Get the creature from the battlefield
-  let assert Ok(player) =
-    list.find(game_after_resolve.players, fn(p) { p.id == 1 })
+  let assert Ok(player) = player.find(game_after_resolve.players, 1)
   let assert [creature_on_battlefield] = player.battlefield
 
   // Verify the creature HAS summoning sickness on the same cycle it entered

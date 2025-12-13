@@ -16,7 +16,10 @@ pub type Action {
   CastCreature(player_id: Int, card_id: String)
 }
 
-pub fn dispatch(state: game.State, action: Action) -> Result(game.State, error.Error) {
+pub fn dispatch(
+  state: game.State,
+  action: Action,
+) -> Result(game.State, error.Error) {
   case action {
     PassPriority -> handle_pass_priority(state)
     ProduceMana(player_id, mana) ->

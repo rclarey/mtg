@@ -16,7 +16,11 @@ pub type Permanent {
 }
 
 // Create a new permanent
-pub fn from_card(card: card.Card, owner_id: Int, current_cycle: Int) -> Permanent {
+pub fn from_card(
+  card: card.Card,
+  owner_id: Int,
+  current_cycle: Int,
+) -> Permanent {
   Permanent(
     card:,
     owner_id:,

@@ -34,7 +34,10 @@ pub fn new(id: Int) -> Player {
   )
 }
 
-pub fn find(players: List(Player), player_id: Int) -> Result(Player, error.Error) {
+pub fn find(
+  players: List(Player),
+  player_id: Int,
+) -> Result(Player, error.Error) {
   list.find(players, fn(p) { p.id == player_id })
   |> result.replace_error(error.InvalidAction("Player not found"))
 }

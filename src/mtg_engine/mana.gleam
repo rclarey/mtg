@@ -45,10 +45,7 @@ const not_enough_mana = Error(
   error.InvalidAction("Not enough mana to cast this spell"),
 )
 
-pub fn pay_cost(
-  pool: Produced,
-  cost: Cost,
-) -> Result(Produced, error.Error) {
+pub fn pay_cost(pool: Produced, cost: Cost) -> Result(Produced, error.Error) {
   // Check if we have enough of each specific color
   use <- bool.guard(
     pool.white < cost.white
@@ -107,10 +104,7 @@ fn pay_generic_from_pool(
   )
   use <- bool.guard(
     pool.red > 0,
-    pay_generic_from_pool(
-      Produced(..pool, red: pool.red - 1),
-      generic_cost - 1,
-    ),
+    pay_generic_from_pool(Produced(..pool, red: pool.red - 1), generic_cost - 1),
   )
   use <- bool.guard(
     pool.green > 0,

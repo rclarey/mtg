@@ -1,4 +1,3 @@
-import gleam/list
 import gleam/option
 import mtg_engine/action
 import mtg_engine/card
@@ -20,6 +19,11 @@ pub fn pass_until(target_step: game.Step, state: game.State) {
     step if step == target_step -> state
     _ -> pass_until(target_step, pass_both(state))
   }
+}
+
+pub fn pass_turn(state: game.State) {
+  pass_until(game.Cleanup, state)
+  |> pass_both()
 }
 
 // Helper function to create a test land card
@@ -70,11 +74,8 @@ pub fn add_card_to_hand(
 ) -> game.State {
   game.State(
     ..game,
-    players: list.map(game.players, fn(p) {
-      case p.id == player_id {
-        True -> player.Player(..p, hand: [card, ..p.hand])
-        False -> p
-      }
+    players: player.update(game.players, player_id, fn(p) {
+      player.Player(..p, hand: [card, ..p.hand])
     }),
   )
 }
@@ -94,12 +95,8 @@ pub fn add_land_to_battlefield(
     )
   game.State(
     ..game,
-    players: list.map(game.players, fn(p) {
-      case p.id == player_id {
-        True ->
-          player.Player(..p, battlefield: [land_permanent, ..p.battlefield])
-        False -> p
-      }
+    players: player.update(game.players, player_id, fn(p) {
+      player.Player(..p, battlefield: [land_permanent, ..p.battlefield])
     }),
   )
 }
