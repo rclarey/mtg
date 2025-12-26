@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/list
 import gleam/option
 import gleeunit
@@ -56,7 +57,7 @@ pub fn play_land_success_test() {
   // Verify land moved from hand to battlefield
   let assert Ok(player1) = player.find(game.players, 1)
   assert player1.hand == []
-  assert list.length(player1.battlefield) == 1
+  assert dict.size(player1.battlefield) == 1
   assert permanent.find(player1.battlefield, "land1")
     == Ok(permanent.from_card(land, player1.id, game.turn_cycle(game)))
 
@@ -117,7 +118,7 @@ pub fn play_land_postcombat_main_test() {
 
   // Verify land moved to battlefield
   let assert Ok(player1) = player.find(game.players, 1)
-  assert list.length(player1.battlefield) == 1
+  assert dict.size(player1.battlefield) == 1
 }
 
 // Test only active player can play land
@@ -948,7 +949,7 @@ pub fn resolve_creature_spell_test() {
   // Verify creature moved from stack to battlefield
   assert game_after_resolve.stack == []
   let assert Ok(player1) = player.find(game_after_resolve.players, 1)
-  assert list.length(player1.battlefield) == 1
+  assert dict.size(player1.battlefield) == 1
 
   // Verify creature is on battlefield with correct properties
   let assert Ok(creature_on_battlefield) =
@@ -1027,9 +1028,9 @@ pub fn resolve_creature_to_controller_battlefield_test() {
   // Verify creature is on player 1's battlefield only
   let assert Ok(player1) = player.find(game_after_resolve.players, 1)
   let assert Ok(player2) = player.find(game_after_resolve.players, 2)
-  assert list.length(player1.battlefield) == 1
-  assert player2.battlefield == []
-  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert dict.size(player1.battlefield) == 1
+  assert dict.is_empty(player2.battlefield)
+  assert dict.has_key(player1.battlefield, "creature1")
 }
 
 // Test resolving multiple creatures in sequence
@@ -1078,7 +1079,7 @@ pub fn resolve_multiple_creatures_test() {
   // Verify stack is empty and creature is on battlefield
   assert game_after_resolve1.stack == []
   let assert Ok(p1_after_first) = player.find(game_after_resolve1.players, 1)
-  assert list.length(p1_after_first.battlefield) == 1
+  assert dict.size(p1_after_first.battlefield) == 1
 
   // Cast second creature
   let assert Ok(game_after_cast2) =
@@ -1092,9 +1093,9 @@ pub fn resolve_multiple_creatures_test() {
 
   // Verify both creatures are on battlefield
   let assert Ok(p1_final) = player.find(game_after_resolve2.players, 1)
-  assert list.length(p1_final.battlefield) == 2
-  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
-  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
+  assert dict.size(p1_final.battlefield) == 2
+  assert dict.has_key(p1_final.battlefield, "creature1")
+  assert dict.has_key(p1_final.battlefield, "creature2")
 }
 
 // Test creature retains power and toughness when resolving
@@ -1171,8 +1172,8 @@ pub fn automatic_resolution_when_all_pass_test() {
   // Verify creature resolved automatically to battlefield
   assert game_after_pass.stack == []
   let assert Ok(player1) = player.find(game_after_pass.players, 1)
-  assert list.length(player1.battlefield) == 1
-  assert list.any(player1.battlefield, fn(perm) { perm.card.id == "creature1" })
+  assert dict.size(player1.battlefield) == 1
+  assert dict.has_key(player1.battlefield, "creature1")
 }
 
 // Test priority resets to active player after automatic resolution
@@ -1250,7 +1251,7 @@ pub fn automatic_resolution_lifo_order_test() {
   assert game_after_first_resolve.stack == []
   let assert Ok(p1_after_first) =
     player.find(game_after_first_resolve.players, 1)
-  assert list.length(p1_after_first.battlefield) == 1
+  assert dict.size(p1_after_first.battlefield) == 1
 
   // Cast second creature
   let assert Ok(game_after_cast2) =
@@ -1264,9 +1265,9 @@ pub fn automatic_resolution_lifo_order_test() {
 
   // Verify both creatures are on battlefield
   let assert Ok(p1_final) = player.find(game_after_second_resolve.players, 1)
-  assert list.length(p1_final.battlefield) == 2
-  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature1" })
-  assert list.any(p1_final.battlefield, fn(perm) { perm.card.id == "creature2" })
+  assert dict.size(p1_final.battlefield) == 2
+  assert dict.has_key(p1_final.battlefield, "creature1")
+  assert dict.has_key(p1_final.battlefield, "creature2")
 }
 
 // Test cannot play land while spell is on stack

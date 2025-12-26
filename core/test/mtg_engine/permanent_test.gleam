@@ -1,3 +1,4 @@
+import gleam/dict
 import gleeunit
 import mtg_engine/action
 import mtg_engine/game
@@ -33,7 +34,7 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
 
   // Get the creature from the battlefield
   let assert Ok(player) = player.find(game_after_resolve.players, 1)
-  let assert [creature_on_battlefield] = player.battlefield
+  let assert Ok(creature_on_battlefield) = dict.get(player.battlefield, "creature1")
 
   // Verify the creature has summoning sickness (entered this turn cycle)
   let current_cycle = game.turn_cycle(game_after_resolve)
@@ -70,7 +71,7 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
 
   // Get the creature from the battlefield
   let assert Ok(player) = player.find(game_after_resolve.players, 1)
-  let assert [creature_on_battlefield] = player.battlefield
+  let assert Ok(creature_on_battlefield) = dict.get(player.battlefield, "creature1")
 
   // Verify the creature HAS summoning sickness on the same cycle it entered
   assert permanent.has_summoning_sickness(

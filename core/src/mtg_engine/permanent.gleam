@@ -1,4 +1,4 @@
-import gleam/list
+import gleam/dict.{type Dict}
 import gleam/result
 import mtg_engine/card
 import mtg_engine/error
@@ -31,23 +31,22 @@ pub fn from_card(
 
 // Find a permanent on the battlefield by card ID
 pub fn find(
-  battlefield: List(Permanent),
+  battlefield: Dict(String, Permanent),
   card_id: String,
 ) -> Result(Permanent, error.Error) {
-  list.find(battlefield, fn(permanent) { permanent.card.id == card_id })
+  dict.get(battlefield, card_id)
   |> result.replace_error(error.InvalidAction("Permanent not found"))
 }
 
-// Update a permanent in the battlefield list
+// Update a permanent in the battlefield
 pub fn update(
-  battlefield: List(Permanent),
+  battlefield: Dict(String, Permanent),
   permanent_id: String,
   f: fn(Permanent) -> Permanent,
-) -> List(Permanent) {
-  case battlefield {
-    [] -> []
-    [p, ..rest] if p.card.id == permanent_id -> [f(p), ..rest]
-    [p, ..rest] -> [p, ..update(rest, permanent_id, f)]
+) -> Dict(String, Permanent) {
+  case dict.get(battlefield, permanent_id) {
+    Ok(perm) -> dict.insert(battlefield, permanent_id, f(perm))
+    Error(_) -> battlefield
   }
 }
 

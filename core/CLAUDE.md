@@ -2,7 +2,7 @@
 
 ## Project Outline
 
-- Implements a game of Magic the Gathering by strictly following the rules in the `../rules/` directory
+- Implements a game of Magic the Gathering by strictly following the rules in the `../rules/` directory (relative to this module)
   - `../rules/000-contents.md` is the entrypoint which contains a table of contents and links to other rules files
 - Rejects invalid game actions
 - Updates the game state as valid game actions occur

@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/option
 import mtg_engine/action
 import mtg_engine/card
@@ -119,7 +120,7 @@ pub fn add_land_to_battlefield(
   game.State(
     ..game,
     players: player.update(game.players, player_id, fn(p) {
-      player.Player(..p, battlefield: [land_permanent, ..p.battlefield])
+      player.Player(..p, battlefield: dict.insert(p.battlefield, land.id, land_permanent))
     }),
   )
 }
@@ -141,7 +142,7 @@ pub fn add_creature_to_battlefield(
   game.State(
     ..game,
     players: player.update(game.players, player_id, fn(p) {
-      player.Player(..p, battlefield: [creature_permanent, ..p.battlefield])
+      player.Player(..p, battlefield: dict.insert(p.battlefield, creature.id, creature_permanent))
     }),
   )
 }

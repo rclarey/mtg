@@ -1,4 +1,5 @@
 import gleam/bool
+import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option
 import gleam/result
@@ -168,7 +169,7 @@ fn handle_play_land(
   // Land enters battlefield untapped and record when it entered
   let current_cycle = game.turn_cycle(state)
   let land_permanent = permanent.from_card(c, player_id, current_cycle)
-  let new_battlefield = [land_permanent, ..p.battlefield]
+  let new_battlefield = dict.insert(p.battlefield, card_id, land_permanent)
   let updated_player =
     player.Player(
       ..p,
@@ -369,7 +370,7 @@ fn handle_declare_attackers(
 
 // Helper function to validate all attackers
 fn validate_attackers(
-  battlefield: List(permanent.Permanent),
+  battlefield: Dict(String, permanent.Permanent),
   attacker_ids: List(String),
   current_cycle: Int,
 ) -> Result(List(permanent.Permanent), error.Error) {

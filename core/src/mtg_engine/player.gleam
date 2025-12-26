@@ -1,3 +1,4 @@
+import gleam/dict.{type Dict}
 import gleam/list
 import gleam/result
 import mtg_engine/card
@@ -13,7 +14,7 @@ pub type Player {
     mana_pool: mana.Produced,
     lands_played_this_turn: Int,
     hand: List(card.Card),
-    battlefield: List(permanent.Permanent),
+    battlefield: Dict(String, permanent.Permanent),
     graveyard: List(card.Card),
     library: List(card.Card),
     exile: List(card.Card),
@@ -27,7 +28,7 @@ pub fn new(id: Int) -> Player {
     mana_pool: mana.none(),
     lands_played_this_turn: 0,
     hand: [],
-    battlefield: [],
+    battlefield: dict.new(),
     graveyard: [],
     library: [],
     exile: [],
@@ -63,6 +64,6 @@ pub fn reset_lands_played(player: Player) -> Player {
 }
 
 pub fn untap_permanents(player: Player) -> Player {
-  let untapped_battlefield = list.map(player.battlefield, permanent.untap)
+  let untapped_battlefield = dict.map_values(player.battlefield, fn(_, perm) { permanent.untap(perm) })
   Player(..player, battlefield: untapped_battlefield)
 }

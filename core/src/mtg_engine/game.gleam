@@ -1,6 +1,7 @@
 import gleam/bool
+import gleam/dict
 import gleam/list
-import gleam/option
+import gleam/option.{type Option}
 import mtg_engine/card
 import mtg_engine/error
 import mtg_engine/permanent
@@ -48,13 +49,13 @@ pub type State {
     players: List(player.Player),
     active_player_id: Int,
     // None during declare attackers until attackers are declared
-    priority_player_id: option.Option(Int),
+    priority_player_id: Option(Int),
     current_step: Step,
     consecutive_passes: Int,
     turn_index: Int,
     stack: List(StackItem),
     // None means attackers not yet declared, Some([]) means no attackers, Some([ids]) means attackers declared
-    attacking_creatures: option.Option(List(String)),
+    attacking_creatures: Option(List(String)),
   )
 }
 
@@ -215,7 +216,7 @@ pub fn resolve_top_of_stack(state: State) -> Result(State, error.Error) {
   // Update the controller's battlefield
   let new_players =
     player.update(state.players, top_item.controller_id, fn(p) {
-      player.Player(..p, battlefield: [creature_permanent, ..p.battlefield])
+      player.Player(..p, battlefield: dict.insert(p.battlefield, top_item.card.id, creature_permanent))
     })
 
   Ok(State(..state, players: new_players, stack: remaining_stack))
