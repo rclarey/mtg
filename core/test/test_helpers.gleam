@@ -16,7 +16,10 @@ pub fn pass_both(state: game.State) {
   {
     True -> {
       let assert Ok(s) =
-        action.dispatch(state, action.DeclareAttackers(state.active_player_id, []))
+        action.dispatch(
+          state,
+          action.DeclareAttackers(state.active_player_id, []),
+        )
       s
     }
     False -> state
@@ -24,10 +27,12 @@ pub fn pass_both(state: game.State) {
 
   // Get current priority player
   let assert option.Some(priority_player_1) = state.priority_player_id
-  let assert Ok(s1) = action.dispatch(state, action.PassPriority(priority_player_1))
+  let assert Ok(s1) =
+    action.dispatch(state, action.PassPriority(priority_player_1))
 
   let assert option.Some(priority_player_2) = s1.priority_player_id
-  let assert Ok(s2) = action.dispatch(s1, action.PassPriority(priority_player_2))
+  let assert Ok(s2) =
+    action.dispatch(s1, action.PassPriority(priority_player_2))
   s2
 }
 

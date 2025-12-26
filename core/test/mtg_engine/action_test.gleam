@@ -177,7 +177,8 @@ pub fn play_land_without_priority_test() {
   let game = pass_until(game.PreCombatMain, game)
 
   // Pass priority so player 2 has priority
-  let assert Ok(game_p2_priority) = action.dispatch(game, action.PassPriority(1))
+  let assert Ok(game_p2_priority) =
+    action.dispatch(game, action.PassPriority(1))
   assert game_p2_priority.priority_player_id == option.Some(2)
 
   // Try to play land as player 1 without priority - should fail
@@ -1197,7 +1198,8 @@ pub fn automatic_resolution_resets_priority_test() {
   let game_after_pass = pass_both(game_after_cast)
 
   // Priority should go back to active player
-  assert game_after_pass.priority_player_id == option.Some(game_after_pass.active_player_id)
+  assert game_after_pass.priority_player_id
+    == option.Some(game_after_pass.active_player_id)
   assert game_after_pass.priority_player_id == option.Some(1)
 
   // Consecutive passes should be reset
@@ -1376,7 +1378,10 @@ pub fn declare_multiple_attackers_test() {
 
   // Declare both attackers
   let assert Ok(new_game) =
-    action.dispatch(game, action.DeclareAttackers(1, ["creature1", "creature2"]))
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, ["creature1", "creature2"]),
+    )
 
   // Verify both creatures are tapped
   let assert Ok(player1) = player.find(new_game.players, 1)
@@ -1416,7 +1421,8 @@ pub fn declare_attackers_tapped_creature_test() {
 
   // Try to declare tapped creature as attacker - should fail
   let result = action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
-  assert result == Error(error.InvalidAction("Cannot attack with tapped creature"))
+  assert result
+    == Error(error.InvalidAction("Cannot attack with tapped creature"))
 }
 
 // Test cannot declare attackers with summoning sickness
@@ -1564,7 +1570,8 @@ pub fn declare_attackers_empty_list_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Declare no attackers
-  let assert Ok(new_game) = action.dispatch(game, action.DeclareAttackers(1, []))
+  let assert Ok(new_game) =
+    action.dispatch(game, action.DeclareAttackers(1, []))
 
   // Verify attacking_creatures is empty list wrapped in Some
   assert new_game.attacking_creatures == option.Some([])
@@ -1636,7 +1643,10 @@ pub fn declare_attackers_twice_with_empty_first_test() {
 
   // Try to declare attackers again - should fail because attackers were already declared
   let result =
-    action.dispatch(game_still_in_declare, action.DeclareAttackers(1, ["creature1"]))
+    action.dispatch(
+      game_still_in_declare,
+      action.DeclareAttackers(1, ["creature1"]),
+    )
   assert result
     == Error(error.InvalidAction(
       "Attackers have already been declared this step",
