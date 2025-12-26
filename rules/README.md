@@ -1,0 +1,1 @@
+Retrieved from https://media.wizards.com/2025/downloads/MagicCompRules%2020251114.txt

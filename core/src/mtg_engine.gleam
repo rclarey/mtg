@@ -1,5 +1,5 @@
 import gleam/io
 
 pub fn main() -> Nil {
-  io.println("Hello from mtg_engine!")
+  io.println("Hello World")
 }

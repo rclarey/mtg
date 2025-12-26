@@ -2,8 +2,8 @@
 
 ## Project Outline
 
-- Implements a game of Magic the Gathering by strictly following the rules outlined at https://media.wizards.com/2025/downloads/MagicCompRules%2020250919.txt
-  - When you need to reference these rules use a subagent to summarize the specific rule relevant to the current task
+- Implements a game of Magic the Gathering by strictly following the rules in the `../rules/` directory
+  - `../rules/000-contents.md` is the entrypoint which contains a table of contents and links to other rules files
 - Rejects invalid game actions
 - Updates the game state as valid game actions occur
 
