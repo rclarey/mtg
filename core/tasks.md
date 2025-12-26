@@ -62,9 +62,9 @@
 
 ## Phase 6: Basic Combat
 
-- [ ] **Add declare attackers action** - Implement declaring attackers with basic validation
+- [x] **Add declare attackers action** - Implement declaring attackers with basic validation
 
-- [ ] **Test declare attackers** - Verify only legal creatures can attack
+- [x] **Test declare attackers** - Verify only legal creatures can attack
 
 - [ ] **Add declare blockers action** - Implement declaring blockers with basic validation
 

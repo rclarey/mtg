@@ -1346,8 +1346,9 @@ pub fn declare_attackers_success_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Declare attackers
+  let attack_pairs = [game.AttackPair("creature1", game.AttackPlayer(2))]
   let assert Ok(new_game) =
-    action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+    action.dispatch(game, action.DeclareAttackers(1, attack_pairs))
 
   // Verify creature is tapped
   let assert Ok(player1) = player.find(new_game.players, 1)
@@ -1355,7 +1356,7 @@ pub fn declare_attackers_success_test() {
   assert attacker.tapped == True
 
   // Verify attacking_creatures is set
-  assert new_game.attacking_creatures == option.Some(["creature1"])
+  assert new_game.attacking_creatures == option.Some(attack_pairs)
 
   // Verify active player retains priority
   assert new_game.priority_player_id == option.Some(1)
@@ -1378,10 +1379,14 @@ pub fn declare_multiple_attackers_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Declare both attackers
+  let attack_pairs = [
+    game.AttackPair("creature1", game.AttackPlayer(2)),
+    game.AttackPair("creature2", game.AttackPlayer(2)),
+  ]
   let assert Ok(new_game) =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, ["creature1", "creature2"]),
+      action.DeclareAttackers(1, attack_pairs),
     )
 
   // Verify both creatures are tapped
@@ -1392,7 +1397,7 @@ pub fn declare_multiple_attackers_test() {
   assert attacker2.tapped == True
 
   // Verify both are listed as attackers
-  assert new_game.attacking_creatures == option.Some(["creature1", "creature2"])
+  assert new_game.attacking_creatures == option.Some(attack_pairs)
 }
 
 // Test cannot declare attackers with tapped creature
@@ -1421,7 +1426,11 @@ pub fn declare_attackers_tapped_creature_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Try to declare tapped creature as attacker - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+    )
   assert result
     == Error(error.InvalidAction("Cannot attack with tapped creature"))
 }
@@ -1439,7 +1448,11 @@ pub fn declare_attackers_summoning_sickness_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Try to attack with creature that has summoning sickness - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+    )
   assert result
     == Error(error.InvalidAction(
       "Cannot attack with creature that has summoning sickness",
@@ -1458,7 +1471,11 @@ pub fn declare_attackers_not_active_player_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Player 2 tries to declare attackers - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(2, ["creature1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(2, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+    )
   assert result
     == Error(error.InvalidAction("Only the active player can declare attackers"))
 }
@@ -1475,7 +1492,11 @@ pub fn declare_attackers_wrong_step_test() {
   let game = pass_until(game.PreCombatMain, game)
 
   // Try to declare attackers in wrong step - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+    )
   assert result
     == Error(error.InvalidAction(
       "Can only declare attackers during DeclareAttackers step",
@@ -1498,7 +1519,10 @@ pub fn declare_attackers_retains_priority_test() {
 
   // Declare attackers
   let assert Ok(new_game) =
-    action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+    )
 
   // Verify player 1 now has priority after declaring
   assert new_game.priority_player_id == option.Some(1)
@@ -1519,11 +1543,17 @@ pub fn declare_attackers_already_declared_test() {
 
   // Declare first attacker
   let assert Ok(game_after_first) =
-    action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+    )
 
   // Try to declare attackers again - should fail
   let result =
-    action.dispatch(game_after_first, action.DeclareAttackers(1, ["creature2"]))
+    action.dispatch(
+      game_after_first,
+      action.DeclareAttackers(1, [game.AttackPair("creature2", game.AttackPlayer(2))]),
+    )
   assert result
     == Error(error.InvalidAction(
       "Attackers have already been declared this step",
@@ -1542,7 +1572,11 @@ pub fn declare_attackers_not_creature_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Try to declare land as attacker - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(1, ["land1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("land1", game.AttackPlayer(2))]),
+    )
   assert result == Error(error.InvalidAction("Only creatures can attack"))
 }
 
@@ -1558,7 +1592,11 @@ pub fn declare_attackers_without_priority_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Player 2 (non-active) tries to declare attackers - should fail
-  let result = action.dispatch(game, action.DeclareAttackers(2, ["creature1"]))
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(2, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+    )
   assert result
     == Error(error.InvalidAction("Only the active player can declare attackers"))
 }
@@ -1593,11 +1631,12 @@ pub fn attacking_creatures_cleared_on_new_turn_test() {
   let game = pass_until(game.DeclareAttackers, game)
 
   // Declare attackers
+  let attack_pairs = [game.AttackPair("creature1", game.AttackPlayer(2))]
   let assert Ok(game_with_attackers) =
-    action.dispatch(game, action.DeclareAttackers(1, ["creature1"]))
+    action.dispatch(game, action.DeclareAttackers(1, attack_pairs))
 
   // Verify attackers are set
-  assert game_with_attackers.attacking_creatures == option.Some(["creature1"])
+  assert game_with_attackers.attacking_creatures == option.Some(attack_pairs)
 
   // Advance to next turn
   let game_next_turn = pass_until(game.Upkeep, game_with_attackers)
@@ -1646,7 +1685,7 @@ pub fn declare_attackers_twice_with_empty_first_test() {
   let result =
     action.dispatch(
       game_still_in_declare,
-      action.DeclareAttackers(1, ["creature1"]),
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
     )
   assert result
     == Error(error.InvalidAction(
@@ -1783,4 +1822,24 @@ pub fn non_active_player_can_act_before_attackers_declared_test() {
     == Error(error.InvalidAction(
       "Must declare attackers before taking other actions",
     ))
+}
+
+// Test cannot attack yourself
+pub fn declare_attackers_cannot_attack_yourself_test() {
+  let game = game.new()
+  let creature = create_test_creature("creature1", "Grizzly Bears")
+
+  // Add creature to battlefield without summoning sickness
+  let game = add_creature_to_battlefield(game, 1, creature, -1)
+
+  // Advance to DeclareAttackers step
+  let game = pass_until(game.DeclareAttackers, game)
+
+  // Try to attack yourself - should fail
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+    )
+  assert result == Error(error.InvalidAction("Cannot attack yourself"))
 }

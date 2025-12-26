@@ -44,6 +44,15 @@ pub type StackItem {
   )
 }
 
+pub type AttackPair {
+  AttackPair(attacker: String, target: AttackTarget)
+}
+
+pub type AttackTarget {
+  AttackPlayer(player_id: Int)
+  // TODO add planeswalkers and battles
+}
+
 pub type State {
   State(
     players: List(player.Player),
@@ -54,8 +63,8 @@ pub type State {
     consecutive_passes: Int,
     turn_index: Int,
     stack: List(StackItem),
-    // None means attackers not yet declared, Some([]) means no attackers, Some([ids]) means attackers declared
-    attacking_creatures: Option(List(String)),
+    // None means attackers not yet declared, Some([]) means no attackers, Some([pairs]) means attackers declared
+    attacking_creatures: Option(List(AttackPair)),
   )
 }
 
@@ -216,7 +225,14 @@ pub fn resolve_top_of_stack(state: State) -> Result(State, error.Error) {
   // Update the controller's battlefield
   let new_players =
     player.update(state.players, top_item.controller_id, fn(p) {
-      player.Player(..p, battlefield: dict.insert(p.battlefield, top_item.card.id, creature_permanent))
+      player.Player(
+        ..p,
+        battlefield: dict.insert(
+          p.battlefield,
+          top_item.card.id,
+          creature_permanent,
+        ),
+      )
     })
 
   Ok(State(..state, players: new_players, stack: remaining_stack))

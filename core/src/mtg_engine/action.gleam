@@ -16,7 +16,7 @@ pub type Action {
   PlayLand(player_id: Int, card_id: String)
   TapLandForMana(player_id: Int, card_id: String)
   CastCreature(player_id: Int, card_id: String)
-  DeclareAttackers(player_id: Int, attacker_ids: List(String))
+  DeclareAttackers(player_id: Int, attacks: List(game.AttackPair))
 }
 
 pub fn dispatch(
@@ -32,8 +32,8 @@ pub fn dispatch(
       handle_tap_land_for_mana(state, player_id, card_id)
     CastCreature(player_id, card_id) ->
       handle_cast_creature(state, player_id, card_id)
-    DeclareAttackers(player_id, attacker_ids) ->
-      handle_declare_attackers(state, player_id, attacker_ids)
+    DeclareAttackers(player_id, attacks) ->
+      handle_declare_attackers(state, player_id, attacks)
   }
 }
 
@@ -307,7 +307,7 @@ fn handle_cast_creature(
 fn handle_declare_attackers(
   state: game.State,
   player_id: Int,
-  attacker_ids: List(String),
+  attacks: List(game.AttackPair),
 ) -> Result(game.State, error.Error) {
   // Validate: must be in DeclareAttackers step
   use <- bool.guard(
@@ -338,8 +338,9 @@ fn handle_declare_attackers(
   // Validate each attacker and collect them
   use validated_attackers <- result.try(validate_attackers(
     p.battlefield,
-    attacker_ids,
+    attacks,
     current_cycle,
+    player_id,
   ))
 
   // Tap all attacking creatures
@@ -361,7 +362,7 @@ fn handle_declare_attackers(
     game.State(
       ..state,
       players: new_players,
-      attacking_creatures: option.Some(attacker_ids),
+      attacking_creatures: option.Some(attacks),
       priority_player_id: option.Some(player_id),
       consecutive_passes: 0,
     ),
@@ -371,13 +372,22 @@ fn handle_declare_attackers(
 // Helper function to validate all attackers
 fn validate_attackers(
   battlefield: Dict(String, permanent.Permanent),
-  attacker_ids: List(String),
+  attacks: List(game.AttackPair),
   current_cycle: Int,
+  attacking_player_id: Int,
 ) -> Result(List(permanent.Permanent), error.Error) {
   // Validate each attacker
-  list.try_map(attacker_ids, fn(attacker_id) {
+  list.try_map(attacks, fn(attack_pair) {
+    // Validate: cannot attack yourself
+    use <- bool.guard(
+      case attack_pair.target {
+        game.AttackPlayer(player_id) -> player_id == attacking_player_id
+      },
+      Error(error.InvalidAction("Cannot attack yourself")),
+    )
+
     // Find the permanent on the battlefield
-    use perm <- result.try(permanent.find(battlefield, attacker_id))
+    use perm <- result.try(permanent.find(battlefield, attack_pair.attacker))
 
     // Validate: must be a creature
     use <- bool.guard(
