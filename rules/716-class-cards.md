@@ -8,10 +8,10 @@ Each Class card has a striated text box containing two class level bars. Its ill
 
 A class level bar is a keyword ability that represents both an activated ability and a static ability. A class level bar includes the activation cost of its activated ability and a level number. Any abilities printed within the same text box section as the class level bar are part of its static ability.
 
-a. “[Cost]: Level N — [Abilities]” means “[Cost]: This Class’s level becomes N. Activate only if this Class is level N-1 and only as a sorcery” and “As long as this Class is level N or greater, it has [abilities].”
-b. A level is a designation that any permanent can have. A Class retains its level even if it stops being a Class. Levels are not a copiable characteristic.
-c. The phrase “to gain a Class level” means “to activate an ability indicated by a class level bar”
-d. If a rule or effect refers to a permanent’s level and that permanent doesn’t have a level, it is treated as though its level is 1.
+- a. “[Cost]: Level N — [Abilities]” means “[Cost]: This Class’s level becomes N. Activate only if this Class is level N-1 and only as a sorcery” and “As long as this Class is level N or greater, it has [abilities].”
+- b. A level is a designation that any permanent can have. A Class retains its level even if it stops being a Class. Levels are not a copiable characteristic.
+- c. The phrase “to gain a Class level” means “to activate an ability indicated by a class level bar”
+- d. If a rule or effect refers to a permanent’s level and that permanent doesn’t have a level, it is treated as though its level is 1.
 
 ## 716.3
 

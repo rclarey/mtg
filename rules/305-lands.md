@@ -8,8 +8,8 @@ A player who has priority may play a land card from their hand during a main pha
 
 A player can normally play one land during their turn; however, continuous effects may increase this number.
 
-a. To determine whether a player can play a land, compare the number of lands the player can play this turn with the number of lands they have already played this turn (including lands played as special actions and lands played during the resolution of spells and abilities). If the number of lands the player can play is greater, the play is legal.
-b. A player can’t play a land, for any reason, if the number of lands the player can play this turn is equal to or less than the number of lands they have already played this turn. Ignore any part of an effect that instructs a player to do so.
+- a. To determine whether a player can play a land, compare the number of lands the player can play this turn with the number of lands they have already played this turn (including lands played as special actions and lands played during the resolution of spells and abilities). If the number of lands the player can play is greater, the play is legal.
+- b. A player can’t play a land, for any reason, if the number of lands the player can play this turn is equal to or less than the number of lands they have already played this turn. Ignore any part of an effect that instructs a player to do so.
 
 ## 305.3
 
@@ -23,7 +23,7 @@ Effects may also allow players to “put” lands onto the battlefield. This isn
 
 Land subtypes are always a single word and are listed after a long dash. Land subtypes are also called land types. Lands may have multiple subtypes. See rule 205.3i for the complete list of land types.
 
-l. : “Basic Land — Mountain” means the card is a land with the subtype Mountain.
+Example: “Basic Land — Mountain” means the card is a land with the subtype Mountain.
 
 ## 305.6
 

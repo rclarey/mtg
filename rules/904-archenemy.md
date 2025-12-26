@@ -8,8 +8,8 @@ In the Archenemy variant, a team of players faces off against a single opponent 
 
 The default setup for an Archenemy game is the Team vs. Team multiplayer variant (see rule 808) involving exactly two teams. The attack multiple players option (see rule 802) and the shared team turns option (see rule 805) are used; no other multiplayer options are used.
 
-a. One of the teams consists of exactly one player, who is designated the archenemy.
-b. The other team consists of any number of players.
+- a. One of the teams consists of exactly one player, who is designated the archenemy.
+- b. The other team consists of any number of players.
 
 ## 904.3
 
@@ -39,7 +39,7 @@ Any abilities of a face-up scheme card in the command zone function from that zo
 
 Immediately after the archenemy’s precombat main phase begins during each of their turns, that player moves the top card of their scheme deck off that scheme deck and turns it face up. This is called “setting that scheme in motion.” (See rule 701.32.) This turn-based action doesn’t use the stack. Abilities of that scheme card that trigger “When you set this scheme in motion” trigger.
 
-0.  If a non-ongoing scheme card is face up in the command zone, and no triggered abilities of any scheme are on the stack or waiting to be put on the stack, that scheme card is turned face down and put on the bottom of its owner’s scheme deck the next time a player would receive priority. (This is a state-based action. See rule 704.)
+- 0.  If a non-ongoing scheme card is face up in the command zone, and no triggered abilities of any scheme are on the stack or waiting to be put on the stack, that scheme card is turned face down and put on the bottom of its owner’s scheme deck the next time a player would receive priority. (This is a state-based action. See rule 704.)
 1.  Once an ongoing scheme card is set in motion, it remains face up in the command zone until an ability causes it to be abandoned (see rule 701.33).
 2.  Supervillain Rumble Option
 2.  As an alternative option, players may play a Free-for-All game in which each player has their own scheme deck. The attack multiple players option (see rule 802) is used; no other multiplayer options are used.

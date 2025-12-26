@@ -8,16 +8,16 @@ A player draws a card by putting the top card of their library into their hand. 
 
 Cards may only be drawn one at a time. If a player is instructed to draw multiple cards, that player performs that many individual card draws.
 
-a. An instruction to draw multiple cards can be modified by replacement effects that refer to the number of cards drawn. This modification occurs before considering any of the individual card draws. See rule 616.1g.
-b. Some effects say that a player can’t draw more than one card each turn. Such an effect applies to individual card draws. Instructions to draw multiple cards may still be partially carried out. However, if an effect offers the player a choice to draw multiple cards, the affected player can’t choose to do so. Similarly, the player can’t pay a cost that includes drawing multiple cards.
-c. If more than one player is instructed to draw cards, the active player performs all of their draws first, then each other player in turn order does the same.
-d. If more than one player is instructed to draw cards in a game that’s using the shared team turns option (such as a Two-Headed Giant game), first each player on the active team, in whatever order that team likes, performs their draws, then each player on each nonactive team in turn order does the same.
+- a. An instruction to draw multiple cards can be modified by replacement effects that refer to the number of cards drawn. This modification occurs before considering any of the individual card draws. See rule 616.1g.
+- b. Some effects say that a player can’t draw more than one card each turn. Such an effect applies to individual card draws. Instructions to draw multiple cards may still be partially carried out. However, if an effect offers the player a choice to draw multiple cards, the affected player can’t choose to do so. Similarly, the player can’t pay a cost that includes drawing multiple cards.
+- c. If more than one player is instructed to draw cards, the active player performs all of their draws first, then each other player in turn order does the same.
+- d. If more than one player is instructed to draw cards in a game that’s using the shared team turns option (such as a Two-Headed Giant game), first each player on the active team, in whatever order that team likes, performs their draws, then each player on each nonactive team in turn order does the same.
 
 ## 121.3
 
 If there are no cards in a player’s library and an effect offers that player the choice to draw a card, that player can choose to do so. However, if an effect says that a player can’t draw cards and another effect offers that player the choice to draw a card, that player can’t choose to do so.
 
-a. The same principles apply if the player who’s making the choice is not the player who would draw the card. If the latter player has no cards in their library, the choice can be taken. If an effect says that the latter player can’t draw a card, the choice can’t be taken.
+- a. The same principles apply if the player who’s making the choice is not the player who would draw the card. If the latter player has no cards in their library, the choice can be taken. If an effect says that the latter player can’t draw a card, the choice can’t be taken.
 
 ## 121.4
 
@@ -31,9 +31,9 @@ If an effect moves cards from a player’s library to that player’s hand witho
 
 Some effects replace card draws.
 
-a. An effect that replaces a card draw is applied even if no cards could be drawn because there are no cards in the affected player’s library.
-b. If an effect replaces a draw within a sequence of card draws, the replacement effect is completed before resuming the sequence.
-c. Some effects perform additional actions on a card after it’s drawn. If the draw is replaced, the additional action is not performed on any cards that are drawn as a result of that replacement effect or any subsequent replacement effects.
+- a. An effect that replaces a card draw is applied even if no cards could be drawn because there are no cards in the affected player’s library.
+- b. If an effect replaces a draw within a sequence of card draws, the replacement effect is completed before resuming the sequence.
+- c. Some effects perform additional actions on a card after it’s drawn. If the draw is replaced, the additional action is not performed on any cards that are drawn as a result of that replacement effect or any subsequent replacement effects.
 
 ## 121.7
 

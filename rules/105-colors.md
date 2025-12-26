@@ -8,9 +8,9 @@ There are five colors in the Magic game: white, blue, black, red, and green.
 
 An object can be one or more of the five colors, or it can be no color at all. An object is the color or colors of the mana symbols in its mana cost, regardless of the color of its frame. An object’s color or colors may also be defined by a color indicator or a characteristic-defining ability. See rule 202.2.
 
-a. A monocolored object is exactly one of the five colors.
-b. A multicolored object is two or more of the five colors.
-c. A colorless object has no color.
+- a. A monocolored object is exactly one of the five colors.
+- b. A multicolored object is two or more of the five colors.
+- c. A colorless object has no color.
 
 ## 105.3
 

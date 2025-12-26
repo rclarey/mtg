@@ -4,7 +4,7 @@
 
 The end step has no turn-based actions. Once it begins, the active player gets priority. (See rule 117, “Timing and Priority.”)
 
-a. Previously, abilities that triggered at the beginning of the end step were printed with the trigger condition “at end of turn.” Cards that were printed with that text have received errata in the Oracle card reference to say “at the beginning of the end step” or “at the beginning of the next end step.”
+- a. Previously, abilities that triggered at the beginning of the end step were printed with the trigger condition “at end of turn.” Cards that were printed with that text have received errata in the Oracle card reference to say “at the beginning of the end step” or “at the beginning of the next end step.”
 
 ## 513.2
 

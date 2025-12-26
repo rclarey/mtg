@@ -20,10 +20,10 @@ Previously, planeswalkers were subject to a “planeswalker uniqueness rule” t
 
 Loyalty is a characteristic only planeswalkers have.
 
-a. The loyalty of a planeswalker card not on the battlefield is equal to the number printed in its lower right corner.
-b. A planeswalker has the intrinsic ability “This permanent enters with a number of loyalty counters on it equal to its printed loyalty number.” This ability creates a replacement effect (see rule 614.1c).
-c. The loyalty of a planeswalker on the battlefield is equal to the number of loyalty counters on it.
-d. Each planeswalker has a number of loyalty abilities, which are activated abilities with loyalty symbols in their costs. Loyalty abilities follow special rules: A player may activate a loyalty ability of a permanent they control any time they have priority and the stack is empty during a main phase of their turn, but only if none of that permanent’s loyalty abilities have been activated that turn. See rule 606, “Loyalty Abilities.”
+- a. The loyalty of a planeswalker card not on the battlefield is equal to the number printed in its lower right corner.
+- b. A planeswalker has the intrinsic ability “This permanent enters with a number of loyalty counters on it equal to its printed loyalty number.” This ability creates a replacement effect (see rule 614.1c).
+- c. The loyalty of a planeswalker on the battlefield is equal to the number of loyalty counters on it.
+- d. Each planeswalker has a number of loyalty abilities, which are activated abilities with loyalty symbols in their costs. Loyalty abilities follow special rules: A player may activate a loyalty ability of a permanent they control any time they have priority and the stack is empty during a main phase of their turn, but only if none of that permanent’s loyalty abilities have been activated that turn. See rule 606, “Loyalty Abilities.”
 
 ## 306.6
 

@@ -8,4 +8,4 @@ If a player takes an illegal action or starts to take an action but can’t lega
 
 When reversing illegal spells and abilities, the player who had priority retains it and may take another action or pass. The player may redo the reversed action in a legal way or take any other action allowed by the rules.
 
-l. iplayer Rules
+- l. iplayer Rules

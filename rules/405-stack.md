@@ -24,11 +24,11 @@ When all players pass in succession, the top (last-added) spell or ability on th
 
 Some things that happen during the game don’t use the stack.
 
-a. Effects don’t go on the stack; they’re the result of spells and abilities resolving. Effects may create delayed triggered abilities, however, and these may go on the stack when they trigger (see rule 603.7).
-b. Static abilities continuously generate effects and don’t go on the stack. (See rule 604, “Handling Static Abilities.”) This includes characteristic-defining abilities such as “[This object] is red” (see rule 604.3).
-c. Mana abilities resolve immediately. If a mana ability both produces mana and has another effect, the mana is produced and the other effect happens immediately. If a player had priority before a mana ability was activated, that player gets priority after it resolves. (See rule 605, “Mana Abilities.”)
-d. Special actions don’t use the stack; they happen immediately. See rule 116, “Special Actions.”
-e. Turn-based actions don’t use the stack; they happen automatically when certain steps or phases begin. They’re dealt with before a player would receive priority (see rule 117.3a). Turn-based actions also happen automatically when each step and phase ends; no player receives priority afterward. See rule 703.
-f. State-based actions don’t use the stack; they happen automatically when certain conditions are met. See rule 704. They are dealt with before a player would receive priority. See rule 117.5.
-g. A player may concede the game at any time. That player leaves the game immediately. See rule 104.3a.
-h. If a player leaves a multiplayer game, objects may leave the game, cease to exist, change control, or be exiled as a result. These actions happen immediately. See rule 800.4a.
+- a. Effects don’t go on the stack; they’re the result of spells and abilities resolving. Effects may create delayed triggered abilities, however, and these may go on the stack when they trigger (see rule 603.7).
+- b. Static abilities continuously generate effects and don’t go on the stack. (See rule 604, “Handling Static Abilities.”) This includes characteristic-defining abilities such as “[This object] is red” (see rule 604.3).
+- c. Mana abilities resolve immediately. If a mana ability both produces mana and has another effect, the mana is produced and the other effect happens immediately. If a player had priority before a mana ability was activated, that player gets priority after it resolves. (See rule 605, “Mana Abilities.”)
+- d. Special actions don’t use the stack; they happen immediately. See rule 116, “Special Actions.”
+- e. Turn-based actions don’t use the stack; they happen automatically when certain steps or phases begin. They’re dealt with before a player would receive priority (see rule 117.3a). Turn-based actions also happen automatically when each step and phase ends; no player receives priority afterward. See rule 703.
+- f. State-based actions don’t use the stack; they happen automatically when certain conditions are met. See rule 704. They are dealt with before a player would receive priority. See rule 117.5.
+- g. A player may concede the game at any time. That player leaves the game immediately. See rule 104.3a.
+- h. If a player leaves a multiplayer game, objects may leave the game, cease to exist, change control, or be exiled as a result. These actions happen immediately. See rule 800.4a.

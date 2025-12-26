@@ -12,4 +12,4 @@ Emblems may be created in the command zone. See rule 114, “Emblems.”
 
 In the Planechase, Vanguard, Commander, Archenemy, and Conspiracy Draft casual variants, nontraditional Magic cards and/or specially designated cards start the game in the command zone. Each variant has its own rules regarding such cards. See section 9, “Casual Variants.”
 
-r.  Structure
+- r.  Structure

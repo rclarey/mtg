@@ -8,8 +8,8 @@ Attraction is an artifact subtype seen only on nontraditional Magic cards. Each 
 
 Attraction cards do not begin the game in a player’s deck and do not count toward maximum or minimum deck sizes. Rather, a player who chooses to play with Attraction cards begins the game with a supplementary Attraction deck that exists in the command zone. Each Attraction deck is shuffled before the game begins (see rule 103.3a).
 
-a. In constructed play, an Attraction deck must contain at least ten Attraction cards and each card in an Attraction deck must have a different English name.
-b. In limited play, an Attraction deck must contain at least three Attraction cards from that player’s card pool, and may contain multiple Attractions cards with the same English name.
+- a. In constructed play, an Attraction deck must contain at least ten Attraction cards and each card in an Attraction deck must have a different English name.
+- b. In limited play, an Attraction deck must contain at least three Attraction cards from that player’s card pool, and may contain multiple Attractions cards with the same English name.
 
 ## 717.3
 
@@ -27,4 +27,4 @@ Each Attraction card has an ability that begins with the word “Visit” follow
 
 If a card with an Astrotorium card back would be put into a zone other than the battlefield, exile, or the command zone from anywhere, instead its owner puts it into the command zone. This replacement effect may apply more than once to the same event. This is an exception to rule 614.5.
 
-a. Each card owned by the same player that has been put in the command zone this way is kept in a single face-up pile separate from any player’s Attraction deck. This pile is informally referred to as that player’s “junkyard.” The pile is not its own zone.
+- a. Each card owned by the same player that has been put in the command zone this way is kept in a single face-up pile separate from any player’s Attraction deck. This pile is informally referred to as that player’s “junkyard.” The pile is not its own zone.

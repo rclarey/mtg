@@ -12,8 +12,8 @@ Each team sits together on one side of the table. Each team decides the order in
 
 Any multiplayer options used are determined before play begins. The Team vs. Team variant uses the following default options.
 
-a. The attack multiple players option is used (see rule 802).
-b. The deploy creatures options and limited range of influence options usually aren’t used in the Team vs. Team variant.
+- a. The attack multiple players option is used (see rule 802).
+- b. The deploy creatures options and limited range of influence options usually aren’t used in the Team vs. Team variant.
 
 ## 808.4
 

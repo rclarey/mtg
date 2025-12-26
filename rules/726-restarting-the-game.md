@@ -4,13 +4,13 @@
 
 One card (Karn Liberated) restarts the game. A game that is restarted immediately ends. No players in that game win, lose, or draw that game. All players in that game when it ended then start a new game following the procedures set forth in rule 103, “Starting the Game,” with the following exception:
 
-a. The starting player in the new game is the player who controlled the spell or ability that restarted the game.
+- a. The starting player in the new game is the player who controlled the spell or ability that restarted the game.
 
 ## 726.2
 
 All Magic cards involved in the game that was restarted when it ended, including phased-out permanents and nontraditional Magic cards, are involved in the new game, even if those cards were not originally involved in the restarted game. Ownership of cards in the new game doesn’t change, regardless of their location when the new game begins.
 
-l. : A player casts Living Wish, bringing a creature card into the game from outside the game. Then that game is restarted. The creature card will be part of that player’s library when the new game begins.
+Example: A player casts Living Wish, bringing a creature card into the game from outside the game. Then that game is restarted. The creature card will be part of that player’s library when the new game begins.
 
 ## 726.3
 
@@ -24,7 +24,7 @@ The effect that restarts the game finishes resolving just before the first turn�
 
 Effects may exempt certain cards from the procedure that restarts the game. These cards are not in their owner’s deck as the new game begins.
 
-a. In a Commander game, a commander that has been exempted from the procedure that restarts the game won’t begin the new game in the command zone. However, it remains that deck’s commander for the new game. See rule 903, “Commander.”
+- a. In a Commander game, a commander that has been exempted from the procedure that restarts the game won’t begin the new game in the command zone. However, it remains that deck’s commander for the new game. See rule 903, “Commander.”
 
 ## 726.6
 

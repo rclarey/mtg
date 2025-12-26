@@ -12,7 +12,7 @@ A Planechase game may be a two-player game or a multiplayer game. The default mu
 
 In addition to the normal game materials, each player needs a supplementary planar deck of at least ten plane and/or phenomenon cards and the game needs one planar die. No more than two cards in a planar deck can be phenomenon cards. Each card in a planar deck must have a different English name. (See rule 311, “Planes,” and rule 312, “Phenomena.”)
 
-a. A planar die is a six-sided die. One face has the Planeswalker symbol. One face has the chaos symbol. The other faces are blank.
+- a. A planar die is a six-sided die. One face has the Planeswalker symbol. One face has the chaos symbol. The other faces are blank.
 
 ## 901.4
 
@@ -30,7 +30,7 @@ The owner of a plane or phenomenon card is the player who started the game with 
 
 Any abilities of a face-up plane card or phenomenon card in the command zone function from that zone. The card’s static abilities affect the game, its triggered abilities may trigger, and its activated abilities may be activated.
 
-a. A face-up plane card or phenomenon card that’s turned face down becomes a new object.
+- a. A face-up plane card or phenomenon card that’s turned face down becomes a new object.
 
 ## 901.8
 
@@ -40,13 +40,13 @@ Planechase games have an inherent triggered ability known as the “planeswalkin
 
 Any time the active player has priority and the stack is empty, but only during a main phase of their turn, that player may roll the planar die. Taking this action costs a player an amount of mana equal to the number of times they have previously taken this action on that turn. This is a special action and doesn’t use the stack. Note that this number won’t be equal to the number of times the player has rolled the planar die that turn if an effect has caused the player to roll the planar die that turn. (See rule 116.2i.)
 
-a. If the die roll is a blank face, nothing happens. The active player gets priority.
-b. If the die roll is the chaos symbol, chaos ensues (see rule 311.7). The active player gets priority.
-c. If the die roll is the Planeswalker symbol, the “planeswalking ability” triggers and is put on the stack. The active player gets priority. (See rule 901.8.)
-d. Rolling the planar die will cause any ability that triggers whenever a player rolls one or more dice to trigger. However, any effect that refers to a numerical result of a die roll, including ones that compare the results of that roll to other rolls or to a given number, ignores the rolling of the planar die. See 706, “Rolling a Die.”
-0.  When a player leaves the game, all objects owned by that player except abilities from phenomena leave the game. (See rule 800.4a.) If that includes a face-up plane card or phenomenon card, the planar controller turns the top card of their planar deck face up. This is not a state-based action. It happens as soon as the player leaves the game.
-0.  If a plane leaves the game while a “planeswalking ability” is on the stack, that ability ceases to exist.
-0.  Abilities from phenomena owned by a player who left the game remain on the stack controlled by the new planar controller.
+- a. If the die roll is a blank face, nothing happens. The active player gets priority.
+- b. If the die roll is the chaos symbol, chaos ensues (see rule 311.7). The active player gets priority.
+- c. If the die roll is the Planeswalker symbol, the “planeswalking ability” triggers and is put on the stack. The active player gets priority. (See rule 901.8.)
+- d. Rolling the planar die will cause any ability that triggers whenever a player rolls one or more dice to trigger. However, any effect that refers to a numerical result of a die roll, including ones that compare the results of that roll to other rolls or to a given number, ignores the rolling of the planar die. See 706, “Rolling a Die.”
+- 0.  When a player leaves the game, all objects owned by that player except abilities from phenomena leave the game. (See rule 800.4a.) If that includes a face-up plane card or phenomenon card, the planar controller turns the top card of their planar deck face up. This is not a state-based action. It happens as soon as the player leaves the game.
+- 0.  If a plane leaves the game while a “planeswalking ability” is on the stack, that ability ceases to exist.
+- 0.  Abilities from phenomena owned by a player who left the game remain on the stack controlled by the new planar controller.
 1.  After the game has started, if a player moves the top card of their planar deck off that planar deck and turns it face up, that player has “planeswalked.” Continuous effects with durations that last until a player planeswalks end. Abilities that trigger when a player planeswalks trigger. See rule 701.31.
 1.  A player may planeswalk as the result of the “planeswalking ability” (see rule 901.8), because the owner of a face-up plane card or phenomenon card leaves the game (see rule 901.10), or because a phenomenon’s triggered ability leaves the stack (see rule 704.6f). Abilities may also instruct a player to planeswalk.
 1.  The plane card that’s turned face up is the plane the player planeswalks to. The plane card or phenomenon card that’s turned face down, or that leaves the game, is the plane or phenomenon the player planeswalks away from.

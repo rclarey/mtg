@@ -12,15 +12,15 @@ When a creature spell resolves, its controller puts it onto the battlefield unde
 
 Creature subtypes are usually a single word long and are listed after a long dash: “Creature — Human Soldier,” “Artifact Creature — Golem,” and so on. Creature subtypes are also called creature types. Creatures may have multiple subtypes. See rule 205.3m for the complete list of creature types.
 
-l. : “Creature — Goblin Wizard” means the card is a creature with the subtypes Goblin and Wizard.
+Example: “Creature — Goblin Wizard” means the card is a creature with the subtypes Goblin and Wizard.
 
 ## 302.4
 
 Power and toughness are characteristics only creatures have.
 
-a. A creature’s power is the amount of damage it deals in combat.
-b. A creature’s toughness is the amount of damage needed to destroy it.
-c. To determine a creature’s power and toughness, start with the numbers printed in its lower right corner, then apply any applicable continuous effects. (See rule 613, “Interaction of Continuous Effects.”)
+- a. A creature’s power is the amount of damage it deals in combat.
+- b. A creature’s toughness is the amount of damage needed to destroy it.
+- c. To determine a creature’s power and toughness, start with the numbers printed in its lower right corner, then apply any applicable continuous effects. (See rule 613, “Interaction of Continuous Effects.”)
 
 ## 302.5
 

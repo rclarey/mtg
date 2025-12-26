@@ -225,33 +225,42 @@ fn format_section_as_markdown(
   blocks: List(String),
   nodes: List(MarkdownNode),
 ) -> String {
-  let lines =
-    list.flat_map(blocks, string.split(_, "\n"))
-    |> list.map(string.trim)
-    |> list.filter(fn(l) { l != "" })
-  case lines {
+  case blocks {
     [] -> render_markdown(list.reverse(nodes))
-    [line, ..rest] -> {
-      let more_nodes = case string.split_once(line, ". ") {
-        Ok(#(x, rest)) -> {
-          case string.length(x) {
-            3 -> [H1(line)]
-            5 -> [Text(rest), H2(x)]
-            _ -> {
-              let assert Ok(#(letter, rest)) =
-                string.pop_grapheme(string.drop_start(line, 5))
-              [ListItem(letter, string.drop_start(rest, 1))]
-            }
-          }
-        }
+    [block, ..rest] -> {
+      let lines =
+        string.split(block, "\n")
+        |> list.map(string.trim)
+        |> list.filter(fn(l) { l != "" })
+      let more_nodes = case lines {
+        [line] -> format_section_subrule(line)
+        [line, ..rest] ->
+          list.map(rest, Text) |> list.append(format_section_subrule(line))
+        _ -> panic as "???"
+      }
+      format_section_as_markdown(rest, list.append(more_nodes, nodes))
+    }
+  }
+}
+
+fn format_section_subrule(line: String) {
+  case string.split_once(line, ". ") {
+    Ok(#(x, rest)) -> {
+      case string.length(x) {
+        3 -> [H1(line)]
+        5 -> [Text(rest), H2(x)]
         _ -> {
           let assert Ok(#(letter, rest)) =
-            string.drop_start(line, 5)
-            |> string.pop_grapheme()
+            string.pop_grapheme(string.drop_start(line, 5))
           [ListItem(letter, string.drop_start(rest, 1))]
         }
       }
-      format_section_as_markdown(rest, list.append(more_nodes, nodes))
+    }
+    _ -> {
+      let assert Ok(#(letter, rest)) =
+        string.drop_start(line, 5)
+        |> string.pop_grapheme()
+      [ListItem(letter, string.drop_start(rest, 1))]
     }
   }
 }
@@ -302,13 +311,17 @@ fn render_markdown(nodes: List(MarkdownNode)) -> String {
       #(ListItem(char, text), ListItem(_, _)) -> {
         case char {
           "-" -> "- " <> text
-          _ -> char <> ". " <> text
+          "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ->
+            char <> ". " <> text
+          _ -> "- " <> char <> ". " <> text
         }
       }
       #(ListItem(char, text), _) -> {
         case char {
           "-" -> "- " <> text <> "\n"
-          _ -> char <> ". " <> text <> "\n"
+          "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ->
+            char <> ". " <> text <> "\n"
+          _ -> "- " <> char <> ". " <> text <> "\n"
         }
       }
       #(Text(text), _) -> text <> "\n"

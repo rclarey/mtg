@@ -20,8 +20,8 @@ Conspiracy cards have no subtypes.
 
 Conspiracy cards may have any number of static or triggered abilities. As long as a conspiracy card is face up in the command zone, its static abilities affect the game, and its triggered abilities may trigger.
 
-a. Abilities of conspiracy cards may affect the start-of-game procedure.
-b. Face-down conspiracy cards have no characteristics.
+- a. Abilities of conspiracy cards may affect the start-of-game procedure.
+- b. Face-down conspiracy cards have no characteristics.
 
 ## 315.6
 
@@ -31,4 +31,4 @@ The owner of a conspiracy card is the player who put it into the command zone at
 
 At any time, you may look at a face-down conspiracy card you control. You can’t look at face-down conspiracy cards controlled by other players.
 
-n. s
+- n. s

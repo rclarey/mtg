@@ -8,9 +8,9 @@ Each station card has a striated text box and may have one or more power/toughne
 
 A station symbol represents a static ability. The station symbol includes a single number followed by a plus sign, indicated here as “{N+}.” Any abilities printed within the same text box striation as a station symbol are part of its static ability. The same is true of any power and toughness boxes printed within that striation, indicated here as [P/T].
 
-a. “{N+}[abilities]” means “As long as this permanent has N or more charge counters on it, it has [abilities].”
-b. “{N+}[abilities][P/T]” means “As long as this permanent has N or more charge counters on it, it has [abilities] and is a creature with base power and toughness [P/T] in addition to its other types.”
-c. While in any zone other than the battlefield, station cards do not have power or toughness.
+- a. “{N+}[abilities]” means “As long as this permanent has N or more charge counters on it, it has [abilities].”
+- b. “{N+}[abilities][P/T]” means “As long as this permanent has N or more charge counters on it, it has [abilities] and is a creature with base power and toughness [P/T] in addition to its other types.”
+- c. While in any zone other than the battlefield, station cards do not have power or toughness.
 
 ## 721.3
 

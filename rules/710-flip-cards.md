@@ -4,15 +4,15 @@
 
 Flip cards have a two-part card frame on a single card. The text that appears right side up on the card defines the card’s normal characteristics. Additional alternative characteristics appear upside down on the card. The back of a flip card is the normal Magic card back.
 
-a. The top half of a flip card contains the card’s normal name, text box, type line, power, and toughness. The text box usually contains an ability that causes the permanent to “flip” if certain conditions are met.
-b. The bottom half of a flip card contains an alternative name, text box, type line, power, and toughness. These characteristics are used only if the permanent is on the battlefield and only if the permanent is flipped.
-c. A flip card’s color and mana cost don’t change if the permanent is flipped. Also, any changes to it by external effects will still apply.
+- a. The top half of a flip card contains the card’s normal name, text box, type line, power, and toughness. The text box usually contains an ability that causes the permanent to “flip” if certain conditions are met.
+- b. The bottom half of a flip card contains an alternative name, text box, type line, power, and toughness. These characteristics are used only if the permanent is on the battlefield and only if the permanent is flipped.
+- c. A flip card’s color and mana cost don’t change if the permanent is flipped. Also, any changes to it by external effects will still apply.
 
 ## 710.2
 
 In every zone other than the battlefield, and also on the battlefield before the permanent flips, a flip card has only the normal characteristics of the card. Once a permanent is flipped, its normal name, text box, type line, power, and toughness don’t apply and the alternative versions of those characteristics apply instead.
 
-l. : Akki Lavarunner is a nonlegendary creature that flips into a legendary creature named Tok-Tok, Volcano Born. An effect that says “Search your library for a legendary card” can’t find this flip card. An effect that says “Legendary creatures get +2/+2” doesn’t affect Akki Lavarunner, but it does affect Tok-Tok.
+Example: Akki Lavarunner is a nonlegendary creature that flips into a legendary creature named Tok-Tok, Volcano Born. An effect that says “Search your library for a legendary card” can’t find this flip card. An effect that says “Legendary creatures get +2/+2” doesn’t affect Akki Lavarunner, but it does affect Tok-Tok.
 
 ## 710.3
 

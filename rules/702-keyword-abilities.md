@@ -4,91 +4,98 @@
 
 Most abilities describe exactly what they do in the card’s rules text. Some, though, are very common or would require too much space to define on the card. In these cases, the object lists only the name of the ability as a “keyword”; sometimes reminder text summarizes the game rule.
 
-a. If an effect refers to a “[keyword ability] cost,” it refers only to the variable costs for that keyword.
-l. : Varolz, the Scar-Striped has an ability that says “Each creature card in your graveyard has scavenge. The scavenge cost is equal to its mana cost.” A creature card’s scavenge cost is an amount of mana equal to its mana cost, and the activation cost of the scavenge ability is that amount of mana plus “Exile this card from your graveyard.”
-b. An effect that grants an object a keyword ability may define a variable in that ability based on characteristics of that object or other information about the game state. For these abilities, the value of that variable is constantly reevaluated.
-l. : Volcano Hellion has the ability “This creature has echo {X}, where X is your life total.” If your life total is 10 when Volcano Hellion’s echo ability triggers but 5 when it resolves, the echo cost to pay is {5}.
-l. : Fire//Ice is a split card whose halves have the mana costs {1}{R} and {1}{U}. Past in Flames reads “Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost.” Fire//Ice has “Flashback {2}{U}{R}” while it is in your graveyard, but if you choose to cast Fire, the resulting spell has “Flashback {1}{R}.”
-c. An effect may state that “the same is true for” a list of keyword abilities or similar. If one of those keyword abilities has variants or variables and the effect grants that keyword or counters of that keyword to one or more objects and/or players, it grants each appropriate variant and variable of that keyword.
-l. : Concerted Effort is an enchantment that reads “At the beginning of each upkeep, creatures you control gain flying until end of turn if a creature you control has flying. The same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance.” As that triggered ability resolves, each landwalk and protection ability from among creatures you control is granted to each creature you control.
-d. An effect may refer to an object “with [keyword ability]” or “that has [keyword ability].” This means the same thing as an object “with a [keyword ability] ability” or an object “that has a [keyword ability] ability.”
+- a. If an effect refers to a “[keyword ability] cost,” it refers only to the variable costs for that keyword.
+
+Example: Varolz, the Scar-Striped has an ability that says “Each creature card in your graveyard has scavenge. The scavenge cost is equal to its mana cost.” A creature card’s scavenge cost is an amount of mana equal to its mana cost, and the activation cost of the scavenge ability is that amount of mana plus “Exile this card from your graveyard.”
+
+- b. An effect that grants an object a keyword ability may define a variable in that ability based on characteristics of that object or other information about the game state. For these abilities, the value of that variable is constantly reevaluated.
+
+Example: Fire//Ice is a split card whose halves have the mana costs {1}{R} and {1}{U}. Past in Flames reads “Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost.” Fire//Ice has “Flashback {2}{U}{R}” while it is in your graveyard, but if you choose to cast Fire, the resulting spell has “Flashback {1}{R}.”
+
+Example: Volcano Hellion has the ability “This creature has echo {X}, where X is your life total.” If your life total is 10 when Volcano Hellion’s echo ability triggers but 5 when it resolves, the echo cost to pay is {5}.
+
+- c. An effect may state that “the same is true for” a list of keyword abilities or similar. If one of those keyword abilities has variants or variables and the effect grants that keyword or counters of that keyword to one or more objects and/or players, it grants each appropriate variant and variable of that keyword.
+
+Example: Concerted Effort is an enchantment that reads “At the beginning of each upkeep, creatures you control gain flying until end of turn if a creature you control has flying. The same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance.” As that triggered ability resolves, each landwalk and protection ability from among creatures you control is granted to each creature you control.
+
+- d. An effect may refer to an object “with [keyword ability]” or “that has [keyword ability].” This means the same thing as an object “with a [keyword ability] ability” or an object “that has a [keyword ability] ability.”
 
 ## 702.2
 
 Deathtouch
 
-a. Deathtouch is a static ability.
-b. A creature with toughness greater than 0 that’s been dealt damage by a source with deathtouch since the last time state-based actions were checked is destroyed as a state-based action. See rule 704.
-c. Any nonzero amount of combat damage assigned to a creature by a source with deathtouch is considered to be lethal damage for the purposes of determining if excess damage is being dealt.
-d. The deathtouch rules function no matter what zone an object with deathtouch deals damage from.
-e. If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had deathtouch.
-f. Multiple instances of deathtouch on the same object are redundant.
+- a. Deathtouch is a static ability.
+- b. A creature with toughness greater than 0 that’s been dealt damage by a source with deathtouch since the last time state-based actions were checked is destroyed as a state-based action. See rule 704.
+- c. Any nonzero amount of combat damage assigned to a creature by a source with deathtouch is considered to be lethal damage for the purposes of determining if excess damage is being dealt.
+- d. The deathtouch rules function no matter what zone an object with deathtouch deals damage from.
+- e. If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had deathtouch.
+- f. Multiple instances of deathtouch on the same object are redundant.
 
 ## 702.3
 
 Defender
 
-a. Defender is a static ability.
-b. A creature with defender can’t attack.
-c. Multiple instances of defender on the same creature are redundant.
+- a. Defender is a static ability.
+- b. A creature with defender can’t attack.
+- c. Multiple instances of defender on the same creature are redundant.
 
 ## 702.4
 
 Double Strike
 
-a. Double strike is a static ability that modifies the rules for the combat damage step. (See rule 510, “Combat Damage Step.”)
-b. If at least one attacking or blocking creature has first strike (see rule 702.7) or double strike as the combat damage step begins, the only creatures that assign combat damage in that step are those with first strike or double strike. After that step, instead of proceeding to the end of combat step, the phase gets a second combat damage step. The only creatures that assign combat damage in that step are the remaining attackers and blockers that had neither first strike nor double strike as the first combat damage step began, as well as the remaining attackers and blockers that currently have double strike. After that step, the phase proceeds to the end of combat step.
-c. Removing double strike from a creature during the first combat damage step will stop it from assigning combat damage in the second combat damage step.
-d. Giving double strike to a creature with first strike after it has already dealt combat damage in the first combat damage step will allow the creature to assign combat damage in the second combat damage step.
-e. Multiple instances of double strike on the same creature are redundant.
+- a. Double strike is a static ability that modifies the rules for the combat damage step. (See rule 510, “Combat Damage Step.”)
+- b. If at least one attacking or blocking creature has first strike (see rule 702.7) or double strike as the combat damage step begins, the only creatures that assign combat damage in that step are those with first strike or double strike. After that step, instead of proceeding to the end of combat step, the phase gets a second combat damage step. The only creatures that assign combat damage in that step are the remaining attackers and blockers that had neither first strike nor double strike as the first combat damage step began, as well as the remaining attackers and blockers that currently have double strike. After that step, the phase proceeds to the end of combat step.
+- c. Removing double strike from a creature during the first combat damage step will stop it from assigning combat damage in the second combat damage step.
+- d. Giving double strike to a creature with first strike after it has already dealt combat damage in the first combat damage step will allow the creature to assign combat damage in the second combat damage step.
+- e. Multiple instances of double strike on the same creature are redundant.
 
 ## 702.5
 
 Enchant
 
-a. Enchant is a static ability, written “Enchant [object or player].” The enchant ability restricts what an Aura spell can target and what an Aura can enchant.
-b. For more information about Auras, see rule 303, “Enchantments.”
-c. If an Aura has multiple instances of enchant, all of them apply. The Aura’s target must follow the restrictions from all the instances of enchant. The Aura can enchant only objects or players that match all of its enchant abilities.
-d. Auras that can enchant a player can target and be attached to players. Such Auras can’t target permanents and can’t be attached to permanents.
+- a. Enchant is a static ability, written “Enchant [object or player].” The enchant ability restricts what an Aura spell can target and what an Aura can enchant.
+- b. For more information about Auras, see rule 303, “Enchantments.”
+- c. If an Aura has multiple instances of enchant, all of them apply. The Aura’s target must follow the restrictions from all the instances of enchant. The Aura can enchant only objects or players that match all of its enchant abilities.
+- d. Auras that can enchant a player can target and be attached to players. Such Auras can’t target permanents and can’t be attached to permanents.
 
 ## 702.6
 
 Equip
 
-a. Equip is an activated ability of Equipment cards. “Equip [cost]” means “[Cost]: Attach this permanent to target creature you control. Activate only as a sorcery.”
-b. For more information about Equipment, see rule 301, “Artifacts.”
-c. Equip abilities may further restrict what creatures may be chosen as legal targets. Such restrictions usually appear in the form “Equip [quality]” or “Equip [quality] creature.” These equip abilities may legally target only a creature that’s controlled by the player activating the ability and that has the chosen quality. Additional restrictions for an equip ability don’t restrict what the Equipment may be attached to.
-d. If a permanent has multiple equip abilities, any of its equip abilities may be activated.
-e. “Equip planeswalker” is a variant of the equip ability. “Equip planeswalker [cost]” means “[Cost]: Attach this permanent to target planeswalker you control as though that planeswalker were a creature. Activate only as a sorcery.”
+- a. Equip is an activated ability of Equipment cards. “Equip [cost]” means “[Cost]: Attach this permanent to target creature you control. Activate only as a sorcery.”
+- b. For more information about Equipment, see rule 301, “Artifacts.”
+- c. Equip abilities may further restrict what creatures may be chosen as legal targets. Such restrictions usually appear in the form “Equip [quality]” or “Equip [quality] creature.” These equip abilities may legally target only a creature that’s controlled by the player activating the ability and that has the chosen quality. Additional restrictions for an equip ability don’t restrict what the Equipment may be attached to.
+- d. If a permanent has multiple equip abilities, any of its equip abilities may be activated.
+- e. “Equip planeswalker” is a variant of the equip ability. “Equip planeswalker [cost]” means “[Cost]: Attach this permanent to target planeswalker you control as though that planeswalker were a creature. Activate only as a sorcery.”
 
 ## 702.7
 
 First Strike
 
-a. First strike is a static ability that modifies the rules for the combat damage step. (See rule 510, “Combat Damage Step.”)
-b. If at least one attacking or blocking creature has first strike or double strike (see rule 702.4) as the combat damage step begins, the only creatures that assign combat damage in that step are those with first strike or double strike. After that step, instead of proceeding to the end of combat step, the phase gets a second combat damage step. The only creatures that assign combat damage in that step are the remaining attackers and blockers that had neither first strike nor double strike as the first combat damage step began, as well as the remaining attackers and blockers that currently have double strike. After that step, the phase proceeds to the end of combat step.
-c. Giving first strike to a creature without it after combat damage has already been dealt in the first combat damage step won’t preclude that creature from assigning combat damage in the second combat damage step. Removing first strike from a creature after it has already dealt combat damage in the first combat damage step won’t allow it to also assign combat damage in the second combat damage step (unless the creature has double strike).
-d. Multiple instances of first strike on the same creature are redundant.
+- a. First strike is a static ability that modifies the rules for the combat damage step. (See rule 510, “Combat Damage Step.”)
+- b. If at least one attacking or blocking creature has first strike or double strike (see rule 702.4) as the combat damage step begins, the only creatures that assign combat damage in that step are those with first strike or double strike. After that step, instead of proceeding to the end of combat step, the phase gets a second combat damage step. The only creatures that assign combat damage in that step are the remaining attackers and blockers that had neither first strike nor double strike as the first combat damage step began, as well as the remaining attackers and blockers that currently have double strike. After that step, the phase proceeds to the end of combat step.
+- c. Giving first strike to a creature without it after combat damage has already been dealt in the first combat damage step won’t preclude that creature from assigning combat damage in the second combat damage step. Removing first strike from a creature after it has already dealt combat damage in the first combat damage step won’t allow it to also assign combat damage in the second combat damage step (unless the creature has double strike).
+- d. Multiple instances of first strike on the same creature are redundant.
 
 ## 702.8
 
 Flash
 
-a. Flash is a static ability that functions in any zone from which you could play the card it’s on. “Flash” means “You may play this card any time you could cast an instant.”
-b. Multiple instances of flash on the same object are redundant.
+- a. Flash is a static ability that functions in any zone from which you could play the card it’s on. “Flash” means “You may play this card any time you could cast an instant.”
+- b. Multiple instances of flash on the same object are redundant.
 
 ## 702.9
 
 Flying
 
-a. Flying is an evasion ability.
-b. A creature with flying can’t be blocked except by creatures with flying and/or reach. A creature with flying can block a creature with or without flying. (See rule 509, “Declare Blockers Step,” and rule 702.17, “Reach.”)
-c. Multiple instances of flying on the same creature are redundant.
-0.  Haste
-0.  Haste is a static ability.
-0.  If a creature has haste, it can attack even if it hasn’t been controlled by its controller continuously since their most recent turn began. (See rule 302.6.)
-0.  If a creature has haste, its controller can activate its activated abilities whose cost includes the tap symbol or the untap symbol even if that creature hasn’t been controlled by that player continuously since their most recent turn began. (See rule 302.6.)
-0.  Multiple instances of haste on the same creature are redundant.
+- a. Flying is an evasion ability.
+- b. A creature with flying can’t be blocked except by creatures with flying and/or reach. A creature with flying can block a creature with or without flying. (See rule 509, “Declare Blockers Step,” and rule 702.17, “Reach.”)
+- c. Multiple instances of flying on the same creature are redundant.
+- 0.  Haste
+- 0.  Haste is a static ability.
+- 0.  If a creature has haste, it can attack even if it hasn’t been controlled by its controller continuously since their most recent turn began. (See rule 302.6.)
+- 0.  If a creature has haste, its controller can activate its activated abilities whose cost includes the tap symbol or the untap symbol even if that creature hasn’t been controlled by that player continuously since their most recent turn began. (See rule 302.6.)
+- 0.  Multiple instances of haste on the same creature are redundant.
 1.  Hexproof
 1.  Hexproof is a static ability.
 1.  “Hexproof” on a permanent means “This permanent can’t be the target of spells or abilities your opponents control.”
@@ -111,7 +118,9 @@ c. Multiple instances of flying on the same creature are redundant.
 4.  Landwalk is an evasion ability.
 4.  A creature with landwalk can’t be blocked as long as the defending player controls at least one land with the specified land type (as in “islandwalk”), with the specified type or supertype (as in “artifact landwalk”), without the specified type or supertype (as in “nonbasic landwalk”), or with both the specified type or supertype and the specified subtype (as in “snow swampwalk”). (See rule 509, “Declare Blockers Step.”)
 4.  Landwalk abilities don’t “cancel” one another.
-l. : If a player controls a snow Forest, that player can’t block an attacking creature with snow forestwalk even if they also control a creature with snow forestwalk.
+
+Example: If a player controls a snow Forest, that player can’t block an attacking creature with snow forestwalk even if they also control a creature with snow forestwalk.
+
 4.  Multiple instances of the same kind of landwalk on the same creature are redundant.
 5.  Lifelink
 5.  Lifelink is a static ability.
@@ -119,7 +128,9 @@ l. : If a player controls a snow Forest, that player can’t block an attacking 
 5.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had lifelink.
 5.  The lifelink rules function no matter what zone an object with lifelink deals damage from.
 5.  If multiple sources with lifelink deal damage at the same time, they cause separate life gain events (see rules 119.9–10).
-l. : A player controls Ajani’s Pridemate, which reads “Whenever you gain life, put a +1/+1 counter on this creature,” and two creatures with lifelink. The creatures with lifelink deal combat damage simultaneously. Ajani’s Pridemate’s ability triggers twice.
+
+Example: A player controls Ajani’s Pridemate, which reads “Whenever you gain life, put a +1/+1 counter on this creature,” and two creatures with lifelink. The creatures with lifelink deal combat damage simultaneously. Ajani’s Pridemate’s ability triggers twice.
+
 5.  Multiple instances of lifelink on the same object are redundant.
 6.  Protection
 6.  Protection is a static ability, written “Protection from [quality].” This quality is usually a color (as in “protection from black”) but can be any characteristic value or information. If the quality happens to be a card name, it is treated as such only if the protection ability specifies that the quality is a name. If the quality is a card type, subtype, or supertype, the ability applies to sources that are permanents with that card type, subtype, or supertype and to any sources not on the battlefield that are of that card type, subtype, or supertype. This is an exception to rule 109.2.
@@ -146,18 +157,23 @@ l. : A player controls Ajani’s Pridemate, which reads “Whenever you gain lif
 9.  Trample
 9.  Trample is a static ability that modifies the rules for assigning an attacking creature’s combat damage. The ability has no effect when a creature with trample is blocking or is dealing noncombat damage. (See rule 510, “Combat Damage Step.”)
 9.  The controller of an attacking creature with trample first assigns damage to the creature(s) blocking it. Once all those blocking creatures are assigned lethal damage, any excess damage is assigned as its controller chooses among those blocking creatures and the player, planeswalker, or battle the creature is attacking. When checking for assigned lethal damage, take into account damage already marked on the creature and damage from other creatures that’s being assigned during the same combat damage step, but not any abilities or effects that might change the amount of damage that’s actually dealt. The attacking creature’s controller need not assign lethal damage to all those blocking creatures but in that case can’t assign any damage to the player or planeswalker it’s attacking.
-l. : A 2/2 creature that can block an additional creature blocks two attackers: a 1/1 with no abilities and a 3/3 with trample. The active player could assign 1 damage from the first attacker and 1 damage from the second to the blocking creature, and 2 damage to the defending player from the creature with trample.
-l. : A 6/6 green creature with trample is blocked by a 2/2 creature with protection from green. The attacking creature’s controller must assign at least 2 damage to the blocker, even though that damage will be prevented by the blocker’s protection ability. The attacking creature’s controller can divide the rest of the damage as they choose between the blocking creature and the defending player.
+
+Example: A 6/6 green creature with trample is blocked by a 2/2 creature with protection from green. The attacking creature’s controller must assign at least 2 damage to the blocker, even though that damage will be prevented by the blocker’s protection ability. The attacking creature’s controller can divide the rest of the damage as they choose between the blocking creature and the defending player.
+
+Example: A 2/2 creature that can block an additional creature blocks two attackers: a 1/1 with no abilities and a 3/3 with trample. The active player could assign 1 damage from the first attacker and 1 damage from the second to the blocking creature, and 2 damage to the defending player from the creature with trample.
+
 9.  Trample over planeswalkers is a variant of trample that modifies the rules for assigning combat damage to planeswalkers. The controller of a creature with trample over planeswalkers assigns that creature’s combat damage as described in rule 702.19b, with one exception. If that creature is attacking a planeswalker, after lethal damage is assigned to all blocking creatures and damage at least equal to the loyalty of the planeswalker the creature is attacking is assigned to that planeswalker, further excess damage may be assigned as the attacking creature’s controller chooses among those blocking creatures, that planeswalker, and that planeswalker’s controller. When checking for assigned damage equal to a planeswalker’s loyalty, take into account damage from other creatures that’s being assigned during the same combat damage step, but not any abilities or effects that might change the amount of damage that’s actually dealt.
-l. : A player controls a planeswalker with three loyalty counters that is being attacked by a 1/1 with no abilities and a 7/7 with trample over planeswalkers. The active player could assign 1 damage from the first attacker and 2 damage from the second to the planeswalker and 5 damage to the defending player from the creature with trample over planeswalkers.
+
+Example: A player controls a planeswalker with three loyalty counters that is being attacked by a 1/1 with no abilities and a 7/7 with trample over planeswalkers. The active player could assign 1 damage from the first attacker and 2 damage from the second to the planeswalker and 5 damage to the defending player from the creature with trample over planeswalkers.
+
 9.  If an attacking creature with trample or trample over planeswalkers is blocked, but there are no creatures blocking it when damage is assigned, its damage is assigned to the defending player and/or planeswalker as though all blocking creatures have been assigned lethal damage.
 9.  If a creature with trample over planeswalkers is attacking a planeswalker and that planeswalker is removed from combat, the creature’s damage may be assigned to the defending player once all blocking creatures have been dealt lethal damage or, if there are no blocking creatures when damage is assigned, all its damage is assigned to the defending player. This is an exception to rule 506.4c, and it does not cause the creature to be attacking that player.
 9.  If a creature without trample over planeswalkers is attacking a planeswalker, none of its combat damage can be assigned to the defending player, even if that planeswalker has been removed from combat or the damage the attacking creature could assign is greater than the planeswalker’s loyalty.
 9.  Multiple instances of trample on the same creature are redundant. Multiple instances of trample over planeswalkers on the same creature are redundant.
-0.  Vigilance
-0.  Vigilance is a static ability that modifies the rules for the declare attackers step.
-0.  Attacking doesn’t cause creatures with vigilance to tap. (See rule 508, “Declare Attackers Step.”)
-0.  Multiple instances of vigilance on the same creature are redundant.
+- 0.  Vigilance
+- 0.  Vigilance is a static ability that modifies the rules for the declare attackers step.
+- 0.  Attacking doesn’t cause creatures with vigilance to tap. (See rule 508, “Declare Attackers Step.”)
+- 0.  Multiple instances of vigilance on the same creature are redundant.
 1.  Ward
 1.  Ward is a triggered ability. Ward [cost] means “Whenever this permanent becomes the target of a spell or ability an opponent controls, counter that spell or ability unless that player pays [cost].”
 1.  Some ward abilities include an X in their cost and state what X is equal to. This value is determined at the time the ability resolves, not locked in as the ability triggers.
@@ -170,7 +186,9 @@ l. : A player controls a planeswalker with three loyalty counters that is being 
 2.  An attacking creature that’s removed from combat is also removed from the band it was in.
 2.  Banding doesn’t cause attacking creatures to share abilities, nor does it remove any abilities. The attacking creatures in a band are separate permanents.
 2.  If an attacking creature becomes blocked by a creature, each other creature in the same band as the attacking creature becomes blocked by that same blocking creature.
-l. : A player attacks with a band consisting of a creature with flying and a creature with swampwalk. The defending player, who controls a Swamp, can block the flying creature if able. If they do, then the creature with swampwalk will also become blocked by the blocking creature(s).
+
+Example: A player attacks with a band consisting of a creature with flying and a creature with swampwalk. The defending player, who controls a Swamp, can block the flying creature if able. If they do, then the creature with swampwalk will also become blocked by the blocking creature(s).
+
 2.  If one member of a band would become blocked due to an effect, the entire band becomes blocked.
 2.  During the combat damage step, if an attacking creature is being blocked by a creature with banding, or by both a [quality] creature with “bands with other [quality]” and another [quality] creature, the defending player (rather than the active player) chooses how the attacking creature’s damage is assigned. That player can divide that creature’s combat damage as they choose among any creatures blocking it. This is an exception to the procedure described in rule 510.1c.
 2.  During the combat damage step, if a blocking creature is blocking a creature with banding, or both a [quality] creature with “bands with other [quality]” and another [quality] creature, the active player (rather than the defending player) chooses how the blocking creature’s damage is assigned. That player can divide that creature’s combat damage as they choose among any creatures it’s blocking. This is an exception to the procedure described in rule 510.1d.
@@ -181,18 +199,26 @@ l. : A player attacks with a band consisting of a creature with flying and a cre
 3.  If a creature has multiple instances of rampage, each triggers separately.
 4.  Cumulative Upkeep
 4.  Cumulative upkeep is a triggered ability that imposes an increasing cost on a permanent. “Cumulative upkeep [cost]” means “At the beginning of your upkeep, if this permanent is on the battlefield, put an age counter on this permanent. Then you may pay [cost] for each age counter on it. If you don’t, sacrifice it.” If [cost] has choices associated with it, each choice is made separately for each age counter, then either the entire set of costs is paid, or none of them is paid. Partial payments aren’t allowed.
-l. : A creature has “Cumulative upkeep {W} or {U}” and two age counters on it. When its ability next triggers and resolves, the creature’s controller puts an age counter on it and then may pay {W}{W}{W}, {W}{W}{U}, {W}{U}{U}, or {U}{U}{U} to keep the creature on the battlefield.
-l. : A creature has “Cumulative upkeep—Sacrifice a creature” and one age counter on it. When its ability next triggers and resolves, its controller can’t choose the same creature to sacrifice twice. Either two different creatures must be sacrificed, or the creature with cumulative upkeep must be sacrificed.
+
+Example: A creature has “Cumulative upkeep—Sacrifice a creature” and one age counter on it. When its ability next triggers and resolves, its controller can’t choose the same creature to sacrifice twice. Either two different creatures must be sacrificed, or the creature with cumulative upkeep must be sacrificed.
+
+Example: A creature has “Cumulative upkeep {W} or {U}” and two age counters on it. When its ability next triggers and resolves, the creature’s controller puts an age counter on it and then may pay {W}{W}{W}, {W}{W}{U}, {W}{U}{U}, or {U}{U}{U} to keep the creature on the battlefield.
+
 4.  If a permanent has multiple instances of cumulative upkeep, each triggers separately. However, the age counters are not connected to any particular ability; each cumulative upkeep ability will count the total number of age counters on the permanent at the time that ability resolves.
-l. : A creature has two instances of “Cumulative upkeep—Pay 1 life.” The creature has no age counters, and both cumulative upkeep abilities trigger. When the first ability resolves, the controller adds a counter and then chooses to pay 1 life. When the second ability resolves, the controller adds another counter and then chooses to pay an additional 2 life.
+
+Example: A creature has two instances of “Cumulative upkeep—Pay 1 life.” The creature has no age counters, and both cumulative upkeep abilities trigger. When the first ability resolves, the controller adds a counter and then chooses to pay 1 life. When the second ability resolves, the controller adds another counter and then chooses to pay an additional 2 life.
+
 5.  Flanking
 5.  Flanking is a triggered ability that triggers during the declare blockers step. (See rule 509, “Declare Blockers Step.”) “Flanking” means “Whenever this creature becomes blocked by a creature without flanking, the blocking creature gets -1/-1 until end of turn.”
 5.  If a creature has multiple instances of flanking, each triggers separately.
 6.  Phasing
 6.  Phasing is a static ability that modifies the rules of the untap step. During each player’s untap step, before the active player untaps permanents, all phased-in permanents with phasing that player controls “phase out.” Simultaneously, all phased-out permanents that had phased out under that player’s control “phase in.”
 6.  If a permanent phases out, its status changes to “phased out.” Except for rules and effects that specifically mention phased-out permanents, a phased-out permanent is treated as though it does not exist. It can’t affect or be affected by anything else in the game. A permanent that phases out is removed from combat. (See rule 506.4.)
-l. : You control three creatures, one of which is phased out. You cast a spell that says “Draw a card for each creature you control.” You draw two cards.
-l. : You control a phased-out creature. You cast a spell that says “Destroy all creatures.” The phased-out creature is not destroyed.
+
+Example: You control a phased-out creature. You cast a spell that says “Destroy all creatures.” The phased-out creature is not destroyed.
+
+Example: You control three creatures, one of which is phased out. You cast a spell that says “Draw a card for each creature you control.” You draw two cards.
+
 6.  If a permanent phases in, its status changes to “phased in.” The game once again treats it as though it exists.
 6.  The phasing event doesn’t actually cause a permanent to change zones or control, even though it’s treated as though it’s not on the battlefield and not under its controller’s control while it’s phased out. Zone-change triggers don’t trigger when a permanent phases in or out. Tokens continue to exist on the battlefield while phased out. Counters and stickers remain on a permanent while it’s phased out. Effects that check a phased-in permanent’s history won’t treat the phasing event as having caused the permanent to leave or enter the battlefield or its controller’s control.
 6.  If a continuous effect generated by the resolution of a spell or ability modifies the characteristics or changes the controller of any objects, a phased-out permanent won’t be included in the set of affected objects. This includes continuous effects that reference the permanent specifically, unless they also specifically refer to the permanent as phased out.
@@ -218,9 +244,9 @@ l. : You control a phased-out creature. You cast a spell that says “Destroy al
 9.  Some cards have abilities that trigger whenever a player “cycles or discards” a card. These abilities trigger only once when a card is cycled.
 9.  Typecycling is a variant of the cycling ability. “[Type]cycling [cost]” means “[Cost], Discard this card: Search your library for a [type] card, reveal it, and put it into your hand. Then shuffle your library.” This type is usually a subtype (as in “mountaincycling”) but can be any card type, subtype, supertype, or combination thereof (as in “basic landcycling”).
 9.  Typecycling abilities are cycling abilities, and typecycling costs are cycling costs. Any cards that trigger when a player cycles a card will trigger when a card is discarded to pay an activation cost of a typecycling ability. Any effect that stops players from cycling cards will stop players from activating cards’ typecycling abilities. Any effect that increases or reduces a cycling cost will increase or reduce a typecycling cost. Any effect that looks for a card with cycling will find a card with typecycling.
-0.  Echo
-0.  Echo is a triggered ability. “Echo [cost]” means “At the beginning of your upkeep, if this permanent came under your control since the beginning of your last upkeep, sacrifice it unless you pay [cost].”
-0.  Urza block cards with the echo ability were printed without an echo cost. These cards have been given errata in the Oracle card reference; each one now has an echo cost equal to its mana cost.
+- 0.  Echo
+- 0.  Echo is a triggered ability. “Echo [cost]” means “At the beginning of your upkeep, if this permanent came under your control since the beginning of your last upkeep, sacrifice it unless you pay [cost].”
+- 0.  Urza block cards with the echo ability were printed without an echo cost. These cards have been given errata in the Oracle card reference; each one now has an echo cost equal to its mana cost.
 1.  Horsemanship
 1.  Horsemanship is an evasion ability.
 1.  A creature with horsemanship can’t be blocked by creatures without horsemanship. A creature with horsemanship can block a creature with or without horsemanship. (See rule 509, “Declare Blockers Step.”)
@@ -260,9 +286,9 @@ l. : You control a phased-out creature. You cast a spell that says “Destroy al
 9.  Provoke
 9.  Provoke is a triggered ability. “Provoke” means “Whenever this creature attacks, you may choose to have target creature defending player controls block this creature this combat if able. If you do, untap that creature.”
 9.  If a creature has multiple instances of provoke, each triggers separately.
-0.  Storm
-0.  Storm is a triggered ability that functions on the stack. “Storm” means “When you cast this spell, copy it for each other spell that was cast before it this turn. If the spell has any targets, you may choose new targets for any of the copies.”
-0.  If a spell has multiple instances of storm, each triggers separately.
+- 0.  Storm
+- 0.  Storm is a triggered ability that functions on the stack. “Storm” means “When you cast this spell, copy it for each other spell that was cast before it this turn. If the spell has any targets, you may choose new targets for any of the copies.”
+- 0.  If a spell has multiple instances of storm, each triggers separately.
 1.  Affinity
 1.  Affinity is a static ability that functions while the spell with affinity is on the stack. “Affinity for [text]” means “This spell costs {1} less to cast for each [text] you control.”
 1.  If a spell has multiple instances of affinity, each of them applies.
@@ -276,7 +302,9 @@ l. : You control a phased-out creature. You cast a spell that says “Destroy al
 4.  Sunburst is a static ability that functions as an object is entering the battlefield. “Sunburst” means “If this object is entering as a creature, ignoring any type-changing effects that would affect it, it enters with a +1/+1 counter on it for each color of mana spent to cast it. Otherwise, it enters with a charge counter on it for each color of mana spent to cast it.”
 4.  Sunburst adds counters only if the object with sunburst is entering the battlefield from the stack as a resolving spell and only if one or more colored mana was spent on its costs, including additional or alternative costs.
 4.  Sunburst can also be used to set a variable number for another ability. If the keyword is used in this way, it doesn’t matter whether the ability is on a creature spell or on a noncreature spell.
-l. : The ability “Modular—Sunburst” means “This permanent enters with a +1/+1 counter on it for each color of mana spent to cast it” and “When this permanent is put into a graveyard from the battlefield, you may put a +1/+1 counter on target artifact creature for each +1/+1 counter on this permanent.”
+
+Example: The ability “Modular—Sunburst” means “This permanent enters with a +1/+1 counter on it for each color of mana spent to cast it” and “When this permanent is put into a graveyard from the battlefield, you may put a +1/+1 counter on target artifact creature for each +1/+1 counter on this permanent.”
+
 4.  If an object has multiple instances of sunburst, each one works separately.
 5.  Bushido
 5.  Bushido is a triggered ability. “Bushido N” means “Whenever this creature blocks or becomes blocked, it gets +N/+N until end of turn.” (See rule 509, “Declare Blockers Step.”)
@@ -286,10 +314,14 @@ l. : The ability “Modular—Sunburst” means “This permanent enters with a 
 6.  If a permanent has multiple instances of soulshift, each triggers separately.
 7.  Splice
 7.  Splice is a static ability that functions while a card is in your hand. “Splice onto [quality] [cost]” means “You may reveal this card from your hand as you cast a [quality] spell. If you do, that spell gains the text of this card’s rules text and you pay [cost] as an additional cost to cast that spell.” Paying a card’s splice cost follows the rules for paying additional costs in rules 601.2b and 601.2f–h.
-l. : Since the card with splice remains in the player’s hand, it can later be cast normally or spliced onto another spell. It can even be discarded to pay a “discard a card” cost of the spell it’s spliced onto.
+
+Example: Since the card with splice remains in the player’s hand, it can later be cast normally or spliced onto another spell. It can even be discarded to pay a “discard a card” cost of the spell it’s spliced onto.
+
 7.  You can’t choose to use a splice ability if you can’t make the required choices (targets, etc.) for that card’s rules text. You can’t splice any one card onto the same spell more than once. If you’re splicing more than one card onto a spell, reveal them all at once and choose the order in which their effects will happen. The effects of the main spell must happen first.
 7.  The spell has the characteristics of the main spell, plus the rules text of each of the spliced cards. This is a text-changing effect (see rule 612, “Text-Changing Effects”). The spell doesn’t gain any other characteristics (name, mana cost, color, supertypes, card types, subtypes, etc.) of the spliced cards. Text gained by the spell that refers to a card by name refers to the spell on the stack, not the card from which the text was copied.
-l. : Glacial Ray is a red card with splice onto Arcane that reads, “Glacial Ray deals 2 damage to any target.” Suppose Glacial Ray is spliced onto Reach Through Mists, a blue spell. The spell is still blue, and Reach Through Mists deals the damage. This means that the ability can target a creature with protection from red and deal 2 damage to that creature.
+
+Example: Glacial Ray is a red card with splice onto Arcane that reads, “Glacial Ray deals 2 damage to any target.” Suppose Glacial Ray is spliced onto Reach Through Mists, a blue spell. The spell is still blue, and Reach Through Mists deals the damage. This means that the ability can target a creature with protection from red and deal 2 damage to that creature.
+
 7.  Choose targets for the added text normally (see rule 601.2c). Note that a spell with one or more targets won’t resolve if all of its targets are illegal on resolution.
 7.  The spell loses any splice changes once it leaves the stack for any reason.
 8.  Offering
@@ -301,13 +333,15 @@ l. : Glacial Ray is a red card with splice onto Arcane that reads, “Glacial Ra
 9.  The card with ninjutsu remains revealed from the time the ability is announced until the ability leaves the stack.
 9.  A ninjutsu ability may be activated only while a creature on the battlefield is unblocked (see rule 509.1h). The creature with ninjutsu is put onto the battlefield unblocked. It will be attacking the same player, planeswalker, or battle as the creature that was returned to its owner’s hand.
 9.  Commander ninjutsu is a variant of the ninjutsu ability that also functions while the card with commander ninjutsu is in the command zone. “Commander ninjutsu [cost]” means “[Cost], Reveal this card from your hand or from the command zone, Return an unblocked attacking creature you control to its owner’s hand: Put this card onto the battlefield tapped and attacking.”
-0.  Epic
-0.  Epic represents two spell abilities, one of which creates a delayed triggered ability. “Epic” means “For the rest of the game, you can’t cast spells,” and “At the beginning of each of your upkeeps for the rest of the game, copy this spell except for its epic ability. If the spell has any targets, you may choose new targets for the copy.” See rule 707.10.
-0.  A player can’t cast spells once a spell with epic they control resolves, but effects (such as the epic ability itself) can still put copies of spells onto the stack.
+- 0.  Epic
+- 0.  Epic represents two spell abilities, one of which creates a delayed triggered ability. “Epic” means “For the rest of the game, you can’t cast spells,” and “At the beginning of each of your upkeeps for the rest of the game, copy this spell except for its epic ability. If the spell has any targets, you may choose new targets for the copy.” See rule 707.10.
+- 0.  A player can’t cast spells once a spell with epic they control resolves, but effects (such as the epic ability itself) can still put copies of spells onto the stack.
 1.  Convoke
 1.  Convoke is a static ability that functions while the spell with convoke is on the stack. “Convoke” means “For each colored mana in this spell’s total cost, you may tap an untapped creature of that color you control rather than pay that mana. For each generic mana in this spell’s total cost, you may tap an untapped creature you control rather than pay that mana.”
 1.  The convoke ability isn’t an additional or alternative cost and applies only after the total cost of the spell with convoke is determined.
-l. : Heartless Summoning says, in part, “Creature spells you cast cost {2} less to cast.” You control Heartless Summoning and cast Siege Wurm, a spell with convoke that costs {5}{G}{G}. The total cost to cast Siege Wurm is {3}{G}{G}. After activating mana abilities, you pay that total cost. You may tap up to two green creatures and up to three other creatures to pay that cost, and the remainder is paid with mana.
+
+Example: Heartless Summoning says, in part, “Creature spells you cast cost {2} less to cast.” You control Heartless Summoning and cast Siege Wurm, a spell with convoke that costs {5}{G}{G}. The total cost to cast Siege Wurm is {3}{G}{G}. After activating mana abilities, you pay that total cost. You may tap up to two green creatures and up to three other creatures to pay that cost, and the remainder is paid with mana.
+
 1.  A creature tapped to pay for mana in a spell’s total cost this way is said to have “convoked” that spell.
 1.  Multiple instances of convoke on the same spell are redundant.
 2.  Dredge
@@ -335,9 +369,9 @@ l. : Heartless Summoning says, in part, “Creature spells you cast cost {2} les
 8.  If a permanent has multiple instances of graft, each one works separately.
 9.  Recover
 9.  Recover is a triggered ability that functions only while the card with recover is in a player’s graveyard. “Recover [cost]” means “When a creature is put into your graveyard from the battlefield, you may pay [cost]. If you do, return this card from your graveyard to your hand. Otherwise, exile this card.”
-0.  Ripple
-0.  Ripple is a triggered ability that functions only while the card with ripple is on the stack. “Ripple N” means “When you cast this spell, you may reveal the top N cards of your library, or, if there are fewer than N cards in your library, you may reveal all the cards in your library. If you reveal cards from your library this way, you may cast any of those cards with the same name as this spell without paying their mana costs, then put all revealed cards not cast this way on the bottom of your library in any order.”
-0.  If a spell has multiple instances of ripple, each triggers separately.
+- 0.  Ripple
+- 0.  Ripple is a triggered ability that functions only while the card with ripple is on the stack. “Ripple N” means “When you cast this spell, you may reveal the top N cards of your library, or, if there are fewer than N cards in your library, you may reveal all the cards in your library. If you reveal cards from your library this way, you may cast any of those cards with the same name as this spell without paying their mana costs, then put all revealed cards not cast this way on the bottom of your library in any order.”
+- 0.  If a spell has multiple instances of ripple, each triggers separately.
 1.  Split Second
 1.  Split second is a static ability that functions only while the spell with split second is on the stack. “Split second” means “As long as this spell is on the stack, players can’t cast other spells or activate abilities that aren’t mana abilities.”
 1.  Players may activate mana abilities and take special actions while a spell with split second is on the stack. Triggered abilities trigger and are put on the stack as normal while a spell with split second is on the stack.
@@ -358,8 +392,11 @@ l. : Heartless Summoning says, in part, “Creature spells you cast cost {2} les
 5.  Aura Swap
 5.  Aura swap is an activated ability of some Aura cards. “Aura swap [cost]” means “[Cost]: You may exchange this permanent with an Aura card in your hand.”
 5.  If either half of the exchange can’t be completed, the ability has no effect.
-l. : You activate the aura swap ability of an Aura. The only Aura card in your hand can’t enchant the permanent that’s enchanted by the Aura with aura swap. The ability has no effect.
-l. : You activate the aura swap ability of an Aura that you control but you don’t own. The ability has no effect.
+
+Example: You activate the aura swap ability of an Aura that you control but you don’t own. The ability has no effect.
+
+Example: You activate the aura swap ability of an Aura. The only Aura card in your hand can’t enchant the permanent that’s enchanted by the Aura with aura swap. The ability has no effect.
+
 6.  Delve
 6.  Delve is a static ability that functions while the spell with delve is on the stack. “Delve” means “For each generic mana in this spell’s total cost, you may exile a card from your graveyard rather than pay that mana.”
 6.  The delve ability isn’t an additional or alternative cost and applies only after the total cost of the spell with delve is determined.
@@ -374,9 +411,9 @@ l. : You activate the aura swap ability of an Aura that you control but you don�
 9.  Gravestorm
 9.  Gravestorm is a triggered ability that functions on the stack. “Gravestorm” means “When you cast this spell, copy it for each permanent that was put into a graveyard from the battlefield this turn. If the spell has any targets, you may choose new targets for any of the copies.”
 9.  If a spell has multiple instances of gravestorm, each triggers separately.
-0.  Poisonous
-0.  Poisonous is a triggered ability. “Poisonous N” means “Whenever this creature deals combat damage to a player, that player gets N poison counters.” (For information about poison counters, see rule 104.3d.)
-0.  If a creature has multiple instances of poisonous, each triggers separately.
+- 0.  Poisonous
+- 0.  Poisonous is a triggered ability. “Poisonous N” means “Whenever this creature deals combat damage to a player, that player gets N poison counters.” (For information about poison counters, see rule 104.3d.)
+- 0.  If a creature has multiple instances of poisonous, each triggers separately.
 1.  Transfigure
 1.  Transfigure is an activated ability. “Transfigure [cost]” means “[Cost], Sacrifice this permanent: Search your library for a creature card with the same mana value as this permanent and put it onto the battlefield. Then shuffle your library. Activate only as a sorcery.”
 2.  Champion
@@ -400,11 +437,11 @@ l. : You activate the aura swap ability of an Aura that you control but you don�
 8.  If a spell has multiple instances of conspire, each is paid separately and triggers based on its own payment, not any other instance of conspire.
 9.  Persist
 9.  Persist is a triggered ability. “Persist” means “When this permanent is put into a graveyard from the battlefield, if it had no -1/-1 counters on it, return it to the battlefield under its owner’s control with a -1/-1 counter on it.”
-0.  Wither
-0.  Wither is a static ability. Damage dealt to a creature by a source with wither isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
-0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had wither.
-0.  The wither rules function no matter what zone an object with wither deals damage from.
-0.  Multiple instances of wither on the same object are redundant.
+- 0.  Wither
+- 0.  Wither is a static ability. Damage dealt to a creature by a source with wither isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
+- 0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had wither.
+- 0.  The wither rules function no matter what zone an object with wither deals damage from.
+- 0.  Multiple instances of wither on the same object are redundant.
 1.  Retrace
 1.  Retrace is a static ability that functions while the card with retrace is in a player’s graveyard. “Retrace” means “You may cast this card from your graveyard by discarding a land card as an additional cost to cast it.” Casting a spell using its retrace ability follows the rules for paying additional costs in rules 601.2b and 601.2f–h.
 2.  Devour
@@ -434,13 +471,13 @@ l. : You activate the aura swap ability of an Aura that you control but you don�
 9.  Umbra Armor
 9.  Umbra armor is a static ability that appears on some Auras. “Umbra armor” means “If enchanted permanent would be destroyed, instead remove all damage marked on it and destroy this Aura.”
 9.  Some older cards were printed with the ability “totem armor” or referenced that ability. The text of these cards has been updated in the Oracle card reference to refer to umbra armor instead.
-0.  Infect
-0.  Infect is a static ability.
-0.  Damage dealt to a player by a source with infect doesn’t cause that player to lose life. Rather, it causes that source’s controller to give the player that many poison counters. See rule 120.3.
-0.  Damage dealt to a creature by a source with infect isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
-0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had infect.
-0.  The infect rules function no matter what zone an object with infect deals damage from.
-0.  Multiple instances of infect on the same object are redundant.
+- 0.  Infect
+- 0.  Infect is a static ability.
+- 0.  Damage dealt to a player by a source with infect doesn’t cause that player to lose life. Rather, it causes that source’s controller to give the player that many poison counters. See rule 120.3.
+- 0.  Damage dealt to a creature by a source with infect isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
+- 0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had infect.
+- 0.  The infect rules function no matter what zone an object with infect deals damage from.
+- 0.  Multiple instances of infect on the same object are redundant.
 1.  Battle Cry
 1.  Battle cry is a triggered ability. “Battle cry” means “Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.”
 1.  If a creature has multiple instances of battle cry, each triggers separately.
@@ -469,49 +506,52 @@ l. : You activate the aura swap ability of an Aura that you control but you don�
 9.  Cipher appears on some instants and sorceries. It represents two abilities. The first is a spell ability that functions while the spell with cipher is on the stack. The second is a static ability that functions while the card with cipher is in the exile zone. “Cipher” means “If this spell is represented by a card, you may exile this card encoded on a creature you control” and “For as long as this card is encoded on that creature, that creature has ‘Whenever this creature deals combat damage to a player, you may copy the encoded card and you may cast the copy without paying its mana cost.’”
 9.  The term “encoded” describes the relationship between the card with cipher while in the exile zone and the creature chosen when the spell represented by that card resolves.
 9.  The card with cipher remains encoded on the chosen creature as long as the card with cipher remains exiled and the creature remains on the battlefield. The card remains encoded on that object even if it changes controller or stops being a creature, as long as it remains on the battlefield.
-0. . Evolve
-0. a Evolve is a triggered ability. “Evolve” means “Whenever a creature you control enters, if that creature’s power is greater than this creature’s power and/or that creature’s toughness is greater than this creature’s toughness, put a +1/+1 counter on this creature.”
-0. b A creature “evolves” when one or more +1/+1 counters are put on it as a result of its evolve ability resolving.
-0. c A creature can’t have a greater power or toughness than a noncreature permanent.
-0. d If a creature has multiple instances of evolve, each triggers separately.
-0. . Extort
-0. a Extort is a triggered ability. “Extort” means “Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain life equal to the total life lost this way.”
-0. b If a permanent has multiple instances of extort, each triggers separately.
-0. . Fuse
-0. a Fuse is a static ability found on some split cards (see rule 709, “Split Cards”) that applies while the card with fuse is in a player’s hand. If a player casts a split card with fuse from their hand, the player may choose to cast both halves of that split card rather than choose one half. This choice is made before putting the split card with fuse onto the stack. The resulting spell is a fused split spell.
-0. b A fused split spell has the combined characteristics of its two halves. (See rule 709.4.)
-0. c The total cost of a fused split spell includes the mana cost of each half.
-0. d As a fused split spell resolves, the controller of the spell follows the instructions of the left half and then follows the instructions of the right half.
-0. . Bestow
-0. a Bestow represents a static ability that functions in any zone from which you could play the card it’s on. “Bestow [cost]” means “As you cast this spell, you may choose to cast it bestowed. If you do, you pay [cost] rather than its mana cost.” Casting a spell using its bestow ability follows the rules for paying alternative costs (see 601.2b and 601.2f–h).
-0. b As a spell cast bestowed is put onto the stack, it becomes an Aura enchantment and gains enchant creature. It is a bestowed Aura spell, and the permanent it becomes as it resolves will be a bestowed Aura. These effects last until the spell or the permanent it becomes ceases to be bestowed (see rules 702.103e–g). Because the spell is an Aura spell, its controller must choose a legal target for that spell as defined by its enchant creature ability and rule 601.2c. See also rule 303.4.
-0. c If a bestowed Aura spell is copied, the copy is also a bestowed Aura spell. Any rule that refers to a spell cast bestowed applies to the copy as well.
-0. d When casting a spell bestowed, only its characteristics as modified by the bestow ability are evaluated to determine if it can be cast.
-l. : Aether Storm is an enchantment with the ability “Creature spells can’t be cast.” This effect doesn’t stop a creature card with bestow from being cast bestowed.
-l. : Garruk’s Horde says, in part, “You may cast creature spells from the top of your library.” If you control Garruk’s Horde and the top card of your library is a creature card with bestow, you can cast it as a creature spell, but you can’t cast it bestowed.
-0. e As a bestowed Aura spell begins resolving, if its target is illegal, it ceases to be bestowed and the effect making it an Aura spell ends. It continues resolving as a creature spell. See rule 608.3b.
-0. f If a bestowed Aura becomes unattached, it ceases to be bestowed. If a bestowed Aura is attached to an illegal object or player, it becomes unattached and ceases to be bestowed. This is an exception to rule 704.5m.
-0. g If a bestowed Aura phases in unattached, it ceases to be bestowed. See rule 702.26, “Phasing.”
-0. . Tribute
-0. a Tribute is a static ability that functions as the creature with tribute is entering the battlefield. “Tribute N” means “As this creature enters, choose an opponent. That player may put an additional N +1/+1 counters on it as it enters.”
-0. b Objects with tribute have triggered abilities that check “if tribute wasn’t paid.” This condition is true if the opponent chosen as a result of the tribute ability didn’t have the creature enter the battlefield with +1/+1 counters as specified by the creature’s tribute ability.
-0. . Dethrone
-0. a Dethrone is a triggered ability. “Dethrone” means “Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on this creature.”
-0. b If a creature has multiple instances of dethrone, each triggers separately.
-0. . Hidden Agenda
-0. a Hidden agenda is a static ability that functions as a conspiracy card with hidden agenda is put into the command zone. “Hidden agenda” means “As you put this conspiracy card into the command zone, turn it face down and secretly choose a card name.”
-0. b To secretly choose a card name, note that name on a piece of paper kept with the face-down conspiracy card.
-0. c Any time you have priority, you may turn a face-down conspiracy card you control in the command zone face up. This is a special action. Doing so will reveal the chosen name. See rule 116.2j.
-0. d Hidden agenda and another ability of the object with hidden agenda that refers to “the chosen name” are linked. The second ability refers only to the card name chosen as a result of that object’s hidden agenda ability. See rule 607.2d.
-0. e If a player leaves the game, all face-down conspiracy cards controlled by that player must be revealed to all players. At the end of each game, all face-down conspiracy cards must be revealed to all players.
-0. f Double agenda is a variant of the hidden agenda ability. As you put a conspiracy card with double agenda into the command zone, you secretly name two different cards rather than one. You don’t reveal that more than one name was secretly chosen until you reveal the chosen names.
-0. . Outlast
-0. a Outlast is an activated ability. “Outlast [cost]” means “[Cost], {T}: Put a +1/+1 counter on this creature. Activate only as a sorcery.”
-0. . Prowess
-0. a Prowess is a triggered ability. “Prowess” means “Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.”
-0. b If a creature has multiple instances of prowess, each triggers separately.
-0. . Dash
-0. a Dash represents three abilities: two static abilities that function while the card with dash is on the stack, one of which may create a delayed triggered ability, and a static ability that functions while the object with dash is on the battlefield. “Dash [cost]” means “You may cast this card by paying [cost] rather than its mana cost,” “If this spell’s dash cost was paid, return the permanent this spell becomes to its owner’s hand at the beginning of the next end step,” and “As long as this permanent’s dash cost was paid, it has haste.” Casting a spell for its dash cost follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
+- 0. . Evolve
+- 0. a Evolve is a triggered ability. “Evolve” means “Whenever a creature you control enters, if that creature’s power is greater than this creature’s power and/or that creature’s toughness is greater than this creature’s toughness, put a +1/+1 counter on this creature.”
+- 0. b A creature “evolves” when one or more +1/+1 counters are put on it as a result of its evolve ability resolving.
+- 0. c A creature can’t have a greater power or toughness than a noncreature permanent.
+- 0. d If a creature has multiple instances of evolve, each triggers separately.
+- 0. . Extort
+- 0. a Extort is a triggered ability. “Extort” means “Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain life equal to the total life lost this way.”
+- 0. b If a permanent has multiple instances of extort, each triggers separately.
+- 0. . Fuse
+- 0. a Fuse is a static ability found on some split cards (see rule 709, “Split Cards”) that applies while the card with fuse is in a player’s hand. If a player casts a split card with fuse from their hand, the player may choose to cast both halves of that split card rather than choose one half. This choice is made before putting the split card with fuse onto the stack. The resulting spell is a fused split spell.
+- 0. b A fused split spell has the combined characteristics of its two halves. (See rule 709.4.)
+- 0. c The total cost of a fused split spell includes the mana cost of each half.
+- 0. d As a fused split spell resolves, the controller of the spell follows the instructions of the left half and then follows the instructions of the right half.
+- 0. . Bestow
+- 0. a Bestow represents a static ability that functions in any zone from which you could play the card it’s on. “Bestow [cost]” means “As you cast this spell, you may choose to cast it bestowed. If you do, you pay [cost] rather than its mana cost.” Casting a spell using its bestow ability follows the rules for paying alternative costs (see 601.2b and 601.2f–h).
+- 0. b As a spell cast bestowed is put onto the stack, it becomes an Aura enchantment and gains enchant creature. It is a bestowed Aura spell, and the permanent it becomes as it resolves will be a bestowed Aura. These effects last until the spell or the permanent it becomes ceases to be bestowed (see rules 702.103e–g). Because the spell is an Aura spell, its controller must choose a legal target for that spell as defined by its enchant creature ability and rule 601.2c. See also rule 303.4.
+- 0. c If a bestowed Aura spell is copied, the copy is also a bestowed Aura spell. Any rule that refers to a spell cast bestowed applies to the copy as well.
+- 0. d When casting a spell bestowed, only its characteristics as modified by the bestow ability are evaluated to determine if it can be cast.
+
+Example: Garruk’s Horde says, in part, “You may cast creature spells from the top of your library.” If you control Garruk’s Horde and the top card of your library is a creature card with bestow, you can cast it as a creature spell, but you can’t cast it bestowed.
+
+Example: Aether Storm is an enchantment with the ability “Creature spells can’t be cast.” This effect doesn’t stop a creature card with bestow from being cast bestowed.
+
+- 0. e As a bestowed Aura spell begins resolving, if its target is illegal, it ceases to be bestowed and the effect making it an Aura spell ends. It continues resolving as a creature spell. See rule 608.3b.
+- 0. f If a bestowed Aura becomes unattached, it ceases to be bestowed. If a bestowed Aura is attached to an illegal object or player, it becomes unattached and ceases to be bestowed. This is an exception to rule 704.5m.
+- 0. g If a bestowed Aura phases in unattached, it ceases to be bestowed. See rule 702.26, “Phasing.”
+- 0. . Tribute
+- 0. a Tribute is a static ability that functions as the creature with tribute is entering the battlefield. “Tribute N” means “As this creature enters, choose an opponent. That player may put an additional N +1/+1 counters on it as it enters.”
+- 0. b Objects with tribute have triggered abilities that check “if tribute wasn’t paid.” This condition is true if the opponent chosen as a result of the tribute ability didn’t have the creature enter the battlefield with +1/+1 counters as specified by the creature’s tribute ability.
+- 0. . Dethrone
+- 0. a Dethrone is a triggered ability. “Dethrone” means “Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on this creature.”
+- 0. b If a creature has multiple instances of dethrone, each triggers separately.
+- 0. . Hidden Agenda
+- 0. a Hidden agenda is a static ability that functions as a conspiracy card with hidden agenda is put into the command zone. “Hidden agenda” means “As you put this conspiracy card into the command zone, turn it face down and secretly choose a card name.”
+- 0. b To secretly choose a card name, note that name on a piece of paper kept with the face-down conspiracy card.
+- 0. c Any time you have priority, you may turn a face-down conspiracy card you control in the command zone face up. This is a special action. Doing so will reveal the chosen name. See rule 116.2j.
+- 0. d Hidden agenda and another ability of the object with hidden agenda that refers to “the chosen name” are linked. The second ability refers only to the card name chosen as a result of that object’s hidden agenda ability. See rule 607.2d.
+- 0. e If a player leaves the game, all face-down conspiracy cards controlled by that player must be revealed to all players. At the end of each game, all face-down conspiracy cards must be revealed to all players.
+- 0. f Double agenda is a variant of the hidden agenda ability. As you put a conspiracy card with double agenda into the command zone, you secretly name two different cards rather than one. You don’t reveal that more than one name was secretly chosen until you reveal the chosen names.
+- 0. . Outlast
+- 0. a Outlast is an activated ability. “Outlast [cost]” means “[Cost], {T}: Put a +1/+1 counter on this creature. Activate only as a sorcery.”
+- 0. . Prowess
+- 0. a Prowess is a triggered ability. “Prowess” means “Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.”
+- 0. b If a creature has multiple instances of prowess, each triggers separately.
+- 0. . Dash
+- 0. a Dash represents three abilities: two static abilities that function while the card with dash is on the stack, one of which may create a delayed triggered ability, and a static ability that functions while the object with dash is on the battlefield. “Dash [cost]” means “You may cast this card by paying [cost] rather than its mana cost,” “If this spell’s dash cost was paid, return the permanent this spell becomes to its owner’s hand at the beginning of the next end step,” and “As long as this permanent’s dash cost was paid, it has haste.” Casting a spell for its dash cost follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
 1. . Exploit
 1. a Exploit is a triggered ability. “Exploit” means “When this creature enters, you may sacrifice a creature.”
 1. b A creature with exploit “exploits a creature” when the controller of the exploit ability sacrifices a creature as that ability resolves.
@@ -707,7 +747,9 @@ l. : Garruk’s Horde says, in part, “You may cast creature spells from the to
 6. . Toxic
 6. a Toxic is a static ability. It is written “toxic N,” where N is a number.
 6. b Some rules and effects refer to a creature’s “total toxic value.” A creature’s total toxic value is the sum of all N values of toxic abilities that creature has.
-l. : If a creature with toxic 2 gains toxic 1 due to another effect, its total toxic value is 3.
+
+Example: If a creature with toxic 2 gains toxic 1 due to another effect, its total toxic value is 3.
+
 6. c Combat damage dealt to a player by a creature with toxic causes that creature’s controller to give the player a number of poison counters equal to that creature’s total toxic value, in addition to the damage’s other results. See rule 120.3.
 6. . Backup
 6. a Backup is a triggered ability. “Backup N” means “When this creature enters, put N +1/+1 counters on target creature. If that’s another creature, it also gains the non-backup abilities of this creature printed below this one until end of turn.” Cards with backup have one or more abilities printed after the backup ability. (Some cards with backup also have abilities printed before the backup ability.)
@@ -769,10 +811,14 @@ l. : If a creature with toxic 2 gains toxic 1 due to another effect, its total t
 7. b If a spell has multiple instances of offspring, each is paid separately and triggers based on the payments made for it, not any other instances of offspring.
 7. . Impending
 7. a Impending is a keyword that represents four abilities. The first is a static ability that functions while the spell with impending is on the stack. The second is static ability that creates a replacement effect that may apply to the permanent with impending as it enters the battlefield from the stack. The third is a static ability that functions on the battlefield. The fourth is a triggered ability that functions on the battlefield. “Impending N—[cost]” means “You may choose to pay [cost] rather than pay this spell’s mana cost,” “If you chose to pay this permanent’s impending cost, it enters with N time counters on it,” “As long as this permanent’s impending cost was paid and it has a time counter on it, it’s not a creature,” and “At the beginning of your end step, if this permanent’s impending cost was paid and it has a time counter on it, remove a time counter from it.” Casting a spell for its impending cost follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
-7. . Exhaust
+
+702.177. Exhaust
+
 7. a An exhaust ability is a special kind of activated ability. “Exhaust — [Cost]: [Effect]” means “[Cost]: [Effect]. Activate only once.”
 7. b An effect may allow you to take an action as long as you haven’t activated an exhaust ability this turn. Such an effect allows that action only if you haven’t begun to activate an exhaust ability this turn.
-l. : Elvish Refueler has an exhaust ability that costs mana and also has an ability that reads “During your turn, as long as you haven’t activated an exhaust ability this turn, you may activate exhaust abilities as though they haven’t been activated.” Loot, the Pathfinder has an exhaust ability that is also a mana ability. If you’ve already activated both of these abilities in a previous turn, you can’t activate Loot’s mana ability during the process of activating Elvish Refueler’s exhaust ability, because you have already begun to activate a different exhaust ability.
+
+Example: Elvish Refueler has an exhaust ability that costs mana and also has an ability that reads “During your turn, as long as you haven’t activated an exhaust ability this turn, you may activate exhaust abilities as though they haven’t been activated.” Loot, the Pathfinder has an exhaust ability that is also a mana ability. If you’ve already activated both of these abilities in a previous turn, you can’t activate Loot’s mana ability during the process of activating Elvish Refueler’s exhaust ability, because you have already begun to activate a different exhaust ability.
+
 7. . Max Speed
 7. a A max speed ability is a special kind of static ability. “Max speed — [Ability]” means “As long as your speed is 4, this object has ‘[Ability].’” See rule 702.179, “Start Your Engines!”
 7. b If an ability granted by a max speed ability states which zones it functions from, the max speed ability that grants that ability functions from those zones. (See rule 113.6c.)
@@ -796,7 +842,9 @@ l. : Elvish Refueler has an exhaust ability that costs mana and also has an abil
 8. a Station is an activated ability. “Station” means “Tap another untapped creature you control: Put a number of charge counters on this permanent equal to the tapped creature’s power. Activate only as a sorcery.”
 8. b Each card printed with a station ability is known as a station card. It has a nonstandard layout and includes station symbols that are themselves keyword abilities. See rule 721, “Station Cards.”
 8. c Static abilities may modify the result of a station ability by causing it to use a characteristic other than the tapped creature’s power to determine the number of counters placed on the permanent with the station ability.
-l. : Tapestry Warden has as ability that reads “Each creature you control with toughness greater than its power stations permanents using its toughness rather than its power.”
+
+Example: Tapestry Warden has as ability that reads “Each creature you control with toughness greater than its power stations permanents using its toughness rather than its power.”
+
 8. . Warp
 8. a Warp represents two static abilities that function while the card with warp is on the stack, one of which may create a delayed triggered ability. “Warp [cost]” means “You may cast this card from your hand by paying [cost] rather than its mana cost” and “If this spell’s warp cost was paid, exile the permanent this spell becomes at the beginning of the next end step. Its owner may cast this card after the current turn has ended for as long as it remains exiled.” Casting a spell for its warp cost follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
 8. b Some effects refer to “warped” cards in exile. A warped card in exile is one that was exiled by the delayed triggered ability created by a warp ability.

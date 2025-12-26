@@ -8,18 +8,18 @@ Adventurer cards have a two-part card frame, with a smaller frame inset within t
 
 The text that appears in the inset frame on the left defines alternative characteristics that the object may have while it’s a spell. The card’s normal characteristics appear as usual, although with a smaller text box on the right.
 
-a. If an effect refers to a card, spell, or permanent that “has an Adventure,” it refers to an object that has the alternative characteristics of an Adventure spell, even if the object currently doesn’t use them.
-b. The existence and values of these alternative characteristics are part of the object’s copiable values.
-c. Although adventurer cards are printed with multiple sets of characteristics, each adventurer card is only one card. For example, a player who has drawn or discarded an adventurer card has drawn or discarded one card, not two.
+- a. If an effect refers to a card, spell, or permanent that “has an Adventure,” it refers to an object that has the alternative characteristics of an Adventure spell, even if the object currently doesn’t use them.
+- b. The existence and values of these alternative characteristics are part of the object’s copiable values.
+- c. Although adventurer cards are printed with multiple sets of characteristics, each adventurer card is only one card. For example, a player who has drawn or discarded an adventurer card has drawn or discarded one card, not two.
 
 ## 715.3
 
 As a player plays an adventurer card, the player chooses whether they play the card normally or as an Adventure.
 
-a. When casting an adventurer card as an Adventure, only the alternative characteristics are evaluated to see if it can be cast.
-b. While on the stack as an Adventure, the spell has only its alternative characteristics.
-c. If an Adventure spell is copied, the copy is also an Adventure. It has the alternative characteristics of the spell and not the normal characteristics of the card that represents the Adventure spell. Any rule or effect that refers to a spell cast as an Adventure refers to the copy as well.
-d. Instead of putting a spell that was cast as an Adventure into its owner’s graveyard as it resolves, its controller exiles it. For as long as that card remains exiled, that player may play it. It can’t be cast as an Adventure this way, although other effects that allow a player to cast it may allow a player to cast it as an Adventure.
+- a. When casting an adventurer card as an Adventure, only the alternative characteristics are evaluated to see if it can be cast.
+- b. While on the stack as an Adventure, the spell has only its alternative characteristics.
+- c. If an Adventure spell is copied, the copy is also an Adventure. It has the alternative characteristics of the spell and not the normal characteristics of the card that represents the Adventure spell. Any rule or effect that refers to a spell cast as an Adventure refers to the copy as well.
+- d. Instead of putting a spell that was cast as an Adventure into its owner’s graveyard as it resolves, its controller exiles it. For as long as that card remains exiled, that player may play it. It can’t be cast as an Adventure this way, although other effects that allow a player to cast it may allow a player to cast it as an Adventure.
 
 ## 715.4
 
