@@ -1,6 +1,7 @@
 import gleam/dict
 import gleam/list
-import gleam/option
+import gleam/option.{None, Some}
+import gleam/result
 import gleeunit
 import mtg_engine/action
 import mtg_engine/card
@@ -11,7 +12,7 @@ import mtg_engine/permanent
 import mtg_engine/player
 import test_helpers.{
   add_card_to_hand, add_creature_to_battlefield, add_land_to_battlefield,
-  create_test_creature, create_test_land, pass_both, pass_until,
+  create_test_creature, create_test_land, pass, pass_until,
 }
 
 pub fn main() -> Nil {
@@ -27,7 +28,7 @@ pub fn pass_priority_advances_from_player_1_to_2_test() {
 }
 
 pub fn pass_priority_wraps_from_player_2_to_1_test() {
-  let game = pass_both(game.new())
+  let game = pass(game.new())
   assert game.priority_player_id == option.Some(1)
 }
 
@@ -944,7 +945,7 @@ pub fn resolve_creature_spell_test() {
   assert list.length(game_after_cast.stack) == 1
 
   // Both players pass priority - spell resolves automatically
-  let game_after_resolve = pass_both(game_after_cast)
+  let game_after_resolve = pass(game_after_cast)
 
   // Verify creature moved from stack to battlefield
   assert game_after_resolve.stack == []
@@ -979,7 +980,7 @@ pub fn creature_enters_untapped_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass priority - spell resolves automatically
-  let game_after_resolve = pass_both(game_after_cast)
+  let game_after_resolve = pass(game_after_cast)
 
   // Verify creature is untapped on battlefield
   let assert Ok(player1) = player.find(game_after_resolve.players, 1)
@@ -997,7 +998,7 @@ pub fn resolve_empty_stack_test() {
 
   // When both players pass with empty stack, should just advance step
   // (not error - this is normal behavior)
-  let game_after_pass = pass_both(game)
+  let game_after_pass = pass(game)
 
   // Should have advanced to next step, not errored
   assert game_after_pass.current_step == game.BeginCombat
@@ -1023,7 +1024,7 @@ pub fn resolve_creature_to_controller_battlefield_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass priority - spell resolves automatically
-  let game_after_resolve = pass_both(game_after_cast)
+  let game_after_resolve = pass(game_after_cast)
 
   // Verify creature is on player 1's battlefield only
   let assert Ok(player1) = player.find(game_after_resolve.players, 1)
@@ -1074,7 +1075,7 @@ pub fn resolve_multiple_creatures_test() {
   assert list.length(game_after_cast1.stack) == 1
 
   // Both players pass priority - first creature resolves automatically
-  let game_after_resolve1 = pass_both(game_after_cast1)
+  let game_after_resolve1 = pass(game_after_cast1)
 
   // Verify stack is empty and creature is on battlefield
   assert game_after_resolve1.stack == []
@@ -1089,7 +1090,7 @@ pub fn resolve_multiple_creatures_test() {
   assert list.length(game_after_cast2.stack) == 1
 
   // Both players pass priority - second creature resolves automatically
-  let game_after_resolve2 = pass_both(game_after_cast2)
+  let game_after_resolve2 = pass(game_after_cast2)
 
   // Verify both creatures are on battlefield
   let assert Ok(p1_final) = player.find(game_after_resolve2.players, 1)
@@ -1134,7 +1135,7 @@ pub fn resolve_creature_retains_stats_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass priority - spell resolves automatically
-  let game_after_resolve = pass_both(game_after_cast)
+  let game_after_resolve = pass(game_after_cast)
 
   // Verify creature has correct stats
   let assert Ok(player1) = player.find(game_after_resolve.players, 1)
@@ -1167,7 +1168,7 @@ pub fn automatic_resolution_when_all_pass_test() {
   assert list.length(game_after_cast.stack) == 1
 
   // Both players pass priority - should automatically resolve
-  let game_after_pass = pass_both(game_after_cast)
+  let game_after_pass = pass(game_after_cast)
 
   // Verify creature resolved automatically to battlefield
   assert game_after_pass.stack == []
@@ -1196,7 +1197,7 @@ pub fn automatic_resolution_resets_priority_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass priority - should resolve and reset priority
-  let game_after_pass = pass_both(game_after_cast)
+  let game_after_pass = pass(game_after_cast)
 
   // Priority should go back to active player
   assert game_after_pass.priority_player_id
@@ -1245,7 +1246,7 @@ pub fn automatic_resolution_lifo_order_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass - first creature resolves
-  let game_after_first_resolve = pass_both(game_after_cast1)
+  let game_after_first_resolve = pass(game_after_cast1)
 
   // Verify first creature resolved
   assert game_after_first_resolve.stack == []
@@ -1261,7 +1262,7 @@ pub fn automatic_resolution_lifo_order_test() {
     )
 
   // Both players pass - second creature resolves
-  let game_after_second_resolve = pass_both(game_after_cast2)
+  let game_after_second_resolve = pass(game_after_cast2)
 
   // Verify both creatures are on battlefield
   let assert Ok(p1_final) = player.find(game_after_second_resolve.players, 1)
@@ -1322,7 +1323,7 @@ pub fn priority_after_automatic_resolution_test() {
     action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
 
   // Both players pass - creature resolves automatically
-  let game_after_resolve = pass_both(game_after_cast)
+  let game_after_resolve = pass(game_after_cast)
 
   // Verify players can take actions after resolution (priority works)
   // Priority should be with active player
@@ -1384,10 +1385,7 @@ pub fn declare_multiple_attackers_test() {
     game.AttackPair("creature2", game.AttackPlayer(2)),
   ]
   let assert Ok(new_game) =
-    action.dispatch(
-      game,
-      action.DeclareAttackers(1, attack_pairs),
-    )
+    action.dispatch(game, action.DeclareAttackers(1, attack_pairs))
 
   // Verify both creatures are tapped
   let assert Ok(player1) = player.find(new_game.players, 1)
@@ -1429,7 +1427,9 @@ pub fn declare_attackers_tapped_creature_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction("Cannot attack with tapped creature"))
@@ -1451,7 +1451,9 @@ pub fn declare_attackers_summoning_sickness_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction(
@@ -1474,7 +1476,9 @@ pub fn declare_attackers_not_active_player_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(2, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+      action.DeclareAttackers(2, [
+        game.AttackPair("creature1", game.AttackPlayer(1)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction("Only the active player can declare attackers"))
@@ -1495,7 +1499,9 @@ pub fn declare_attackers_wrong_step_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction(
@@ -1521,7 +1527,9 @@ pub fn declare_attackers_retains_priority_test() {
   let assert Ok(new_game) =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
 
   // Verify player 1 now has priority after declaring
@@ -1545,14 +1553,18 @@ pub fn declare_attackers_already_declared_test() {
   let assert Ok(game_after_first) =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
 
   // Try to declare attackers again - should fail
   let result =
     action.dispatch(
       game_after_first,
-      action.DeclareAttackers(1, [game.AttackPair("creature2", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature2", game.AttackPlayer(2)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction(
@@ -1575,7 +1587,9 @@ pub fn declare_attackers_not_creature_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("land1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("land1", game.AttackPlayer(2)),
+      ]),
     )
   assert result == Error(error.InvalidAction("Only creatures can attack"))
 }
@@ -1595,7 +1609,9 @@ pub fn declare_attackers_without_priority_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(2, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+      action.DeclareAttackers(2, [
+        game.AttackPair("creature1", game.AttackPlayer(1)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction("Only the active player can declare attackers"))
@@ -1672,7 +1688,7 @@ pub fn declare_attackers_twice_with_empty_first_test() {
     action.dispatch(game_p2_priority, action.PassPriority(2))
 
   // We should now be in DeclareBlockers step
-  assert game_back_to_p1.current_step == game.DeclareBlockers
+  let assert game.DeclareBlockers(_) = game_back_to_p1.current_step
 
   // But let's test the scenario where we're still in DeclareAttackers
   // (for example, if player 2 had cast a spell)
@@ -1685,7 +1701,9 @@ pub fn declare_attackers_twice_with_empty_first_test() {
   let result =
     action.dispatch(
       game_still_in_declare,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(2))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(2)),
+      ]),
     )
   assert result
     == Error(error.InvalidAction(
@@ -1839,7 +1857,350 @@ pub fn declare_attackers_cannot_attack_yourself_test() {
   let result =
     action.dispatch(
       game,
-      action.DeclareAttackers(1, [game.AttackPair("creature1", game.AttackPlayer(1))]),
+      action.DeclareAttackers(1, [
+        game.AttackPair("creature1", game.AttackPlayer(1)),
+      ]),
     )
   assert result == Error(error.InvalidAction("Cannot attack yourself"))
+}
+
+pub fn declare_single_blocker_test() {
+  // Setup: Create a game with an attacker and a blocker
+  let game = game.new()
+
+  // Add creatures to battlefields
+  let attacker = create_test_creature("attacker1", "Grizzly Bears")
+  let blocker = create_test_creature("blocker1", "Wall")
+
+  // Player 1 (active player) has an attacker (no summoning sickness)
+  let game = add_creature_to_battlefield(game, 1, attacker, -1)
+
+  // Player 2 (defending player) has a blocker (no summoning sickness)
+  let game = add_creature_to_battlefield(game, 2, blocker, -1)
+
+  // Advance to DeclareAttackers step
+  let game = pass_until(game.DeclareAttackers, game)
+
+  // Player 1 declares attacker
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker.id, game.AttackPlayer(2)),
+      ]),
+    )
+
+  // Both players pass priority
+  let assert Some(p1) = game.priority_player_id
+  let assert Ok(game) = action.dispatch(game, action.PassPriority(p1))
+  let assert Some(p2) = game.priority_player_id
+  let assert Ok(game) = action.dispatch(game, action.PassPriority(p2))
+
+  // We should be in DeclareBlockers step with player 2 declaring
+  let assert game.DeclareBlockers(Some(2)) = game.current_step
+
+  // Player 2 declares blocker
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [game.BlockPair(blocker.id, attacker.id)]),
+    )
+
+  // Verify blocking was recorded
+  assert game.blocking_creatures == [game.BlockPair(blocker.id, attacker.id)]
+
+  // Verify we're still in DeclareBlockers step but all players have declared
+  let assert game.DeclareBlockers(None) = game.current_step
+
+  // Verify priority went to active player
+  assert game.priority_player_id == Some(1)
+}
+
+pub fn declare_no_blockers_test() {
+  // Setup: Create a game with an attacker but no blockers
+  let game = game.new()
+
+  // Add attacker to player 1's battlefield (no summoning sickness)
+  let attacker = create_test_creature("attacker1", "Grizzly Bears")
+  let game = add_creature_to_battlefield(game, 1, attacker, -1)
+
+  // Advance to DeclareAttackers step
+  let game = pass_until(game.DeclareAttackers, game)
+
+  // Player 1 declares attacker
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker.id, game.AttackPlayer(2)),
+      ]),
+    )
+
+  // Both players pass
+  let game = pass(game)
+
+  // We should be in DeclareBlockers step
+  let assert game.DeclareBlockers(Some(2)) = game.current_step
+
+  // Player 2 declares no blockers
+  let assert Ok(game) = action.dispatch(game, action.DeclareBlockers(2, []))
+
+  // Verify no blocks were recorded
+  assert game.blocking_creatures == []
+
+  // Verify priority went to active player
+  assert game.priority_player_id == Some(1)
+}
+
+pub fn multiple_blockers_different_attackers_test() {
+  // Setup: Create a game with multiple attackers and blockers
+  let game = game.new()
+
+  // Add attackers to player 1's battlefield (no summoning sickness)
+  let attacker1 = create_test_creature("attacker1", "Bears")
+  let attacker2 = create_test_creature("attacker2", "Wolves")
+  let game =
+    add_creature_to_battlefield(game, 1, attacker1, -1)
+    |> add_creature_to_battlefield(1, attacker2, -1)
+
+  // Add blockers to player 2's battlefield (no summoning sickness)
+  let blocker1 = create_test_creature("blocker1", "Wall 1")
+  let blocker2 = create_test_creature("blocker2", "Wall 2")
+  let game =
+    add_creature_to_battlefield(game, 2, blocker1, -1)
+    |> add_creature_to_battlefield(2, blocker2, -1)
+
+  // Advance to DeclareAttackers step
+  let game = pass_until(game.DeclareAttackers, game)
+
+  // Player 1 declares attackers
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker1.id, game.AttackPlayer(2)),
+        game.AttackPair(attacker2.id, game.AttackPlayer(2)),
+      ]),
+    )
+
+  // Both players pass
+  let game = pass(game)
+
+  // Player 2 declares blockers
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [
+        game.BlockPair(blocker1.id, attacker1.id),
+        game.BlockPair(blocker2.id, attacker2.id),
+      ]),
+    )
+
+  // Verify blocking was recorded
+  assert game.blocking_creatures
+    == [
+      game.BlockPair(blocker1.id, attacker1.id),
+      game.BlockPair(blocker2.id, attacker2.id),
+    ]
+}
+
+pub fn cannot_block_with_tapped_creature_test() {
+  // Setup: Create a game with an attacker and a tapped blocker
+  let game = game.new()
+
+  let attacker = create_test_creature("attacker1", "Bears")
+  let blocker = create_test_creature("blocker1", "Wall")
+
+  let game = add_creature_to_battlefield(game, 1, attacker, -1)
+  let game = add_creature_to_battlefield(game, 2, blocker, -1)
+
+  // Tap the blocker
+  let game =
+    game.State(
+      ..game,
+      players: player.update(game.players, 2, fn(p) {
+        player.Player(
+          ..p,
+          battlefield: permanent.update(p.battlefield, blocker.id, fn(perm) {
+            permanent.Permanent(..perm, tapped: True)
+          }),
+        )
+      }),
+    )
+
+  // Advance to DeclareAttackers and declare attacker
+  let game = pass_until(game.DeclareAttackers, game)
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker.id, game.AttackPlayer(2)),
+      ]),
+    )
+  let game = pass(game)
+
+  // Try to block with tapped creature - should fail
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [
+        game.BlockPair(blocker.id, attacker.id),
+      ]),
+    )
+
+  assert result.is_error(result)
+}
+
+pub fn cannot_block_creature_attacking_different_player_test() {
+  // Setup: In a multiplayer game, this test ensures blockers can't block attackers
+  // that aren't attacking them
+  let game = game.new_multiplayer(4)
+
+  let attacker_p2 = create_test_creature("attacker1", "Bears")
+  let attacker_p3 = create_test_creature("attacker2", "Bears")
+  let blocker_p2 = create_test_creature("blocker1", "Wall")
+  let blocker_p3 = create_test_creature("blocker2", "Goblin")
+
+  let game =
+    add_creature_to_battlefield(game, 1, attacker_p2, -1)
+    |> add_creature_to_battlefield(1, attacker_p3, -1)
+    |> add_creature_to_battlefield(2, blocker_p2, -1)
+    |> add_creature_to_battlefield(3, blocker_p3, -1)
+
+  // Advance to DeclareAttackers and declare attacker
+  let game = pass_until(game.DeclareAttackers, game)
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker_p2.id, game.AttackPlayer(2)),
+        game.AttackPair(attacker_p3.id, game.AttackPlayer(3)),
+      ]),
+    )
+  let game = pass(game)
+
+  // Player 2 tries to block the creature attacking player 3
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [
+        game.BlockPair(blocker_p2.id, attacker_p3.id),
+      ]),
+    )
+
+  assert result.is_error(result)
+}
+
+pub fn cannot_block_in_wrong_step_test() {
+  let game = game.new()
+
+  let result = action.dispatch(game, action.DeclareBlockers(2, []))
+
+  assert result.is_error(result)
+}
+
+pub fn wrong_player_cannot_declare_blockers_test() {
+  // Setup: Create a game with an attacker
+  let game = game.new()
+
+  let attacker = create_test_creature("attacker1", "Bears")
+  let game = add_creature_to_battlefield(game, 1, attacker, -1)
+
+  // Advance to DeclareAttackers and declare attacker
+  let game = pass_until(game.DeclareAttackers, game)
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker.id, game.AttackPlayer(2)),
+      ]),
+    )
+  let game = pass(game)
+
+  // We should be in DeclareBlockers step with player 2 declaring
+  let assert game.DeclareBlockers(Some(2)) = game.current_step
+
+  // Try to have player 1 (not the declaring player) declare blocks - should fail
+  let result = action.dispatch(game, action.DeclareBlockers(1, []))
+
+  assert result.is_error(result)
+}
+
+pub fn cannot_block_with_same_creature_twice_test() {
+  // Test that a creature cannot block multiple attackers without special ability
+  let game = game.new()
+
+  // Add attackers (no summoning sickness)
+  let attacker1 = create_test_creature("attacker1", "Bears")
+  let attacker2 = create_test_creature("attacker2", "Wolves")
+  let game = add_creature_to_battlefield(game, 1, attacker1, -1)
+  let game = add_creature_to_battlefield(game, 1, attacker2, -1)
+
+  // Add blocker (no summoning sickness)
+  let blocker = create_test_creature("blocker1", "Wall")
+  let game = add_creature_to_battlefield(game, 2, blocker, -1)
+
+  // Advance to DeclareAttackers and declare attackers
+  let game = pass_until(game.DeclareAttackers, game)
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker1.id, game.AttackPlayer(2)),
+        game.AttackPair(attacker2.id, game.AttackPlayer(2)),
+      ]),
+    )
+  let game = pass(game)
+
+  // Try to block both attackers with the same creature - should fail
+  let result =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [
+        game.BlockPair(blocker.id, attacker1.id),
+        game.BlockPair(blocker.id, attacker2.id),
+      ]),
+    )
+
+  assert result.is_error(result)
+}
+
+pub fn some_attackers_blocked_some_unblocked_test() {
+  // Test that some attackers can be blocked while others remain unblocked
+  let game = game.new()
+
+  // Add attackers (no summoning sickness)
+  let attacker1 = create_test_creature("attacker1", "Bears")
+  let attacker2 = create_test_creature("attacker2", "Wolves")
+  let game =
+    add_creature_to_battlefield(game, 1, attacker1, -1)
+    |> add_creature_to_battlefield(1, attacker2, -1)
+
+  // Add one blocker (no summoning sickness)
+  let blocker = create_test_creature("blocker1", "Wall")
+  let game = add_creature_to_battlefield(game, 2, blocker, -1)
+
+  // Advance to DeclareAttackers and declare attackers
+  let game = pass_until(game.DeclareAttackers, game)
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareAttackers(1, [
+        game.AttackPair(attacker1.id, game.AttackPlayer(2)),
+        game.AttackPair(attacker2.id, game.AttackPlayer(2)),
+      ]),
+    )
+  let game = pass(game)
+
+  // Block only one attacker
+  let assert Ok(game) =
+    action.dispatch(
+      game,
+      action.DeclareBlockers(2, [
+        game.BlockPair(blocker.id, attacker1.id),
+      ]),
+    )
+
+  // Verify only one block was recorded
+  assert game.blocking_creatures == [game.BlockPair(blocker.id, attacker1.id)]
 }

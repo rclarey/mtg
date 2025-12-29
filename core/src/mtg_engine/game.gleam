@@ -1,7 +1,7 @@
 import gleam/bool
 import gleam/dict
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option.{type Option, None, Some}
 import mtg_engine/card
 import mtg_engine/error
 import mtg_engine/permanent
@@ -26,7 +26,7 @@ pub type Step {
   // Combat phase
   BeginCombat
   DeclareAttackers
-  DeclareBlockers
+  DeclareBlockers(declaring_player_id: Option(Int))
   CombatDamage
   EndCombat
   // Post-combat main phase
@@ -53,6 +53,10 @@ pub type AttackTarget {
   // TODO add planeswalkers and battles
 }
 
+pub type BlockPair {
+  BlockPair(blocker: String, attacker: String)
+}
+
 pub type State {
   State(
     players: List(player.Player),
@@ -65,6 +69,7 @@ pub type State {
     stack: List(StackItem),
     // None means attackers not yet declared, Some([]) means no attackers, Some([pairs]) means attackers declared
     attacking_creatures: Option(List(AttackPair)),
+    blocking_creatures: List(BlockPair),
   )
 }
 
@@ -81,6 +86,22 @@ pub fn new() -> State {
     turn_index: 0,
     stack: [],
     attacking_creatures: option.None,
+    blocking_creatures: [],
+  )
+}
+
+pub fn new_multiplayer(n: Int) -> State {
+  let players = list.range(1, n) |> list.map(player.new)
+  State(
+    players:,
+    active_player_id: 1,
+    priority_player_id: option.Some(1),
+    current_step: Untap,
+    consecutive_passes: 0,
+    turn_index: 0,
+    stack: [],
+    attacking_creatures: option.None,
+    blocking_creatures: [],
   )
 }
 
@@ -101,6 +122,30 @@ pub fn next_player(state: State, current_player_id: Int) -> player.Player {
       first_player
     }
     [next_player, ..] -> next_player
+  }
+}
+
+// Given current declaring player, return next defender in APNAP order
+// Returns None if this was the last defender
+pub fn get_next_defending_player(
+  state: State,
+  current_player_id: Int,
+) -> Option(Int) {
+  case next_player(state, current_player_id) {
+    player if player.id == state.active_player_id -> None
+    player -> {
+      use attackers <- option.then(state.attacking_creatures)
+      let is_attacked =
+        list.any(attackers, fn(attack) {
+          case attack.target {
+            AttackPlayer(id) -> id == player.id
+          }
+        })
+      case is_attacked {
+        True -> Some(player.id)
+        False -> get_next_defending_player(state, player.id)
+      }
+    }
   }
 }
 
@@ -139,6 +184,7 @@ pub fn advance_step(state: State) -> State {
         consecutive_passes: 0,
         turn_index: state.turn_index + 1,
         attacking_creatures: option.None,
+        blocking_creatures: [],
       )
     }
     Draw if state.turn_index == 0 && state.active_player_id == first_player.id ->
@@ -167,6 +213,25 @@ pub fn advance_step(state: State) -> State {
         consecutive_passes: 0,
       )
     }
+    DeclareBlockers(_) -> {
+      let first_defender =
+        get_next_defending_player(state, state.active_player_id)
+
+      // If there are no defenders, give priority to active player immediately
+      let priority = case first_defender {
+        option.Some(_) -> option.None
+        option.None -> option.Some(state.active_player_id)
+      }
+
+      State(
+        ..state,
+        players: cleared_players,
+        current_step: DeclareBlockers(first_defender),
+        priority_player_id: priority,
+        consecutive_passes: 0,
+        blocking_creatures: [],
+      )
+    }
     _ -> {
       // Normal step advancement within a turn
       // Priority goes to active player when entering a new step
@@ -188,8 +253,8 @@ fn next_step(current_step: Step) -> Step {
     Draw -> PreCombatMain
     PreCombatMain -> BeginCombat
     BeginCombat -> DeclareAttackers
-    DeclareAttackers -> DeclareBlockers
-    DeclareBlockers -> CombatDamage
+    DeclareAttackers -> DeclareBlockers(option.None)
+    DeclareBlockers(_) -> CombatDamage
     CombatDamage -> EndCombat
     EndCombat -> PostCombatMain
     PostCombatMain -> EndStep

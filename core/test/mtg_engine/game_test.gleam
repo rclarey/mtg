@@ -1,5 +1,5 @@
 import gleam/list
-import gleam/option
+import gleam/option.{Some}
 import gleeunit
 import mtg_engine/action
 import mtg_engine/game
@@ -7,8 +7,8 @@ import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
 import test_helpers.{
-  add_card_to_hand, add_land_to_battlefield, create_test_land, pass_both,
-  pass_turn, pass_until,
+  add_card_to_hand, add_land_to_battlefield, create_test_land, pass, pass_turn,
+  pass_until,
 }
 
 pub fn main() -> Nil {
@@ -29,7 +29,7 @@ pub fn init_game_test() {
   assert game.current_step == game.Untap
 
   // Verify player 1 has priority
-  assert game.priority_player_id == option.Some(1)
+  assert game.priority_player_id == Some(1)
 
   // Verify player 1 is the active player
   assert game.active_player_id == 1
@@ -57,12 +57,12 @@ pub fn both_players_pass_advances_step_test() {
   let game = game.new()
 
   // Both players pass in Untap (which should advance through to Upkeep)
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Should advance from Untap -> Upkeep
   assert game.current_step == game.Upkeep
   assert game.consecutive_passes == 0
-  assert game.priority_player_id == option.Some(1)
+  assert game.priority_player_id == Some(1)
 }
 
 // Test step advancement resets consecutive passes
@@ -81,11 +81,11 @@ pub fn new_step_gives_priority_to_active_player_test() {
   let game = game.new()
 
   // Advance through Untap -> Upkeep
-  let game = pass_both(game)
+  let game = pass(game)
 
   assert game.current_step == game.Upkeep
-  assert game.priority_player_id == option.Some(game.active_player_id)
-  assert game.priority_player_id == option.Some(1)
+  assert game.priority_player_id == Some(game.active_player_id)
+  assert game.priority_player_id == Some(1)
 }
 
 // Test first turn draw step is skipped
@@ -93,11 +93,11 @@ pub fn first_turn_skips_draw_step_test() {
   let game = game.new()
 
   // Advance through Untap -> Upkeep
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Upkeep
 
   // Advance through Upkeep -> Draw (which should skip to PreCombatMain on turn 1)
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Should skip Draw and go to PreCombatMain
   assert game.current_step == game.PreCombatMain
@@ -112,43 +112,43 @@ pub fn full_turn_cycle_test() {
   assert game.current_step == game.Untap
 
   // Untap -> Upkeep
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Upkeep
 
   // Upkeep -> Draw (skipped) -> PreCombatMain
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.PreCombatMain
 
   // PreCombatMain -> BeginCombat
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.BeginCombat
 
   // BeginCombat -> DeclareAttackers
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.DeclareAttackers
 
   // DeclareAttackers -> DeclareBlockers
-  let game = pass_both(game)
-  assert game.current_step == game.DeclareBlockers
+  let game = pass(game)
+  let assert game.DeclareBlockers(_) = game.current_step
 
   // DeclareBlockers -> CombatDamage
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.CombatDamage
 
   // CombatDamage -> EndCombat
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.EndCombat
 
   // EndCombat -> PostCombatMain
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.PostCombatMain
 
   // PostCombatMain -> EndStep
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.EndStep
 
   // EndStep -> Cleanup
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Cleanup
 
   // Still turn index 0
@@ -168,13 +168,13 @@ pub fn turn_transition_to_player_2_test() {
   assert game.active_player_id == 1
 
   // Cleanup -> Untap (skipped) -> Upkeep of player 2's turn
-  let game = pass_both(game)
+  let game = pass(game)
 
   assert game.current_step == game.Upkeep
   assert game.turn_index == 1
   // Turn index increments when moving to next player
   assert game.active_player_id == 2
-  assert game.priority_player_id == option.Some(2)
+  assert game.priority_player_id == Some(2)
 }
 
 // Test turn cycle increments after full round
@@ -209,11 +209,11 @@ pub fn player_2_has_draw_step_test() {
   assert game.current_step == game.Upkeep
 
   // Player 2 should have a draw step even on turn_index 1
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Draw
 
   // Draw -> PreCombatMain
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.PreCombatMain
 }
 
@@ -229,11 +229,11 @@ pub fn second_turn_cycle_has_draw_step_test() {
   assert game.current_step == game.Upkeep
 
   // Turn cycle 1 should have draw step
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Draw
 
   // Draw -> PreCombatMain
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.PreCombatMain
 }
 
@@ -253,7 +253,7 @@ pub fn mana_empties_on_step_change_test() {
   assert player1.mana_pool.black == 1
 
   // Both players pass to advance to Upkeep
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Upkeep
 
   // Mana should be cleared
@@ -286,7 +286,7 @@ pub fn mana_empties_for_all_players_test() {
   assert p2.mana_pool.green == 1
 
   // Advance to next step
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Both players' mana should be cleared
   let assert Ok(p1_after) = player.find(game.players, 1)
@@ -305,7 +305,7 @@ pub fn empty_pools_remain_empty_test() {
   assert p1.mana_pool.white == 0
 
   // Advance to next step
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Pools should still be empty
   let assert Ok(p1_after) = player.find(game.players, 1)
@@ -327,7 +327,7 @@ pub fn mana_empties_across_multiple_steps_test() {
   let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
 
   // Advance through Untap -> Upkeep
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.Upkeep
 
   // Mana should be cleared
@@ -338,7 +338,7 @@ pub fn mana_empties_across_multiple_steps_test() {
   let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
 
   // Advance through Upkeep -> PreCombatMain (Draw skipped on turn 1)
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.current_step == game.PreCombatMain
 
   // Mana should be cleared again
@@ -368,7 +368,7 @@ pub fn mana_empties_on_turn_transition_test() {
   assert p1.mana_pool.white == 10
 
   // Advance to next player's turn
-  let game = pass_both(game)
+  let game = pass(game)
   assert game.active_player_id == 2
 
   // Player 1's mana should be cleared
@@ -403,11 +403,11 @@ pub fn lands_played_resets_on_new_turn_test() {
 
   // Advance to end of turn and into next player's turn
   let game = pass_until(game.Cleanup, game)
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Complete player 2's turn
   let game = pass_until(game.Cleanup, game)
-  let game = pass_both(game)
+  let game = pass(game)
 
   // Now player 1's turn 2 - lands_played_this_turn should be reset
   let assert Ok(p1_turn2) = player.find(game.players, 1)

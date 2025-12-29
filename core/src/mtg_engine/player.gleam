@@ -64,6 +64,7 @@ pub fn reset_lands_played(player: Player) -> Player {
 }
 
 pub fn untap_permanents(player: Player) -> Player {
-  let untapped_battlefield = dict.map_values(player.battlefield, fn(_, perm) { permanent.untap(perm) })
+  let untapped_battlefield =
+    dict.map_values(player.battlefield, fn(_, perm) { permanent.untap(perm) })
   Player(..player, battlefield: untapped_battlefield)
 }

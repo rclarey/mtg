@@ -1,7 +1,7 @@
 import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/list
-import gleam/option
+import gleam/option.{None, Some}
 import gleam/result
 import mtg_engine/card
 import mtg_engine/error
@@ -17,6 +17,7 @@ pub type Action {
   TapLandForMana(player_id: Int, card_id: String)
   CastCreature(player_id: Int, card_id: String)
   DeclareAttackers(player_id: Int, attacks: List(game.AttackPair))
+  DeclareBlockers(player_id: Int, blocks: List(game.BlockPair))
 }
 
 pub fn dispatch(
@@ -34,6 +35,8 @@ pub fn dispatch(
       handle_cast_creature(state, player_id, card_id)
     DeclareAttackers(player_id, attacks) ->
       handle_declare_attackers(state, player_id, attacks)
+    DeclareBlockers(player_id, blocks) ->
+      handle_declare_blockers(state, player_id, blocks)
   }
 }
 
@@ -44,11 +47,11 @@ fn handle_pass_priority(
 ) -> Result(game.State, error.Error) {
   // Check if anyone has priority yet (attackers must be declared first in DeclareAttackers step)
   use current_priority_player <- result.try(case state.priority_player_id {
-    option.None ->
+    None ->
       Error(error.InvalidAction(
         "Must declare attackers before taking other actions",
       ))
-    option.Some(id) -> Ok(id)
+    Some(id) -> Ok(id)
   })
 
   // Validate: player must have priority
@@ -76,7 +79,7 @@ fn handle_pass_priority(
           Ok(
             game.State(
               ..resolved_state,
-              priority_player_id: option.Some(resolved_state.active_player_id),
+              priority_player_id: Some(resolved_state.active_player_id),
               consecutive_passes: 0,
             ),
           )
@@ -90,7 +93,7 @@ fn handle_pass_priority(
       Ok(
         game.State(
           ..state,
-          priority_player_id: option.Some(next_player.id),
+          priority_player_id: Some(next_player.id),
           consecutive_passes: new_consecutive_passes,
         ),
       )
@@ -139,7 +142,7 @@ fn handle_play_land(
 
   // Check if player has priority
   use <- bool.guard(
-    state.priority_player_id != option.Some(player_id),
+    state.priority_player_id != Some(player_id),
     Error(error.InvalidAction("Can only play a land when you have priority")),
   )
 
@@ -259,7 +262,7 @@ fn handle_cast_creature(
 
   // Validate: must have priority
   use <- bool.guard(
-    state.priority_player_id != option.Some(player_id),
+    state.priority_player_id != Some(player_id),
     Error(error.InvalidAction("Can only cast spells when you have priority")),
   )
 
@@ -362,8 +365,8 @@ fn handle_declare_attackers(
     game.State(
       ..state,
       players: new_players,
-      attacking_creatures: option.Some(attacks),
-      priority_player_id: option.Some(player_id),
+      attacking_creatures: Some(attacks),
+      priority_player_id: Some(player_id),
       consecutive_passes: 0,
     ),
   )
@@ -411,4 +414,141 @@ fn validate_attackers(
 
     Ok(perm)
   })
+}
+
+// Handle declaring blockers
+fn handle_declare_blockers(
+  state: game.State,
+  player_id: Int,
+  blocks: List(game.BlockPair),
+) -> Result(game.State, error.Error) {
+  // Validate: must be the declaring player's turn
+  use <- bool.guard(
+    state.current_step != game.DeclareBlockers(Some(player_id)),
+    Error(error.InvalidAction("Not your turn to declare blockers")),
+  )
+
+  use defending_player <- result.try(player.find(state.players, player_id))
+
+  // Validate: all blocks must be for this defending player
+  use <- bool.guard(
+    list.any(blocks, fn(b) {
+      result.is_error(permanent.find(defending_player.battlefield, b.blocker))
+    }),
+    Error(error.InvalidAction("Can only declare your own blocks")),
+  )
+
+  // Validate: must have attacking creatures
+  use attacks <- result.try(case state.attacking_creatures {
+    None -> Error(error.InvalidAction("No attackers declared"))
+    Some(attack_list) -> Ok(attack_list)
+  })
+
+  // Validate each block
+  use _ <- result.try(
+    list.try_fold(blocks, dict.new(), fn(seen_blockers, block) {
+      validate_block_pair(
+        defending_player.battlefield,
+        block,
+        attacks,
+        defending_player.id,
+        seen_blockers,
+      )
+    }),
+  )
+
+  // Merge this player's blocks with existing blocks
+  let blocking_creatures = list.append(state.blocking_creatures, blocks)
+
+  // Determine next defending player
+  let next_defender = game.get_next_defending_player(state, player_id)
+
+  // Update step and blocking
+  case next_defender {
+    Some(next_id) -> {
+      // More defenders to go
+      Ok(
+        game.State(
+          ..state,
+          blocking_creatures:,
+          current_step: game.DeclareBlockers(Some(next_id)),
+          priority_player_id: None,
+          consecutive_passes: 0,
+        ),
+      )
+    }
+    None -> {
+      // All defenders have declared, give priority to active player
+      Ok(
+        game.State(
+          ..state,
+          blocking_creatures:,
+          current_step: game.DeclareBlockers(None),
+          priority_player_id: Some(state.active_player_id),
+          consecutive_passes: 0,
+        ),
+      )
+    }
+  }
+}
+
+// Validate a single block pair
+fn validate_block_pair(
+  battlefield: Dict(String, permanent.Permanent),
+  block: game.BlockPair,
+  attacks: List(game.AttackPair),
+  defending_player_id: Int,
+  seen_blockers: Dict(String, Int),
+) -> Result(Dict(String, Int), error.Error) {
+  // For now: each blocker can only block once
+  // TODO (Phase 9): Check creature keywords for:
+  //   - "can block an additional creature" -> max 2
+  //   - "can block any number of creatures" -> unlimited
+  use <- bool.guard(
+    dict.get(seen_blockers, block.blocker) |> result.unwrap(0) >= 1,
+    Error(error.InvalidAction("A creature cannot block more than once")),
+  )
+
+  // Find the blocker on battlefield
+  use blocker_perm <- result.try(permanent.find(battlefield, block.blocker))
+
+  // Validate: must be a creature
+  use <- bool.guard(
+    blocker_perm.card.card_type != card.Creature,
+    Error(error.InvalidAction("Only creatures can block")),
+  )
+
+  // Validate: must be untapped (rule 509.1a)
+  use <- bool.guard(
+    blocker_perm.tapped,
+    Error(error.InvalidAction("Cannot block with tapped creature")),
+  )
+
+  // Validate: attacker exists and is attacking this defender
+  use <- bool.guard(
+    !is_attacking_defender(attacks, block.attacker, defending_player_id),
+    Error(error.InvalidAction("Can only block creatures attacking you")),
+  )
+
+  // TODO (Phase 9): Validate evasion abilities (flying, menace, etc.)
+
+  Ok(
+    dict.upsert(seen_blockers, block.blocker, fn(c) { option.unwrap(c, 0) + 1 }),
+  )
+}
+
+// Check if an attacker is attacking a specific defender
+fn is_attacking_defender(
+  attacks: List(game.AttackPair),
+  attacker_id: String,
+  defender_id: Int,
+) -> Bool {
+  list.find(attacks, fn(a) { a.attacker == attacker_id })
+  |> result.map(fn(attack) {
+    case attack.target {
+      game.AttackPlayer(player_id) -> player_id == defender_id
+      // TODO: Add planeswalker/battle checks when implemented
+    }
+  })
+  |> result.unwrap(False)
 }

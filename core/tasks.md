@@ -66,9 +66,9 @@
 
 - [x] **Test declare attackers** - Verify only legal creatures can attack
 
-- [ ] **Add declare blockers action** - Implement declaring blockers with basic validation
+- [x] **Add declare blockers action** - Implement declaring blockers with basic validation
 
-- [ ] **Test declare blockers** - Verify only legal blocks are accepted
+- [x] **Test declare blockers** - Verify only legal blocks are accepted
 
 - [ ] **Add combat damage** - Implement dealing combat damage to creatures and players
 

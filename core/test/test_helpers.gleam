@@ -1,5 +1,6 @@
 import gleam/dict
-import gleam/option
+import gleam/list
+import gleam/option.{None, Some}
 import mtg_engine/action
 import mtg_engine/card
 import mtg_engine/game
@@ -9,7 +10,8 @@ import mtg_engine/player
 
 // Helper to pass priority for both players
 // Automatically declares attackers if in DeclareAttackers step and not yet declared
-pub fn pass_both(state: game.State) {
+// Automatically declares no blockers if in DeclareBlockers step and blockers not yet declared
+pub fn pass(state: game.State) {
   // If we're in DeclareAttackers step and attackers not declared, declare no attackers
   let state = case
     state.current_step == game.DeclareAttackers
@@ -26,28 +28,43 @@ pub fn pass_both(state: game.State) {
     False -> state
   }
 
-  // Get current priority player
-  let assert option.Some(priority_player_1) = state.priority_player_id
-  let assert Ok(s1) =
-    action.dispatch(state, action.PassPriority(priority_player_1))
+  // If we're in DeclareBlockers step and there's a declaring player, declare no blockers
+  // This might result in moving to the next defender, so we recursively call pass
+  let state = case state.current_step {
+    game.DeclareBlockers(Some(declaring_player_id)) -> {
+      let assert Ok(s) =
+        action.dispatch(state, action.DeclareBlockers(declaring_player_id, []))
+      // After declaring, if there's another defender, recursively handle it
+      case s.current_step {
+        game.DeclareBlockers(Some(_)) -> pass(s)
+        _ -> s
+      }
+    }
+    _ -> state
+  }
 
-  let assert option.Some(priority_player_2) = s1.priority_player_id
-  let assert Ok(s2) =
-    action.dispatch(s1, action.PassPriority(priority_player_2))
-  s2
+  let assert Some(priority_player) = state.priority_player_id
+  let not_priority_player = fn(p: player.Player) { p.id != priority_player }
+  list.drop_while(state.players, not_priority_player)
+  |> list.append(list.take_while(state.players, not_priority_player))
+  |> list.fold(state, fn(state, player) {
+    let assert Ok(state) =
+      action.dispatch(state, action.PassPriority(player.id))
+    state
+  })
 }
 
 // Helper to pass until reaching a target step
 pub fn pass_until(target_step: game.Step, state: game.State) {
   case state.current_step {
     step if step == target_step -> state
-    _ -> pass_until(target_step, pass_both(state))
+    _ -> pass_until(target_step, pass(state))
   }
 }
 
 pub fn pass_turn(state: game.State) {
   pass_until(game.Cleanup, state)
-  |> pass_both()
+  |> pass()
 }
 
 // Helper function to create a test land card
@@ -65,8 +82,8 @@ pub fn create_test_land(id: String, name: String) -> card.Card {
       green: 0,
       colorless: 0,
     ),
-    power: option.None,
-    toughness: option.None,
+    power: None,
+    toughness: None,
   )
 }
 
@@ -85,8 +102,8 @@ pub fn create_test_creature(id: String, name: String) -> card.Card {
       green: 1,
       colorless: 0,
     ),
-    power: option.Some(2),
-    toughness: option.Some(2),
+    power: Some(2),
+    toughness: Some(2),
   )
 }
 
@@ -120,7 +137,10 @@ pub fn add_land_to_battlefield(
   game.State(
     ..game,
     players: player.update(game.players, player_id, fn(p) {
-      player.Player(..p, battlefield: dict.insert(p.battlefield, land.id, land_permanent))
+      player.Player(
+        ..p,
+        battlefield: dict.insert(p.battlefield, land.id, land_permanent),
+      )
     }),
   )
 }
@@ -142,7 +162,10 @@ pub fn add_creature_to_battlefield(
   game.State(
     ..game,
     players: player.update(game.players, player_id, fn(p) {
-      player.Player(..p, battlefield: dict.insert(p.battlefield, creature.id, creature_permanent))
+      player.Player(
+        ..p,
+        battlefield: dict.insert(p.battlefield, creature.id, creature_permanent),
+      )
     }),
   )
 }
