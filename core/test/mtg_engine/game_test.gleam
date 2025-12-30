@@ -1,5 +1,5 @@
 import gleam/list
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 import gleeunit
 import mtg_engine/action
 import mtg_engine/game
@@ -16,339 +16,318 @@ pub fn main() -> Nil {
 }
 
 // Test game initialization
-pub fn init_game_test() {
-  let game = game.new()
+pub fn new_game_test() {
+  let state = game.new()
 
   // Verify two players are created
-  assert list.length(game.players) == 2
+  assert list.length(state.players) == 2
 
   // Verify both players start with 20 life
-  assert list.all(game.players, fn(player) { player.life == 20 })
+  assert list.all(state.players, fn(player) { player.life == 20 })
 
   // Verify game starts at Untap step
-  assert game.current_step == game.Untap
+  assert state.step == game.Untap
 
-  // Verify player 1 has priority
-  assert game.priority_player_id == Some(1)
+  // Verify no player has priority
+  assert state.priority_player == None
 
   // Verify player 1 is the active player
-  assert game.active_player_id == 1
+  assert state.active_player == 1
 
-  // Verify game starts at turn 1
-  assert game.turn_index == 0
+  // Verify game starts at turn index 0
+  assert state.turn_index == 0
 
   // Verify consecutive_passes starts at 0
-  assert game.consecutive_passes == 0
+  assert state.consecutive_passes == 0
 
   // Verify stack starts empty
-  assert game.stack == []
-}
-
-// Test stack initialization
-pub fn stack_starts_empty_test() {
-  let game = game.new()
-
-  // Verify stack is an empty list
-  assert game.stack == []
+  assert state.stack == []
 }
 
 // Test phase advancement when both players pass
 pub fn both_players_pass_advances_step_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Both players pass in Untap (which should advance through to Upkeep)
-  let game = pass(game)
+  let state = pass(state)
 
   // Should advance from Untap -> Upkeep
-  assert game.current_step == game.Upkeep
-  assert game.consecutive_passes == 0
-  assert game.priority_player_id == Some(1)
+  assert state.step == game.Upkeep
+  assert state.consecutive_passes == 0
+  assert state.priority_player == Some(1)
 }
 
 // Test step advancement resets consecutive passes
 pub fn step_advancement_resets_consecutive_passes_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
 
-  let assert Ok(game) = action.dispatch(game, action.PassPriority(1))
-  assert game.consecutive_passes == 1
+  let assert Ok(state) = action.dispatch(state, action.PassPriority(1))
+  assert state.consecutive_passes == 1
 
-  let assert Ok(game) = action.dispatch(game, action.PassPriority(2))
-  assert game.consecutive_passes == 0
+  let assert Ok(state) = action.dispatch(state, action.PassPriority(2))
+  assert state.consecutive_passes == 0
 }
 
 // Test priority goes to active player when entering new step
 pub fn new_step_gives_priority_to_active_player_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Advance through Untap -> Upkeep
-  let game = pass(game)
+  let state = pass(state)
 
-  assert game.current_step == game.Upkeep
-  assert game.priority_player_id == Some(game.active_player_id)
-  assert game.priority_player_id == Some(1)
+  assert state.step == game.Upkeep
+  assert state.priority_player == Some(state.active_player)
+  assert state.priority_player == Some(1)
 }
 
 // Test first turn draw step is skipped
 pub fn first_turn_skips_draw_step_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Advance through Untap -> Upkeep
-  let game = pass(game)
-  assert game.current_step == game.Upkeep
+  let state = pass(state)
+  assert state.step == game.Upkeep
 
   // Advance through Upkeep -> Draw (which should skip to PreCombatMain on turn 1)
-  let game = pass(game)
+  let state = pass(state)
 
   // Should skip Draw and go to PreCombatMain
-  assert game.current_step == game.PreCombatMain
-  assert game.turn_index == 0
+  assert state.step == game.PreCombatMain
+  assert state.turn_index == 0
 }
 
 // Test full turn cycle advances through all steps
 pub fn full_turn_cycle_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Start: Untap
-  assert game.current_step == game.Untap
+  assert state.step == game.Untap
 
   // Untap -> Upkeep
-  let game = pass(game)
-  assert game.current_step == game.Upkeep
+  let state = pass(state)
+  assert state.step == game.Upkeep
 
   // Upkeep -> Draw (skipped) -> PreCombatMain
-  let game = pass(game)
-  assert game.current_step == game.PreCombatMain
+  let state = pass(state)
+  assert state.step == game.PreCombatMain
 
   // PreCombatMain -> BeginCombat
-  let game = pass(game)
-  assert game.current_step == game.BeginCombat
+  let state = pass(state)
+  assert state.step == game.BeginCombat
 
   // BeginCombat -> DeclareAttackers
-  let game = pass(game)
-  assert game.current_step == game.DeclareAttackers
+  let state = pass(state)
+  assert state.step == game.DeclareAttackers
 
   // DeclareAttackers -> DeclareBlockers
-  let game = pass(game)
-  let assert game.DeclareBlockers(_) = game.current_step
+  let state = pass(state)
+  let assert game.DeclareBlockers(_) = state.step
 
   // DeclareBlockers -> CombatDamage
-  let game = pass(game)
-  assert game.current_step == game.CombatDamage
+  let state = pass(state)
+  assert state.step == game.CombatDamage
 
   // CombatDamage -> EndCombat
-  let game = pass(game)
-  assert game.current_step == game.EndCombat
+  let state = pass(state)
+  assert state.step == game.EndCombat
 
   // EndCombat -> PostCombatMain
-  let game = pass(game)
-  assert game.current_step == game.PostCombatMain
+  let state = pass(state)
+  assert state.step == game.PostCombatMain
 
   // PostCombatMain -> EndStep
-  let game = pass(game)
-  assert game.current_step == game.EndStep
+  let state = pass(state)
+  assert state.step == game.EndStep
 
   // EndStep -> Cleanup
-  let game = pass(game)
-  assert game.current_step == game.Cleanup
+  let state = pass(state)
+  assert state.step == game.Cleanup
 
   // Still turn index 0
-  assert game.turn_index == 0
-  assert game.active_player_id == 1
+  assert state.turn_index == 0
+  assert state.active_player == 1
 }
 
-// Test turn transition changes active player but keeps turn number
+// Test turn transition changes active player
 pub fn turn_transition_to_player_2_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Advance through entire first turn (player 1)
-  let game = pass_until(game.Cleanup, game)
+  let state = pass_until(game.Cleanup, state)
 
-  assert game.current_step == game.Cleanup
-  assert game.turn_index == 0
-  assert game.active_player_id == 1
+  assert state.step == game.Cleanup
+  assert state.turn_index == 0
+  assert state.active_player == 1
 
-  // Cleanup -> Untap (skipped) -> Upkeep of player 2's turn
-  let game = pass(game)
-
-  assert game.current_step == game.Upkeep
-  assert game.turn_index == 1
+  let state = pass(state)
+  assert state.step == game.Untap
   // Turn index increments when moving to next player
-  assert game.active_player_id == 2
-  assert game.priority_player_id == Some(2)
+  assert state.turn_index == 1
+  assert state.active_player == 2
 }
 
 // Test turn cycle increments after full round
 pub fn turn_index_increments_after_full_round_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Complete player 1's turn
-  let game = pass_turn(game)
+  let state = pass_turn(state)
 
-  assert game.turn_cycle(game) == 0
-  assert game.active_player_id == 2
+  assert game.turn_cycle(state) == 0
+  assert state.active_player == 2
 
   // Complete player 2's turn
-  let game = pass_turn(game)
+  let state = pass_turn(state)
 
   // Now turn cycle should increment since we're back to player 1
-  assert game.turn_cycle(game) == 1
-  assert game.active_player_id == 1
-  // Player 1 gets a draw step on the second turn cycle
-  assert game.current_step == game.Upkeep
+  assert game.turn_cycle(state) == 1
+  assert state.active_player == 1
 }
 
 // Test player 2 has draw step (turn_index 0 draw skip only applies to first player)
 pub fn player_2_has_draw_step_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Advance through player 1's entire first turn
-  let game = pass_turn(game)
+  let state = pass_turn(state)
 
-  assert game.turn_index == 1
-  assert game.active_player_id == 2
-  assert game.current_step == game.Upkeep
+  assert state.turn_index == 1
+  assert state.active_player == 2
+  assert state.step == game.Untap
 
   // Player 2 should have a draw step even on turn_index 1
-  let game = pass(game)
-  assert game.current_step == game.Draw
+  let state = pass(state) |> pass()
+  assert state.step == game.Draw
 
   // Draw -> PreCombatMain
-  let game = pass(game)
-  assert game.current_step == game.PreCombatMain
+  let state = pass(state)
+  assert state.step == game.PreCombatMain
 }
 
 // Test second turn cycle does not skip draw step
 pub fn second_turn_cycle_has_draw_step_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Complete full round to reach turn cycle 1
-  let game = pass_turn(game) |> pass_turn()
+  let state = pass_turn(state) |> pass_turn()
 
-  assert game.turn_cycle(game) == 1
-  assert game.active_player_id == 1
-  assert game.current_step == game.Upkeep
+  assert game.turn_cycle(state) == 1
+  assert state.active_player == 1
+  assert state.step == game.Untap
 
   // Turn cycle 1 should have draw step
-  let game = pass(game)
-  assert game.current_step == game.Draw
+  let state = pass(state) |> pass()
+  assert state.step == game.Draw
 
   // Draw -> PreCombatMain
-  let game = pass(game)
-  assert game.current_step == game.PreCombatMain
+  let state = pass(state)
+  assert state.step == game.PreCombatMain
 }
 
 // Test mana empties when step advances
 pub fn mana_empties_on_step_change_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
   let mana =
     mana.Produced(white: 3, blue: 2, black: 1, red: 0, green: 0, colorless: 0)
 
-  // Produce mana for player 1 in Untap step
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
+  // Produce mana for player 1
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   // Verify mana is in pool
-  let assert Ok(player1) = player.find(game.players, 1)
+  let assert Ok(player1) = player.find(state.players, 1)
   assert player1.mana_pool.white == 3
   assert player1.mana_pool.blue == 2
   assert player1.mana_pool.black == 1
 
-  // Both players pass to advance to Upkeep
-  let game = pass(game)
-  assert game.current_step == game.Upkeep
+  let state = pass(state)
 
   // Mana should be cleared
-  let assert Ok(player1_after) = player.find(game.players, 1)
-  assert player1_after.mana_pool.white == 0
-  assert player1_after.mana_pool.blue == 0
-  assert player1_after.mana_pool.black == 0
-  assert player1_after.mana_pool.red == 0
-  assert player1_after.mana_pool.green == 0
-  assert player1_after.mana_pool.colorless == 0
+  let assert Ok(player1) = player.find(state.players, 1)
+  assert player1.mana_pool.white == 0
+  assert player1.mana_pool.blue == 0
+  assert player1.mana_pool.black == 0
+  assert player1.mana_pool.red == 0
+  assert player1.mana_pool.green == 0
+  assert player1.mana_pool.colorless == 0
 }
 
 // Test mana empties for all players on step change
 pub fn mana_empties_for_all_players_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
   let mana_p1 =
     mana.Produced(white: 3, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
   let mana_p2 =
     mana.Produced(white: 0, blue: 0, black: 0, red: 2, green: 1, colorless: 0)
 
   // Produce mana for both players
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana_p1))
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(2, mana_p2))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana_p1))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(2, mana_p2))
 
   // Verify both have mana
-  let assert Ok(p1) = player.find(game.players, 1)
-  let assert Ok(p2) = player.find(game.players, 2)
+  let assert Ok(p1) = player.find(state.players, 1)
+  let assert Ok(p2) = player.find(state.players, 2)
   assert p1.mana_pool.white == 3
   assert p2.mana_pool.red == 2
   assert p2.mana_pool.green == 1
 
   // Advance to next step
-  let game = pass(game)
+  let state = pass(state)
 
   // Both players' mana should be cleared
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  let assert Ok(p2_after) = player.find(game.players, 2)
-  assert p1_after.mana_pool.white == 0
-  assert p2_after.mana_pool.red == 0
-  assert p2_after.mana_pool.green == 0
+  let assert Ok(p1) = player.find(state.players, 1)
+  let assert Ok(p2) = player.find(state.players, 2)
+  assert p1.mana_pool.white == 0
+  assert p2.mana_pool.red == 0
+  assert p2.mana_pool.green == 0
 }
 
 // Test empty pools remain empty (edge case)
 pub fn empty_pools_remain_empty_test() {
-  let game = game.new()
+  let state = game.new()
 
   // Verify pools start empty
-  let assert Ok(p1) = player.find(game.players, 1)
+  let assert Ok(p1) = player.find(state.players, 1)
   assert p1.mana_pool.white == 0
 
   // Advance to next step
-  let game = pass(game)
+  let state = pass(state)
 
   // Pools should still be empty
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  assert p1_after.mana_pool.white == 0
-  assert p1_after.mana_pool.blue == 0
-  assert p1_after.mana_pool.black == 0
-  assert p1_after.mana_pool.red == 0
-  assert p1_after.mana_pool.green == 0
-  assert p1_after.mana_pool.colorless == 0
+  let assert Ok(p1) = player.find(state.players, 1)
+  assert p1.mana_pool.white == 0
+  assert p1.mana_pool.blue == 0
+  assert p1.mana_pool.black == 0
+  assert p1.mana_pool.red == 0
+  assert p1.mana_pool.green == 0
+  assert p1.mana_pool.colorless == 0
 }
 
 // Test mana empties across multiple step transitions
 pub fn mana_empties_across_multiple_steps_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 5, colorless: 0)
 
   // Produce mana
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
-
-  // Advance through Untap -> Upkeep
-  let game = pass(game)
-  assert game.current_step == game.Upkeep
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
+  let state = pass(state)
 
   // Mana should be cleared
-  let assert Ok(p1) = player.find(game.players, 1)
+  let assert Ok(p1) = player.find(state.players, 1)
   assert p1.mana_pool.green == 0
 
-  // Produce more mana in Upkeep
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
-
-  // Advance through Upkeep -> PreCombatMain (Draw skipped on turn 1)
-  let game = pass(game)
-  assert game.current_step == game.PreCombatMain
+  // Produce more mana
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
+  let state = pass(state)
 
   // Mana should be cleared again
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  assert p1_after.mana_pool.green == 0
+  let assert Ok(p1) = player.find(state.players, 1)
+  assert p1.mana_pool.green == 0
 }
 
 // Test mana empties when transitioning turns
 pub fn mana_empties_on_turn_transition_test() {
-  let game = game.new()
+  let state = game.new()
   let mana =
     mana.Produced(
       white: 10,
@@ -360,126 +339,132 @@ pub fn mana_empties_on_turn_transition_test() {
     )
 
   // Advance to end of turn and produce lots of mana
-  let game = pass_until(game.Cleanup, game)
-  let assert Ok(game) = action.dispatch(game, action.ProduceMana(1, mana))
+  let state = pass_until(game.Cleanup, state)
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   // Verify mana is there
-  let assert Ok(p1) = player.find(game.players, 1)
+  let assert Ok(p1) = player.find(state.players, 1)
   assert p1.mana_pool.white == 10
 
   // Advance to next player's turn
-  let game = pass(game)
-  assert game.active_player_id == 2
+  let state = pass(state)
+  assert state.active_player == 2
 
   // Player 1's mana should be cleared
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  assert p1_after.mana_pool.white == 0
-  assert p1_after.mana_pool.blue == 0
-  assert p1_after.mana_pool.black == 0
-  assert p1_after.mana_pool.red == 0
-  assert p1_after.mana_pool.green == 0
-  assert p1_after.mana_pool.colorless == 0
+  let assert Ok(p1) = player.find(state.players, 1)
+  assert p1.mana_pool.white == 0
+  assert p1.mana_pool.blue == 0
+  assert p1.mana_pool.black == 0
+  assert p1.mana_pool.red == 0
+  assert p1.mana_pool.green == 0
+  assert p1.mana_pool.colorless == 0
 }
 
 // Test lands_played_this_turn resets on new turn
 pub fn lands_played_resets_on_new_turn_test() {
-  let game = game.new()
+  let state = game.new()
   let land1 = create_test_land("land1", "Forest")
   let land2 = create_test_land("land2", "Mountain")
 
   // Add lands to player 1's hand
-  let game = add_card_to_hand(game, 1, land1)
-  let game = add_card_to_hand(game, 1, land2)
+  let state = add_card_to_hand(state, 1, land1)
+  let state = add_card_to_hand(state, 1, land2)
 
   // Advance to PreCombatMain
-  let game = pass_until(game.PreCombatMain, game)
+  let state = pass_until(game.PreCombatMain, state)
 
   // Play first land
-  let assert Ok(game) = action.dispatch(game, action.PlayLand(1, "land1"))
+  let assert Ok(state) = action.dispatch(state, action.PlayLand(1, "land1"))
 
   // Verify lands_played_this_turn is 1
-  let assert Ok(p1) = player.find(game.players, 1)
+  let assert Ok(p1) = player.find(state.players, 1)
   assert p1.lands_played_this_turn == 1
 
   // Advance to end of turn and into next player's turn
-  let game = pass_until(game.Cleanup, game)
-  let game = pass(game)
+  let state = pass_until(game.Cleanup, state)
+  let state = pass(state)
 
   // Complete player 2's turn
-  let game = pass_until(game.Cleanup, game)
-  let game = pass(game)
+  let state = pass_until(game.Cleanup, state)
+  let state = pass(state)
 
   // Now player 1's turn 2 - lands_played_this_turn should be reset
-  let assert Ok(p1_turn2) = player.find(game.players, 1)
-  assert p1_turn2.lands_played_this_turn == 0
+  let assert Ok(p1) = player.find(state.players, 1)
+  assert p1.lands_played_this_turn == 0
 
   // Should be able to play second land now
-  let game = pass_until(game.PreCombatMain, game)
-  let assert Ok(_new_game) = action.dispatch(game, action.PlayLand(1, "land2"))
+  let state = pass_until(game.PreCombatMain, state)
+  let assert Ok(_) = action.dispatch(state, action.PlayLand(1, "land2"))
 }
 
 // Test lands untap during untap step
 pub fn lands_untap_during_untap_step_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
   let forest = create_test_land("land1", "Forest")
   let mountain = create_test_land("land2", "Mountain")
 
   // Add lands to battlefield
-  let game = add_land_to_battlefield(game, 1, forest)
-  let game = add_land_to_battlefield(game, 1, mountain)
+  let state = add_land_to_battlefield(state, 1, forest)
+  let state = add_land_to_battlefield(state, 1, mountain)
 
   // Tap both lands
-  let assert Ok(game) = action.dispatch(game, action.TapLandForMana(1, "land1"))
-  let assert Ok(game) = action.dispatch(game, action.TapLandForMana(1, "land2"))
+  let assert Ok(state) =
+    action.dispatch(state, action.TapLandForMana(1, "land1"))
+  let assert Ok(state) =
+    action.dispatch(state, action.TapLandForMana(1, "land2"))
 
   // Verify both lands are tapped
-  let assert Ok(p1) = player.find(game.players, 1)
+  let assert Ok(p1) = player.find(state.players, 1)
   let assert Ok(land1) = permanent.find(p1.battlefield, "land1")
   let assert Ok(land2) = permanent.find(p1.battlefield, "land2")
   assert land1.tapped == True
   assert land2.tapped == True
 
   // Advance until player 1's next turn (this will trigger untap)
-  let game = pass_turn(game) |> pass_turn()
+  let state = pass_turn(state) |> pass_turn()
 
   // Verify lands are now untapped
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  let assert Ok(land1_after) = permanent.find(p1_after.battlefield, "land1")
-  let assert Ok(land2_after) = permanent.find(p1_after.battlefield, "land2")
-  assert land1_after.tapped == False
-  assert land2_after.tapped == False
+  let assert Ok(p1) = player.find(state.players, 1)
+  let assert Ok(land1) = permanent.find(p1.battlefield, "land1")
+  let assert Ok(land2) = permanent.find(p1.battlefield, "land2")
+  assert land1.tapped == False
+  assert land2.tapped == False
 }
 
 // Test only active player's lands untap
 pub fn only_active_player_lands_untap_test() {
-  let game = game.new()
+  let state = game.new() |> pass_until(game.PreCombatMain, _)
   let forest_p1 = create_test_land("land1", "Forest")
   let mountain_p2 = create_test_land("land2", "Mountain")
 
   // Add lands to both players' battlefields
-  let game = add_land_to_battlefield(game, 1, forest_p1)
-  let game = add_land_to_battlefield(game, 2, mountain_p2)
+  let state =
+    add_land_to_battlefield(state, 1, forest_p1)
+    |> add_land_to_battlefield(2, mountain_p2)
 
   // Tap both lands
-  let assert Ok(game) = action.dispatch(game, action.TapLandForMana(1, "land1"))
-  let assert Ok(game) = action.dispatch(game, action.TapLandForMana(2, "land2"))
+  let assert Ok(state) =
+    action.dispatch(state, action.TapLandForMana(1, "land1"))
+  let state = pass_turn(state) |> pass_until(game.PreCombatMain, _)
+  let assert Ok(state) =
+    action.dispatch(state, action.TapLandForMana(2, "land2"))
 
   // Verify both are tapped
-  let assert Ok(p1) = player.find(game.players, 1)
-  let assert Ok(p2) = player.find(game.players, 2)
+  let assert Ok(p1) = player.find(state.players, 1)
+  let assert Ok(p2) = player.find(state.players, 2)
   let assert Ok(land1) = permanent.find(p1.battlefield, "land1")
   let assert Ok(land2) = permanent.find(p2.battlefield, "land2")
   assert land1.tapped == True
   assert land2.tapped == True
 
-  // Advance to next player's turn (player 2)
-  let game = pass_turn(game)
+  // Advance to next player's turn (player 1)
+  let state = pass_turn(state)
 
-  // Player 2's lands should untap, player 1's should stay tapped
-  let assert Ok(p1_after) = player.find(game.players, 1)
-  let assert Ok(p2_after) = player.find(game.players, 2)
-  let assert Ok(land1_after) = permanent.find(p1_after.battlefield, "land1")
-  let assert Ok(land2_after) = permanent.find(p2_after.battlefield, "land2")
-  assert land1_after.tapped == True
-  assert land2_after.tapped == False
+  // Player 1's lands should untap, player 2's should stay tapped
+  let assert Ok(p1) = player.find(state.players, 1)
+  let assert Ok(p2) = player.find(state.players, 2)
+  let assert Ok(land1) = permanent.find(p1.battlefield, "land1")
+  let assert Ok(land2) = permanent.find(p2.battlefield, "land2")
+  assert land1.tapped == False
+  assert land2.tapped == True
 }

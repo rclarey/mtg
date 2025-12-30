@@ -12,31 +12,31 @@ pub fn main() -> Nil {
 }
 
 pub fn creature_has_summoning_sickness_same_turn_test() {
-  let game = game.new()
+  let state = game.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to hand and advance to main phase
-  let game = add_card_to_hand(game, 1, creature)
-  let game = pass_until(game.PreCombatMain, game)
+  let state = add_card_to_hand(state, 1, creature)
+  let state = pass_until(game.PreCombatMain, state)
 
   // Give player mana to cast
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
-  let assert Ok(game_with_mana) =
-    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(state) =
+    action.dispatch(state, action.ProduceMana(1, mana))
 
   // Cast and resolve the creature
-  let assert Ok(game_after_cast) =
-    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
-  let game_after_resolve = pass(game_after_cast)
+  let assert Ok(state) =
+    action.dispatch(state, action.CastCreature(1, "creature1"))
+  let state = pass(state)
 
   // Get the creature from the battlefield
-  let assert Ok(player) = player.find(game_after_resolve.players, 1)
+  let assert Ok(player) = player.find(state.players, 1)
   let assert Ok(creature_on_battlefield) =
     dict.get(player.battlefield, "creature1")
 
   // Verify the creature has summoning sickness (entered this turn cycle)
-  let current_cycle = game.turn_cycle(game_after_resolve)
+  let current_cycle = game.turn_cycle(state)
   assert permanent.has_summoning_sickness(
       creature_on_battlefield,
       current_cycle,
@@ -46,30 +46,30 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
 
 // Test that a creature does NOT have summoning sickness on the next turn
 pub fn creature_no_summoning_sickness_next_turn_test() {
-  let game = game.new()
+  let state = game.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to hand and advance to main phase
-  let game = add_card_to_hand(game, 1, creature)
-  let game = pass_until(game.PreCombatMain, game)
+  let state = add_card_to_hand(state, 1, creature)
+  let state = pass_until(game.PreCombatMain, state)
 
   // Give player mana to cast
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
-  let assert Ok(game_with_mana) =
-    action.dispatch(game, action.ProduceMana(1, mana))
+  let assert Ok(state) =
+    action.dispatch(state, action.ProduceMana(1, mana))
 
   // Cast and resolve the creature (turn_index 0, player 1, cycle 0)
-  let assert Ok(game_after_cast) =
-    action.dispatch(game_with_mana, action.CastCreature(1, "creature1"))
-  let game_after_resolve = pass(game_after_cast)
+  let assert Ok(state) =
+    action.dispatch(state, action.CastCreature(1, "creature1"))
+  let state = pass(state)
 
   // Verify creature entered on cycle 0
-  let cycle_entered = game.turn_cycle(game_after_resolve)
+  let cycle_entered = game.turn_cycle(state)
   assert cycle_entered == 0
 
   // Get the creature from the battlefield
-  let assert Ok(player) = player.find(game_after_resolve.players, 1)
+  let assert Ok(player) = player.find(state.players, 1)
   let assert Ok(creature_on_battlefield) =
     dict.get(player.battlefield, "creature1")
 

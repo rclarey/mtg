@@ -12,51 +12,55 @@ import mtg_engine/player
 // Automatically declares attackers if in DeclareAttackers step and not yet declared
 // Automatically declares no blockers if in DeclareBlockers step and blockers not yet declared
 pub fn pass(state: game.State) {
-  // If we're in DeclareAttackers step and attackers not declared, declare no attackers
-  let state = case
-    state.current_step == game.DeclareAttackers
-    && option.is_none(state.attacking_creatures)
-  {
-    True -> {
-      let assert Ok(s) =
-        action.dispatch(
-          state,
-          action.DeclareAttackers(state.active_player_id, []),
-        )
-      s
+  let state = case state.step {
+    // If we're in DeclareAttackers step and attackers not declared, declare no attackers
+    game.DeclareAttackers if state.attacking_creatures == None -> {
+      let assert Ok(state) =
+        action.dispatch(state, action.DeclareAttackers(state.active_player, []))
+      state
     }
-    False -> state
-  }
-
-  // If we're in DeclareBlockers step and there's a declaring player, declare no blockers
-  // This might result in moving to the next defender, so we recursively call pass
-  let state = case state.current_step {
+    // If we're in DeclareBlockers step and there's a declaring player, declare no blockers
+    // This might result in moving to the next defender, so we recursively call pass
     game.DeclareBlockers(Some(declaring_player_id)) -> {
-      let assert Ok(s) =
+      let assert Ok(state) =
         action.dispatch(state, action.DeclareBlockers(declaring_player_id, []))
       // After declaring, if there's another defender, recursively handle it
-      case s.current_step {
-        game.DeclareBlockers(Some(_)) -> pass(s)
-        _ -> s
+      case state.step {
+        game.DeclareBlockers(Some(_)) -> pass(state)
+        _ -> state
       }
     }
     _ -> state
   }
 
-  let assert Some(priority_player) = state.priority_player_id
-  let not_priority_player = fn(p: player.Player) { p.id != priority_player }
-  list.drop_while(state.players, not_priority_player)
-  |> list.append(list.take_while(state.players, not_priority_player))
-  |> list.fold(state, fn(state, player) {
-    let assert Ok(state) =
-      action.dispatch(state, action.PassPriority(player.id))
-    state
-  })
+  case state.step, state.priority_player {
+    // Handle Untap
+    // TODO do something better than this
+    game.Untap, _ ->
+      game.State(
+        ..state,
+        step: game.Upkeep,
+        priority_player: Some(state.active_player),
+      )
+    // TODO for now just ignore unimplemented steps that don't start with priority
+    _, None ->
+      pass(game.State(..state, priority_player: Some(state.active_player)))
+    _, Some(priority_player) -> {
+      let not_priority_player = fn(p: player.Player) { p.id != priority_player }
+      list.drop_while(state.players, not_priority_player)
+      |> list.append(list.take_while(state.players, not_priority_player))
+      |> list.fold(state, fn(state, player) {
+        let assert Ok(state) =
+          action.dispatch(state, action.PassPriority(player.id))
+        state
+      })
+    }
+  }
 }
 
 // Helper to pass until reaching a target step
 pub fn pass_until(target_step: game.Step, state: game.State) {
-  case state.current_step {
+  case state.step {
     step if step == target_step -> state
     _ -> pass_until(target_step, pass(state))
   }
@@ -109,13 +113,13 @@ pub fn create_test_creature(id: String, name: String) -> card.Card {
 
 // Helper function to add a card to a player's hand
 pub fn add_card_to_hand(
-  game: game.State,
+  state: game.State,
   player_id: Int,
   card: card.Card,
 ) -> game.State {
   game.State(
-    ..game,
-    players: player.update(game.players, player_id, fn(p) {
+    ..state,
+    players: player.update(state.players, player_id, fn(p) {
       player.Player(..p, hand: [card, ..p.hand])
     }),
   )
@@ -123,7 +127,7 @@ pub fn add_card_to_hand(
 
 // Helper function to add a land directly to battlefield
 pub fn add_land_to_battlefield(
-  game: game.State,
+  state: game.State,
   player_id: Int,
   land: card.Card,
 ) -> game.State {
@@ -135,8 +139,8 @@ pub fn add_land_to_battlefield(
       entered_battlefield_cycle: 0,
     )
   game.State(
-    ..game,
-    players: player.update(game.players, player_id, fn(p) {
+    ..state,
+    players: player.update(state.players, player_id, fn(p) {
       player.Player(
         ..p,
         battlefield: dict.insert(p.battlefield, land.id, land_permanent),
@@ -147,7 +151,7 @@ pub fn add_land_to_battlefield(
 
 // Helper function to add a creature directly to battlefield
 pub fn add_creature_to_battlefield(
-  game: game.State,
+  state: game.State,
   player_id: Int,
   creature: card.Card,
   entered_cycle: Int,
@@ -160,8 +164,8 @@ pub fn add_creature_to_battlefield(
       entered_battlefield_cycle: entered_cycle,
     )
   game.State(
-    ..game,
-    players: player.update(game.players, player_id, fn(p) {
+    ..state,
+    players: player.update(state.players, player_id, fn(p) {
       player.Player(
         ..p,
         battlefield: dict.insert(p.battlefield, creature.id, creature_permanent),

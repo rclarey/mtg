@@ -40,31 +40,30 @@ pub fn dispatch(
   }
 }
 
+fn guard_priority(
+  state: game.State,
+  player_id: Int,
+  do: fn() -> Result(a, error.Error),
+) -> Result(a, error.Error) {
+  bool.guard(
+    state.priority_player != Some(player_id),
+    Error(error.DoNotHavePriority),
+    do,
+  )
+}
+
 // Handle passing priority
 fn handle_pass_priority(
   state: game.State,
   player_id: Int,
 ) -> Result(game.State, error.Error) {
-  // Check if anyone has priority yet (attackers must be declared first in DeclareAttackers step)
-  use current_priority_player <- result.try(case state.priority_player_id {
-    None ->
-      Error(error.InvalidAction(
-        "Must declare attackers before taking other actions",
-      ))
-    Some(id) -> Ok(id)
-  })
+  use <- guard_priority(state, player_id)
 
-  // Validate: player must have priority
-  use <- bool.guard(
-    player_id != current_priority_player,
-    Error(error.InvalidAction("Can only pass priority when you have priority")),
-  )
-
-  let new_consecutive_passes = state.consecutive_passes + 1
+  let consecutive_passes = state.consecutive_passes + 1
   let num_players = list.length(state.players)
 
   // Check if all players have passed
-  case new_consecutive_passes >= num_players {
+  case consecutive_passes >= num_players {
     True -> {
       // All players passed - check if there's anything on the stack to resolve
       case state.stack {
@@ -74,12 +73,12 @@ fn handle_pass_priority(
         }
         _ -> {
           // Stack has items, resolve the top one and reset priority
-          use resolved_state <- result.try(game.resolve_top_of_stack(state))
+          use state <- result.try(game.resolve_top_of_stack(state))
           // Reset consecutive passes and give priority to active player
           Ok(
             game.State(
-              ..resolved_state,
-              priority_player_id: Some(resolved_state.active_player_id),
+              ..state,
+              priority_player: Some(state.active_player),
               consecutive_passes: 0,
             ),
           )
@@ -88,13 +87,13 @@ fn handle_pass_priority(
     }
     False -> {
       // Not all players passed yet, give priority to next player
-      let next_player = game.next_player(state, current_priority_player)
+      let next_player = game.next_player(state, player_id)
 
       Ok(
         game.State(
           ..state,
-          priority_player_id: Some(next_player.id),
-          consecutive_passes: new_consecutive_passes,
+          consecutive_passes:,
+          priority_player: Some(next_player.id),
         ),
       )
     }
@@ -122,28 +121,15 @@ fn handle_play_land(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
-  // Check if anyone has priority yet (must be checked first)
-  use <- bool.guard(
-    option.is_none(state.priority_player_id),
-    Error(error.InvalidAction(
-      "Must declare attackers before taking other actions",
-    )),
-  )
+  use <- guard_priority(state, player_id)
 
   use <- bool.guard(
-    state.current_step != game.PreCombatMain
-      && state.current_step != game.PostCombatMain,
+    state.step != game.PreCombatMain && state.step != game.PostCombatMain,
     Error(error.InvalidAction("Can only play a land during a main phase")),
   )
   use <- bool.guard(
-    player_id != state.active_player_id,
+    player_id != state.active_player,
     Error(error.InvalidAction("Only the active player can play a land")),
-  )
-
-  // Check if player has priority
-  use <- bool.guard(
-    state.priority_player_id != Some(player_id),
-    Error(error.InvalidAction("Can only play a land when you have priority")),
   )
 
   // Find the player
@@ -191,13 +177,7 @@ fn handle_tap_land_for_mana(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
-  // Check if anyone has priority yet (attackers must be declared first)
-  use <- bool.guard(
-    option.is_none(state.priority_player_id),
-    Error(error.InvalidAction(
-      "Must declare attackers before taking other actions",
-    )),
-  )
+  use <- guard_priority(state, player_id)
 
   // Find the player
   use p <- result.try(player.find(state.players, player_id))
@@ -246,30 +226,17 @@ fn handle_cast_creature(
   player_id: Int,
   card_id: String,
 ) -> Result(game.State, error.Error) {
-  // Check if anyone has priority yet (must be checked first)
-  use <- bool.guard(
-    option.is_none(state.priority_player_id),
-    Error(error.InvalidAction(
-      "Must declare attackers before taking other actions",
-    )),
-  )
+  use <- guard_priority(state, player_id)
 
   // Validate: must be active player
   use <- bool.guard(
-    player_id != state.active_player_id,
+    player_id != state.active_player,
     Error(error.InvalidAction("Only the active player can cast spells")),
-  )
-
-  // Validate: must have priority
-  use <- bool.guard(
-    state.priority_player_id != Some(player_id),
-    Error(error.InvalidAction("Can only cast spells when you have priority")),
   )
 
   // Validate: must be in a main phase (sorcery-speed for creatures)
   use <- bool.guard(
-    state.current_step != game.PreCombatMain
-      && state.current_step != game.PostCombatMain,
+    state.step != game.PreCombatMain && state.step != game.PostCombatMain,
     Error(error.InvalidAction("Can only cast creatures during a main phase")),
   )
 
@@ -314,7 +281,7 @@ fn handle_declare_attackers(
 ) -> Result(game.State, error.Error) {
   // Validate: must be in DeclareAttackers step
   use <- bool.guard(
-    state.current_step != game.DeclareAttackers,
+    state.step != game.DeclareAttackers,
     Error(error.InvalidAction(
       "Can only declare attackers during DeclareAttackers step",
     )),
@@ -322,7 +289,7 @@ fn handle_declare_attackers(
 
   // Validate: must be active player
   use <- bool.guard(
-    player_id != state.active_player_id,
+    player_id != state.active_player,
     Error(error.InvalidAction("Only the active player can declare attackers")),
   )
 
@@ -366,7 +333,7 @@ fn handle_declare_attackers(
       ..state,
       players: new_players,
       attacking_creatures: Some(attacks),
-      priority_player_id: Some(player_id),
+      priority_player: Some(player_id),
       consecutive_passes: 0,
     ),
   )
@@ -424,7 +391,7 @@ fn handle_declare_blockers(
 ) -> Result(game.State, error.Error) {
   // Validate: must be the declaring player's turn
   use <- bool.guard(
-    state.current_step != game.DeclareBlockers(Some(player_id)),
+    state.step != game.DeclareBlockers(Some(player_id)),
     Error(error.InvalidAction("Not your turn to declare blockers")),
   )
 
@@ -471,8 +438,8 @@ fn handle_declare_blockers(
         game.State(
           ..state,
           blocking_creatures:,
-          current_step: game.DeclareBlockers(Some(next_id)),
-          priority_player_id: None,
+          step: game.DeclareBlockers(Some(next_id)),
+          priority_player: None,
           consecutive_passes: 0,
         ),
       )
@@ -483,8 +450,8 @@ fn handle_declare_blockers(
         game.State(
           ..state,
           blocking_creatures:,
-          current_step: game.DeclareBlockers(None),
-          priority_player_id: Some(state.active_player_id),
+          step: game.DeclareBlockers(None),
+          priority_player: Some(state.active_player),
           consecutive_passes: 0,
         ),
       )

@@ -60,10 +60,9 @@ pub type BlockPair {
 pub type State {
   State(
     players: List(player.Player),
-    active_player_id: Int,
-    // None during declare attackers until attackers are declared
-    priority_player_id: Option(Int),
-    current_step: Step,
+    active_player: Int,
+    priority_player: Option(Int),
+    step: Step,
     consecutive_passes: Int,
     turn_index: Int,
     stack: List(StackItem),
@@ -74,33 +73,20 @@ pub type State {
 }
 
 pub fn new() -> State {
-  let player1 = player.new(1)
-  let player2 = player.new(2)
-
-  State(
-    players: [player1, player2],
-    active_player_id: 1,
-    priority_player_id: option.Some(1),
-    current_step: Untap,
-    consecutive_passes: 0,
-    turn_index: 0,
-    stack: [],
-    attacking_creatures: option.None,
-    blocking_creatures: [],
-  )
+  new_multiplayer(2)
 }
 
 pub fn new_multiplayer(n: Int) -> State {
   let players = list.range(1, n) |> list.map(player.new)
   State(
     players:,
-    active_player_id: 1,
-    priority_player_id: option.Some(1),
-    current_step: Untap,
+    active_player: 1,
+    priority_player: None,
+    step: Untap,
     consecutive_passes: 0,
     turn_index: 0,
     stack: [],
-    attacking_creatures: option.None,
+    attacking_creatures: None,
     blocking_creatures: [],
   )
 }
@@ -132,7 +118,7 @@ pub fn get_next_defending_player(
   current_player_id: Int,
 ) -> Option(Int) {
   case next_player(state, current_player_id) {
-    player if player.id == state.active_player_id -> None
+    player if player.id == state.active_player -> None
     player -> {
       use attackers <- option.then(state.attacking_creatures)
       let is_attacked =
@@ -150,110 +136,72 @@ pub fn get_next_defending_player(
 }
 
 pub fn advance_step(state: State) -> State {
-  let next_step = next_step(state.current_step)
-  let assert Ok(first_player) = list.first(state.players)
+  let step = next_step(state)
+  let first_defender = case step {
+    DeclareBlockers(_) -> get_next_defending_player(state, state.active_player)
+    _ -> None
+  }
+  let priority_player = case step {
+    Untap | DeclareAttackers | CombatDamage | Cleanup -> None
+    DeclareBlockers(_) ->
+      case first_defender {
+        Some(_) -> None
+        None -> Some(state.active_player)
+      }
+    _ -> Some(state.active_player)
+  }
 
   // Clear all mana pools when transitioning between steps (rule 106.4)
-  let cleared_players = list.map(state.players, player.clear_mana_pool)
+  let players = list.map(state.players, player.clear_mana_pool)
 
-  // Check if we're transitioning to a new turn (next step is Untap)
-  case next_step {
+  let state =
+    State(..state, players:, priority_player:, step:, consecutive_passes: 0)
+
+  case step {
     Untap -> {
       // Move to next player's turn
-      let next_active_player = next_player(state, state.active_player_id)
+      let active_player = next_player(state, state.active_player)
 
-      // Reset lands_played_this_turn for all players
-      let players_with_reset_lands =
-        list.map(cleared_players, player.reset_lands_played)
+      let players =
+        // Reset lands_played_this_turn for all players
+        list.map(players, player.reset_lands_played)
+        // Untap all permanents for the new active player (Untap step)
+        |> player.update(active_player.id, player.untap_permanents)
 
-      // Untap all permanents for the new active player (Untap step)
-      let players_with_untapped =
-        player.update(
-          players_with_reset_lands,
-          next_active_player.id,
-          player.untap_permanents,
-        )
-
-      // Since Untap has no priority, immediately advance to Upkeep
       State(
         ..state,
-        players: players_with_untapped,
-        active_player_id: next_active_player.id,
-        priority_player_id: option.Some(next_active_player.id),
-        current_step: Upkeep,
-        consecutive_passes: 0,
+        players:,
+        active_player: active_player.id,
         turn_index: state.turn_index + 1,
-        attacking_creatures: option.None,
+      )
+    }
+    DeclareBlockers(_) ->
+      State(
+        ..state,
+        step: DeclareBlockers(first_defender),
+        priority_player:,
         blocking_creatures: [],
       )
-    }
-    Draw if state.turn_index == 0 && state.active_player_id == first_player.id ->
-      State(
-        ..state,
-        players: cleared_players,
-        current_step: PreCombatMain,
-        priority_player_id: option.Some(state.active_player_id),
-        consecutive_passes: 0,
-      )
-    Draw ->
-      State(
-        ..state,
-        players: cleared_players,
-        current_step: Draw,
-        priority_player_id: option.Some(state.active_player_id),
-        consecutive_passes: 0,
-      )
-    DeclareAttackers -> {
-      // No one has priority until attackers are declared
-      State(
-        ..state,
-        players: cleared_players,
-        current_step: DeclareAttackers,
-        priority_player_id: option.None,
-        consecutive_passes: 0,
-      )
-    }
-    DeclareBlockers(_) -> {
-      let first_defender =
-        get_next_defending_player(state, state.active_player_id)
-
-      // If there are no defenders, give priority to active player immediately
-      let priority = case first_defender {
-        option.Some(_) -> option.None
-        option.None -> option.Some(state.active_player_id)
-      }
-
-      State(
-        ..state,
-        players: cleared_players,
-        current_step: DeclareBlockers(first_defender),
-        priority_player_id: priority,
-        consecutive_passes: 0,
-        blocking_creatures: [],
-      )
-    }
-    _ -> {
-      // Normal step advancement within a turn
-      // Priority goes to active player when entering a new step
-      State(
-        ..state,
-        players: cleared_players,
-        current_step: next_step,
-        priority_player_id: option.Some(state.active_player_id),
-        consecutive_passes: 0,
-      )
-    }
+    PostCombatMain ->
+      State(..state, attacking_creatures: None, blocking_creatures: [])
+    _ -> state
   }
 }
 
-fn next_step(current_step: Step) -> Step {
-  case current_step {
+fn next_step(state: State) -> Step {
+  case state.step {
     Untap -> Upkeep
-    Upkeep -> Draw
+    Upkeep -> {
+      let assert Ok(first_player) = list.first(state.players)
+      case state.turn_index == 0 && state.active_player == first_player.id {
+        True -> PreCombatMain
+        False -> Draw
+      }
+    }
     Draw -> PreCombatMain
     PreCombatMain -> BeginCombat
     BeginCombat -> DeclareAttackers
-    DeclareAttackers -> DeclareBlockers(option.None)
+    DeclareAttackers -> DeclareBlockers(None)
     DeclareBlockers(_) -> CombatDamage
     CombatDamage -> EndCombat
     EndCombat -> PostCombatMain
