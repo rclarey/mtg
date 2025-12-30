@@ -98,7 +98,7 @@ pub fn first_turn_skips_draw_step_test() {
 
 // Test full turn cycle advances through all steps
 pub fn full_turn_cycle_test() {
-  let state = game.new()
+  let state = game.new() |> pass_until(game.Cleanup, _) |> pass()
 
   // Start: Untap
   assert state.step == game.Untap
@@ -107,7 +107,11 @@ pub fn full_turn_cycle_test() {
   let state = pass(state)
   assert state.step == game.Upkeep
 
-  // Upkeep -> Draw (skipped) -> PreCombatMain
+  // Upkeep -> Draw
+  let state = pass(state)
+  assert state.step == game.Draw
+
+  // Draw -> PreCombatMain
   let state = pass(state)
   assert state.step == game.PreCombatMain
 
@@ -121,7 +125,7 @@ pub fn full_turn_cycle_test() {
 
   // DeclareAttackers -> DeclareBlockers
   let state = pass(state)
-  let assert game.DeclareBlockers(_) = state.step
+  assert state.step == game.DeclareBlockers
 
   // DeclareBlockers -> CombatDamage
   let state = pass(state)
@@ -142,10 +146,6 @@ pub fn full_turn_cycle_test() {
   // EndStep -> Cleanup
   let state = pass(state)
   assert state.step == game.Cleanup
-
-  // Still turn index 0
-  assert state.turn_index == 0
-  assert state.active_player == 1
 }
 
 // Test turn transition changes active player

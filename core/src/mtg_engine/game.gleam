@@ -26,7 +26,7 @@ pub type Step {
   // Combat phase
   BeginCombat
   DeclareAttackers
-  DeclareBlockers(declaring_player_id: Option(Int))
+  DeclareBlockers
   CombatDamage
   EndCombat
   // Post-combat main phase
@@ -62,6 +62,9 @@ pub type State {
     players: List(player.Player),
     active_player: Int,
     priority_player: Option(Int),
+    // used when players need to take some action which doesn't use the stack in APNAP order
+    // e.g. declaring blockers, assigning combat damage, etc.
+    choice_player: Option(Int),
     step: Step,
     consecutive_passes: Int,
     turn_index: Int,
@@ -82,6 +85,7 @@ pub fn new_multiplayer(n: Int) -> State {
     players:,
     active_player: 1,
     priority_player: None,
+    choice_player: None,
     step: Untap,
     consecutive_passes: 0,
     turn_index: 0,
@@ -138,12 +142,12 @@ pub fn get_next_defending_player(
 pub fn advance_step(state: State) -> State {
   let step = next_step(state)
   let first_defender = case step {
-    DeclareBlockers(_) -> get_next_defending_player(state, state.active_player)
+    DeclareBlockers -> get_next_defending_player(state, state.active_player)
     _ -> None
   }
   let priority_player = case step {
     Untap | DeclareAttackers | CombatDamage | Cleanup -> None
-    DeclareBlockers(_) ->
+    DeclareBlockers ->
       case first_defender {
         Some(_) -> None
         None -> Some(state.active_player)
@@ -175,13 +179,7 @@ pub fn advance_step(state: State) -> State {
         turn_index: state.turn_index + 1,
       )
     }
-    DeclareBlockers(_) ->
-      State(
-        ..state,
-        step: DeclareBlockers(first_defender),
-        priority_player:,
-        blocking_creatures: [],
-      )
+    DeclareBlockers -> State(..state, choice_player: first_defender)
     PostCombatMain ->
       State(..state, attacking_creatures: None, blocking_creatures: [])
     _ -> state
@@ -201,8 +199,8 @@ fn next_step(state: State) -> Step {
     Draw -> PreCombatMain
     PreCombatMain -> BeginCombat
     BeginCombat -> DeclareAttackers
-    DeclareAttackers -> DeclareBlockers(None)
-    DeclareBlockers(_) -> CombatDamage
+    DeclareAttackers -> DeclareBlockers
+    DeclareBlockers -> CombatDamage
     CombatDamage -> EndCombat
     EndCombat -> PostCombatMain
     PostCombatMain -> EndStep

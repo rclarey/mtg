@@ -1639,7 +1639,7 @@ pub fn declare_attackers_twice_with_empty_first_test() {
   let assert Ok(state) = action.dispatch(state, action.PassPriority(2))
 
   // We should now be in DeclareBlockers step
-  let assert game.DeclareBlockers(_) = state.step
+  assert state.step == game.DeclareBlockers
 
   // But let's test the scenario where we're still in DeclareAttackers
   // (for example, if player 2 had cast a spell)
@@ -1829,7 +1829,8 @@ pub fn declare_single_blocker_test() {
   let assert Ok(state) = action.dispatch(state, action.PassPriority(p2))
 
   // We should be in DeclareBlockers step with player 2 declaring
-  let assert game.DeclareBlockers(Some(2)) = state.step
+  assert state.step == game.DeclareBlockers
+  assert state.choice_player == Some(2)
 
   // Player 2 declares blocker
   let assert Ok(state) =
@@ -1842,7 +1843,8 @@ pub fn declare_single_blocker_test() {
   assert state.blocking_creatures == [game.BlockPair(blocker.id, attacker.id)]
 
   // Verify we're still in DeclareBlockers step but all players have declared
-  let assert game.DeclareBlockers(None) = state.step
+  assert state.step == game.DeclareBlockers
+  assert state.choice_player == None
 
   // Verify priority went to active player
   assert state.priority_player == Some(1)
@@ -1872,7 +1874,7 @@ pub fn declare_no_blockers_test() {
   let state = pass(state)
 
   // We should be in DeclareBlockers step
-  let assert game.DeclareBlockers(Some(2)) = state.step
+  assert state.step == game.DeclareBlockers
 
   // Player 2 declares no blockers
   let assert Ok(state) = action.dispatch(state, action.DeclareBlockers(2, []))
@@ -2050,7 +2052,8 @@ pub fn wrong_player_cannot_declare_blockers_test() {
   let state = pass(state)
 
   // We should be in DeclareBlockers step with player 2 declaring
-  let assert game.DeclareBlockers(Some(2)) = state.step
+  assert state.step == game.DeclareBlockers
+  assert state.choice_player == Some(2)
 
   // Try to have player 1 (not the declaring player) declare blocks - should fail
   let result = action.dispatch(state, action.DeclareBlockers(1, []))

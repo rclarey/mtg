@@ -389,9 +389,16 @@ fn handle_declare_blockers(
   player_id: Int,
   blocks: List(game.BlockPair),
 ) -> Result(game.State, error.Error) {
+  // Validate: must be the declare blockers step
+  use <- bool.guard(
+    state.step != game.DeclareBlockers,
+    Error(error.InvalidAction(
+      "Can only declare blockers in the declare blockers step",
+    )),
+  )
   // Validate: must be the declaring player's turn
   use <- bool.guard(
-    state.step != game.DeclareBlockers(Some(player_id)),
+    state.choice_player != Some(player_id),
     Error(error.InvalidAction("Not your turn to declare blockers")),
   )
 
@@ -432,30 +439,19 @@ fn handle_declare_blockers(
 
   // Update step and blocking
   case next_defender {
-    Some(next_id) -> {
+    Some(next_id) ->
       // More defenders to go
-      Ok(
-        game.State(
-          ..state,
-          blocking_creatures:,
-          step: game.DeclareBlockers(Some(next_id)),
-          priority_player: None,
-          consecutive_passes: 0,
-        ),
-      )
-    }
-    None -> {
+      Ok(game.State(..state, blocking_creatures:, choice_player: Some(next_id)))
+    None ->
       // All defenders have declared, give priority to active player
       Ok(
         game.State(
           ..state,
           blocking_creatures:,
-          step: game.DeclareBlockers(None),
           priority_player: Some(state.active_player),
-          consecutive_passes: 0,
+          choice_player: None,
         ),
       )
-    }
   }
 }
 

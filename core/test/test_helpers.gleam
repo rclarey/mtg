@@ -19,17 +19,8 @@ pub fn pass(state: game.State) {
         action.dispatch(state, action.DeclareAttackers(state.active_player, []))
       state
     }
-    // If we're in DeclareBlockers step and there's a declaring player, declare no blockers
-    // This might result in moving to the next defender, so we recursively call pass
-    game.DeclareBlockers(Some(declaring_player_id)) -> {
-      let assert Ok(state) =
-        action.dispatch(state, action.DeclareBlockers(declaring_player_id, []))
-      // After declaring, if there's another defender, recursively handle it
-      case state.step {
-        game.DeclareBlockers(Some(_)) -> pass(state)
-        _ -> state
-      }
-    }
+    // If we're in DeclareBlockers then declare no blockers
+    game.DeclareBlockers -> declare_no_blockers(state)
     _ -> state
   }
 
@@ -55,6 +46,17 @@ pub fn pass(state: game.State) {
         state
       })
     }
+  }
+}
+
+pub fn declare_no_blockers(state: game.State) {
+  case state.step, state.choice_player {
+    game.DeclareBlockers, Some(p) -> {
+      let assert Ok(state) =
+        action.dispatch(state, action.DeclareBlockers(p, []))
+      declare_no_blockers(state)
+    }
+    _, _ -> state
   }
 }
 
