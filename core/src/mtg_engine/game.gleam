@@ -4,6 +4,7 @@ import gleam/list
 import gleam/option.{type Option, None, Some}
 import mtg_engine/card
 import mtg_engine/error
+import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
 
@@ -57,6 +58,10 @@ pub type BlockPair {
   BlockPair(blocker: String, attacker: String)
 }
 
+pub type DamageAssignment {
+  DamageAssignment(amount: Int, from: String, to: String)
+}
+
 pub type State {
   State(
     players: List(player.Player),
@@ -69,9 +74,9 @@ pub type State {
     consecutive_passes: Int,
     turn_index: Int,
     stack: List(StackItem),
-    // None means attackers not yet declared, Some([]) means no attackers, Some([pairs]) means attackers declared
     attacking_creatures: Option(List(AttackPair)),
     blocking_creatures: List(BlockPair),
+    assigned_damage: List(DamageAssignment),
   )
 }
 
@@ -92,6 +97,7 @@ pub fn new_multiplayer(n: Int) -> State {
     stack: [],
     attacking_creatures: None,
     blocking_creatures: [],
+    assigned_damage: [],
   )
 }
 
@@ -156,7 +162,8 @@ pub fn advance_step(state: State) -> State {
   }
 
   // Clear all mana pools when transitioning between steps (rule 106.4)
-  let players = list.map(state.players, player.clear_mana_pool)
+  let players =
+    list.map(state.players, fn(p) { player.Player(..p, mana_pool: mana.none()) })
 
   let state =
     State(..state, players:, priority_player:, step:, consecutive_passes: 0)
@@ -167,10 +174,22 @@ pub fn advance_step(state: State) -> State {
       let active_player = next_player(state, state.active_player)
 
       let players =
-        // Reset lands_played_this_turn for all players
-        list.map(players, player.reset_lands_played)
-        // Untap all permanents for the new active player (Untap step)
-        |> player.update(active_player.id, player.untap_permanents)
+        list.map(players, fn(p) {
+          player.Player(
+            ..p,
+            lands_played_this_turn: 0,
+            battlefield: dict.map_values(p.battlefield, fn(_, perm) {
+              permanent.Permanent(
+                ..perm,
+                damage: 0,
+                tapped: case p.id == active_player.id {
+                  True -> False
+                  False -> perm.tapped
+                },
+              )
+            }),
+          )
+        })
 
       State(
         ..state,
@@ -180,6 +199,9 @@ pub fn advance_step(state: State) -> State {
       )
     }
     DeclareBlockers -> State(..state, choice_player: first_defender)
+    CombatDamage ->
+      // Active player assigns damage first in APNAP order
+      State(..state, choice_player: Some(state.active_player))
     PostCombatMain ->
       State(..state, attacking_creatures: None, blocking_creatures: [])
     _ -> state

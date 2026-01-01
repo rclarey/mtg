@@ -18,6 +18,7 @@ pub type Action {
   CastCreature(player_id: Int, card_id: String)
   DeclareAttackers(player_id: Int, attacks: List(game.AttackPair))
   DeclareBlockers(player_id: Int, blocks: List(game.BlockPair))
+  AssignDamage(player_id: Int, assignment: List(game.DamageAssignment))
 }
 
 pub fn dispatch(
@@ -37,6 +38,8 @@ pub fn dispatch(
       handle_declare_attackers(state, player_id, attacks)
     DeclareBlockers(player_id, blocks) ->
       handle_declare_blockers(state, player_id, blocks)
+    AssignDamage(player_id, assignment) ->
+      handle_assign_damage(state, player_id, assignment)
   }
 }
 
@@ -46,7 +49,7 @@ fn guard_priority(
   do: fn() -> Result(a, error.Error),
 ) -> Result(a, error.Error) {
   bool.guard(
-    state.priority_player != Some(player_id),
+    state.priority_player != Some(player_id) || state.choice_player != None,
     Error(error.DoNotHavePriority),
     do,
   )
@@ -514,4 +517,282 @@ fn is_attacking_defender(
     }
   })
   |> result.unwrap(False)
+}
+
+fn handle_assign_damage(
+  state: game.State,
+  player_id: Int,
+  assignments: List(game.DamageAssignment),
+) -> Result(game.State, error.Error) {
+  // Validate: must be the combat damage step
+  use <- bool.guard(
+    state.step != game.CombatDamage,
+    Error(error.InvalidAction(
+      "Can only assign damage in the combat damage step",
+    )),
+  )
+  // Validate: must be the assigning player's turn
+  use <- bool.guard(
+    state.choice_player != Some(player_id),
+    Error(error.InvalidAction("Not your turn to assign damage")),
+  )
+
+  use assigning_player <- result.try(player.find(state.players, player_id))
+
+  use damage_per <- result.try(
+    list.try_fold(assignments, dict.new(), fn(damage_per, assignment) {
+      use _ <- result.try(validate_damage_assignment(
+        state,
+        assigning_player,
+        assignment,
+      ))
+
+      Ok(
+        dict.upsert(damage_per, assignment.from, fn(entry) {
+          case entry {
+            Some(n) -> n + assignment.amount
+            None -> assignment.amount
+          }
+        }),
+      )
+    }),
+  )
+
+  // Validate: each creature must assign damage equal to it's power
+  use _ <- result.try(
+    list.try_each(state.blocking_creatures, fn(block) {
+      let assigner_id = case state.active_player == player_id {
+        True -> block.attacker
+        False -> block.blocker
+      }
+      case permanent.find(assigning_player.battlefield, assigner_id) {
+        // the assigner for this block doesn't belong to the assigning player, so ignore
+        Error(_) -> Ok(Nil)
+        Ok(creature) -> {
+          let damage = dict.get(damage_per, assigner_id)
+          let power = option.unwrap(creature.card.power, 0)
+
+          // 0-power creatures should have no damage assignments
+          case power {
+            0 ->
+              case damage {
+                Error(_) -> Ok(Nil)
+                Ok(_) ->
+                  Error(error.InvalidAction(
+                    "Cannot assign damage from a creature with 0 power",
+                  ))
+              }
+            _ ->
+              case damage == Ok(power) {
+                True -> Ok(Nil)
+                False ->
+                  Error(error.InvalidAction(
+                    "Must assign all damage from each creature",
+                  ))
+              }
+          }
+        }
+      }
+    }),
+  )
+
+  let state =
+    game.State(
+      ..state,
+      assigned_damage: list.append(assignments, state.assigned_damage),
+    )
+
+  // Update step and blocking
+  case game.get_next_defending_player(state, player_id) {
+    Some(next_id) ->
+      // More defenders to go
+      Ok(game.State(..state, choice_player: Some(next_id)))
+    None -> {
+      // All damage assignments collected - apply the damage
+      let state = apply_combat_damage(state)
+
+      Ok(
+        game.State(
+          ..state,
+          assigned_damage: [],
+          priority_player: Some(state.active_player),
+          choice_player: None,
+        ),
+      )
+    }
+  }
+}
+
+// Apply all combat damage to creatures and players
+fn apply_combat_damage(state: game.State) -> game.State {
+  // Step 1: Apply assigned damage to creatures
+  let state = apply_assigned_damage_to_creatures(state)
+
+  // Step 2: Apply damage from unblocked attackers to defending players
+  let state = apply_unblocked_attacker_damage(state)
+
+  // Step 3: Check state-based actions - remove dead creatures
+  remove_dead_creatures(state)
+}
+
+// Apply damage assignments to creatures on the battlefield
+fn apply_assigned_damage_to_creatures(state: game.State) -> game.State {
+  // Group damage by player (to update each player's battlefield once)
+  let players =
+    list.fold(state.assigned_damage, state.players, fn(players, assignment) {
+      // Find which player owns the creature receiving damage
+      list.fold(players, players, fn(acc_players, p) {
+        case permanent.find(p.battlefield, assignment.to) {
+          Ok(_) -> {
+            // This player owns the creature - apply damage
+            player.update(acc_players, p.id, fn(player) {
+              let battlefield =
+                permanent.update(player.battlefield, assignment.to, fn(perm) {
+                  permanent.Permanent(
+                    ..perm,
+                    damage: perm.damage + assignment.amount,
+                  )
+                })
+              player.Player(..player, battlefield:)
+            })
+          }
+          Error(_) -> acc_players
+        }
+      })
+    })
+
+  game.State(..state, players:)
+}
+
+// Apply damage from unblocked attackers to defending players
+fn apply_unblocked_attacker_damage(state: game.State) -> game.State {
+  // Get list of attackers
+  let attackers = case state.attacking_creatures {
+    None -> []
+    Some(attacks) -> attacks
+  }
+
+  // Find unblocked attackers
+  let unblocked_attackers =
+    list.filter(attackers, fn(attack) {
+      !list.any(state.blocking_creatures, fn(block) {
+        block.attacker == attack.attacker
+      })
+    })
+
+  // Deal damage from each unblocked attacker to the defending player
+  let players =
+    list.fold(unblocked_attackers, state.players, fn(players, attack) {
+      // Find the attacker permanent to get its power
+      let attacker_owner_id = state.active_player
+      case player.find(players, attacker_owner_id) {
+        Error(_) -> players
+        Ok(attacker_owner) -> {
+          case permanent.find(attacker_owner.battlefield, attack.attacker) {
+            Error(_) -> players
+            Ok(attacker_perm) -> {
+              // Get the attacker's power
+              let damage = option.unwrap(attacker_perm.card.power, 0)
+              // Get the defending player ID from the attack target
+              let defender_id = case attack.target {
+                game.AttackPlayer(player_id) -> player_id
+              }
+              // Apply damage to the defending player
+              player.update(players, defender_id, fn(defender) {
+                player.Player(..defender, life: defender.life - damage)
+              })
+            }
+          }
+        }
+      }
+    })
+
+  game.State(..state, players:)
+}
+
+// Remove creatures with lethal damage (state-based action)
+fn remove_dead_creatures(state: game.State) -> game.State {
+  let players =
+    list.map(state.players, fn(p) {
+      // Separate living and dead creatures
+      let #(battlefield, graveyard) =
+        dict.fold(
+          p.battlefield,
+          #(p.battlefield, p.graveyard),
+          fn(acc, card_id, perm) {
+            let #(battlefield, graveyard) = acc
+            // Check if this is a creature with lethal damage
+            case perm.card.card_type, perm.card.toughness {
+              card.Creature, Some(toughness) if perm.damage >= toughness -> {
+                // Creature is dead - add to graveyard list
+                #(dict.delete(battlefield, card_id), [perm.card, ..graveyard])
+              }
+              _, _ -> {
+                // Creature is alive or not a creature - keep on battlefield
+                #(battlefield, graveyard)
+              }
+            }
+          },
+        )
+
+      // Update player with new battlefield and graveyard
+      player.Player(..p, battlefield:, graveyard:)
+    })
+
+  game.State(..state, players:)
+}
+
+fn validate_damage_assignment(
+  state: game.State,
+  assigning_player: player.Player,
+  assignment: game.DamageAssignment,
+) {
+  // Validate: there is a corresponding BlockPair for this assignment
+  use _ <- result.try(
+    list.find(state.blocking_creatures, fn(block) {
+      case state.active_player == assigning_player.id {
+        True ->
+          block.blocker == assignment.to && block.attacker == assignment.from
+        False ->
+          block.attacker == assignment.to && block.blocker == assignment.from
+      }
+    })
+    |> result.replace_error(error.InvalidAction(
+      "Damage assignment doesn't have corresponding declared block",
+    )),
+  )
+  // Validate: creature assigning damage is still on the battlefield
+  use from_creature <- result.try(permanent.find(
+    assigning_player.battlefield,
+    assignment.from,
+  ))
+  // Validate: creature assigning damage has power
+  // Validate: creature getting assigned damage is still on the battlefield
+  use _ <- result.try(
+    list.filter(state.players, fn(p) { p.id != assigning_player.id })
+    |> list.find_map(fn(p) { permanent.find(p.battlefield, assignment.to) })
+    |> result.replace_error(error.InvalidAction(
+      "Damage cannot be assigned to a creature not on the battlefield",
+    )),
+  )
+
+  // unwrap to 0 will fail the guard, so don't need a separate check for is_some
+  let from_creature_power = option.unwrap(from_creature.card.power, 0)
+
+  // Reject if creature has 0 power - should not assign damage at all
+  use <- bool.guard(
+    from_creature_power == 0,
+    Error(error.InvalidAction(
+      "Cannot assign damage from a creature with 0 power",
+    )),
+  )
+
+  // Reject if assignment amount is invalid
+  use <- bool.guard(
+    assignment.amount <= 0 || assignment.amount > from_creature_power,
+    Error(error.InvalidAction(
+      "Damage assignment must be positive and not exceed the creature's power",
+    )),
+  )
+  Ok(Nil)
 }

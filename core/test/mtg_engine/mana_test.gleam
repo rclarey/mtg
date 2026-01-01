@@ -1,13 +1,8 @@
-import gleeunit
 import mtg_engine/action
 import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/player
 import test_helpers.{pass_until}
-
-pub fn main() -> Nil {
-  gleeunit.main()
-}
 
 pub fn produce_single_white_mana_test() {
   let state = game.new()
@@ -48,10 +43,8 @@ pub fn mana_accumulates_test() {
   let mana2 =
     mana.Produced(white: 0, blue: 0, black: 0, red: 2, green: 0, colorless: 0)
 
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana1))
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana2))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana1))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana2))
 
   let assert Ok(player1) = player.find(state.players, 1)
   assert player1.mana_pool.red == 3
@@ -65,10 +58,8 @@ pub fn produce_mana_different_players_test() {
   let mana_p2 =
     mana.Produced(white: 0, blue: 3, black: 0, red: 0, green: 0, colorless: 0)
 
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana_p1))
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(2, mana_p2))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana_p1))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(2, mana_p2))
 
   let assert Ok(player1) = player.find(state.players, 1)
   let assert Ok(player2) = player.find(state.players, 2)
@@ -98,17 +89,15 @@ pub fn produce_zero_mana_test() {
 
 // Test mana persists within a step (doesn't empty on priority pass)
 pub fn mana_persists_within_step_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain, _)
+  let state = game.new() |> pass_until(game.PreCombatMain)
   let mana =
     mana.Produced(white: 2, blue: 1, black: 0, red: 0, green: 0, colorless: 0)
 
   // Produce mana for player 1
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   // Player 1 passes priority (but stays in same step)
-  let assert Ok(state) =
-    action.dispatch(state, action.PassPriority(1))
+  let assert Ok(state) = action.dispatch(state, action.PassPriority(1))
 
   // Mana should still be in player 1's pool
   let assert Ok(player1) = player.find(state.players, 1)

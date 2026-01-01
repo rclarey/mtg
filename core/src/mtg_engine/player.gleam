@@ -54,17 +54,3 @@ pub fn update(
     [p, ..rest] -> [p, ..update(rest, player_id, f)]
   }
 }
-
-pub fn clear_mana_pool(player: Player) -> Player {
-  Player(..player, mana_pool: mana.none())
-}
-
-pub fn reset_lands_played(player: Player) -> Player {
-  Player(..player, lands_played_this_turn: 0)
-}
-
-pub fn untap_permanents(player: Player) -> Player {
-  let untapped_battlefield =
-    dict.map_values(player.battlefield, fn(_, perm) { permanent.untap(perm) })
-  Player(..player, battlefield: untapped_battlefield)
-}

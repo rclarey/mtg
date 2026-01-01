@@ -1,5 +1,4 @@
 import gleam/dict
-import gleeunit
 import mtg_engine/action
 import mtg_engine/game
 import mtg_engine/mana
@@ -7,23 +6,18 @@ import mtg_engine/permanent
 import mtg_engine/player
 import test_helpers.{add_card_to_hand, create_test_creature, pass, pass_until}
 
-pub fn main() -> Nil {
-  gleeunit.main()
-}
-
 pub fn creature_has_summoning_sickness_same_turn_test() {
   let state = game.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to hand and advance to main phase
   let state = add_card_to_hand(state, 1, creature)
-  let state = pass_until(game.PreCombatMain, state)
+  let state = pass_until(state, game.PreCombatMain)
 
   // Give player mana to cast
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   // Cast and resolve the creature
   let assert Ok(state) =
@@ -51,13 +45,12 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
 
   // Add creature to hand and advance to main phase
   let state = add_card_to_hand(state, 1, creature)
-  let state = pass_until(game.PreCombatMain, state)
+  let state = pass_until(state, game.PreCombatMain)
 
   // Give player mana to cast
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
-  let assert Ok(state) =
-    action.dispatch(state, action.ProduceMana(1, mana))
+  let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   // Cast and resolve the creature (turn_index 0, player 1, cycle 0)
   let assert Ok(state) =
@@ -99,6 +92,7 @@ pub fn summoning_sickness_only_for_permanents_test() {
       owner_id: 1,
       tapped: False,
       entered_battlefield_cycle: 0,
+      damage: 0,
     )
 
   // Creature should have summoning sickness on the same cycle it entered

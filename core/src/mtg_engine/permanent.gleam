@@ -12,6 +12,8 @@ pub type Permanent {
     tapped: Bool,
     // Track when permanent entered battlefield (for summoning sickness)
     entered_battlefield_cycle: Int,
+    // Track damage marked on this permanent (cleared during cleanup step)
+    damage: Int,
   )
 }
 
@@ -26,6 +28,7 @@ pub fn from_card(
     owner_id:,
     tapped: False,
     entered_battlefield_cycle: current_cycle,
+    damage: 0,
   )
 }
 
@@ -50,20 +53,6 @@ pub fn update(
   }
 }
 
-// Untap a permanent
-pub fn untap(permanent: Permanent) -> Permanent {
-  Permanent(..permanent, tapped: False)
-}
-
-// Check if a permanent has summoning sickness
-// Rule 302.6: A creature can't attack or use tap abilities unless it has been
-// under its controller's control continuously since their most recent turn began
-//
-// This function should be used to validate:
-// - Declaring attackers (Phase 6)
-// - Activated abilities with tap symbol (future phases)
-//
-// Usage: has_summoning_sickness(permanent, current_cycle)
 pub fn has_summoning_sickness(permanent: Permanent, current_cycle: Int) -> Bool {
   // Creature has summoning sickness if it entered this turn cycle
   // TODO: Add haste keyword support to bypass this check
