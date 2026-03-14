@@ -1,5 +1,5 @@
-import gleam/bool
 import mtg_engine/error
+import mtg_engine/util
 
 // Mana cost representation
 pub type Cost {
@@ -47,13 +47,13 @@ const not_enough_mana = Error(
 
 pub fn pay_cost(pool: Produced, cost: Cost) -> Result(Produced, error.Error) {
   // Check if we have enough of each specific color
-  use <- bool.guard(
-    pool.white < cost.white
-      || pool.blue < cost.blue
-      || pool.black < cost.black
-      || pool.red < cost.red
-      || pool.green < cost.green
-      || pool.colorless < cost.colorless,
+  use <- util.guard(
+    pool.white >= cost.white
+      && pool.blue >= cost.blue
+      && pool.black >= cost.black
+      && pool.red >= cost.red
+      && pool.green >= cost.green
+      && pool.colorless >= cost.colorless,
     not_enough_mana,
   )
 
@@ -77,44 +77,44 @@ fn pay_generic_from_pool(
   generic_cost: Int,
 ) -> Result(Produced, error.Error) {
   // Base case: no generic cost to pay
-  use <- bool.guard(generic_cost <= 0, Ok(pool))
+  use <- util.guard(generic_cost > 0, Ok(pool))
 
   // TODO some smarter heuristic for deducting mana
   // For now try to deduct from each mana type in WUBRG order
-  use <- bool.guard(
-    pool.white > 0,
+  use <- util.guard(
+    pool.white <= 0,
     pay_generic_from_pool(
       Produced(..pool, white: pool.white - 1),
       generic_cost - 1,
     ),
   )
-  use <- bool.guard(
-    pool.blue > 0,
+  use <- util.guard(
+    pool.blue <= 0,
     pay_generic_from_pool(
       Produced(..pool, blue: pool.blue - 1),
       generic_cost - 1,
     ),
   )
-  use <- bool.guard(
-    pool.black > 0,
+  use <- util.guard(
+    pool.black <= 0,
     pay_generic_from_pool(
       Produced(..pool, black: pool.black - 1),
       generic_cost - 1,
     ),
   )
-  use <- bool.guard(
-    pool.red > 0,
+  use <- util.guard(
+    pool.red <= 0,
     pay_generic_from_pool(Produced(..pool, red: pool.red - 1), generic_cost - 1),
   )
-  use <- bool.guard(
-    pool.green > 0,
+  use <- util.guard(
+    pool.green <= 0,
     pay_generic_from_pool(
       Produced(..pool, green: pool.green - 1),
       generic_cost - 1,
     ),
   )
-  use <- bool.guard(
-    pool.colorless > 0,
+  use <- util.guard(
+    pool.colorless <= 0,
     pay_generic_from_pool(
       Produced(..pool, colorless: pool.colorless - 1),
       generic_cost - 1,

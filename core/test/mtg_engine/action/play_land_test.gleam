@@ -69,8 +69,7 @@ pub fn play_land_wrong_phase_test() {
   let state = pass_until(state, game.Upkeep)
 
   let result = action.dispatch(state, action.PlayLand(1, "land1"))
-  assert result
-    == Error(error.InvalidAction("Can only play a land during a main phase"))
+  assert result == Error(error.WrongStep(expected: "Pre or post-combat main"))
 }
 
 // Test playing land from PostCombatMain phase

@@ -150,8 +150,7 @@ pub fn cast_creature_wrong_phase_test() {
 
   // Try to cast - should fail
   let result = action.dispatch(state, action.CastCreature(1, "creature1"))
-  assert result
-    == Error(error.InvalidAction("Can only cast creatures during a main phase"))
+  assert result == Error(error.WrongStep(expected: "Pre or post-combat main"))
 }
 
 // Test can cast creature in PostCombatMain phase

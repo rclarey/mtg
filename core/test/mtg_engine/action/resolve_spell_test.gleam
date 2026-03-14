@@ -7,9 +7,7 @@ import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
-import test_helpers.{
-  add_card_to_hand, create_test_creature, pass, pass_until,
-}
+import test_helpers.{add_card_to_hand, create_test_creature, pass, pass_until}
 
 // Test resolving a creature spell from the stack
 pub fn resolve_creature_spell_test() {

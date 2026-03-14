@@ -1,4 +1,3 @@
-import gleam/bool
 import gleam/dict
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -7,6 +6,7 @@ import mtg_engine/error
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/util
 
 pub type Zone {
   Hand
@@ -233,8 +233,8 @@ fn next_step(state: State) -> Step {
 
 pub fn resolve_top_of_stack(state: State) -> Result(State, error.Error) {
   // Validate: stack must not be empty
-  use <- bool.guard(
-    state.stack == [],
+  use <- util.guard(
+    state.stack != [],
     Error(error.InvalidAction("Cannot resolve spell from empty stack")),
   )
 
@@ -243,8 +243,8 @@ pub fn resolve_top_of_stack(state: State) -> Result(State, error.Error) {
 
   // For now, we only handle creature spells
   // In the future, this will be extended for other spell types
-  use <- bool.guard(
-    top_item.card.card_type != card.Creature,
+  use <- util.guard(
+    top_item.card.card_type == card.Creature,
     Error(error.InvalidAction("Can only resolve creature spells currently")),
   )
 

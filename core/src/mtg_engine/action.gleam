@@ -1,4 +1,3 @@
-import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{None, Some}
@@ -9,6 +8,7 @@ import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/util
 
 pub type Action {
   PassPriority(player_id: Int)
@@ -43,15 +43,28 @@ pub fn dispatch(
   }
 }
 
+/// Make sure the player has priority before doing `action`
 fn guard_priority(
   state: game.State,
   player_id: Int,
-  do: fn() -> Result(a, error.Error),
+  action: fn() -> Result(a, error.Error),
 ) -> Result(a, error.Error) {
-  bool.guard(
-    state.priority_player != Some(player_id) || state.choice_player != None,
+  util.guard(
+    state.priority_player == Some(player_id) && state.choice_player == None,
     Error(error.DoNotHavePriority),
-    do,
+    action,
+  )
+}
+
+/// Make sure it's a main phase (either pre or post combat) before doing `action`
+fn guard_main(
+  state: game.State,
+  action: fn() -> Result(a, error.Error),
+) -> Result(a, error.Error) {
+  util.guard(
+    state.step == game.PreCombatMain || state.step == game.PostCombatMain,
+    Error(error.WrongStep(expected: "Pre or post-combat main")),
+    action,
   )
 }
 
@@ -125,13 +138,10 @@ fn handle_play_land(
   card_id: String,
 ) -> Result(game.State, error.Error) {
   use <- guard_priority(state, player_id)
+  use <- guard_main(state)
 
-  use <- bool.guard(
-    state.step != game.PreCombatMain && state.step != game.PostCombatMain,
-    Error(error.InvalidAction("Can only play a land during a main phase")),
-  )
-  use <- bool.guard(
-    player_id != state.active_player,
+  use <- util.guard(
+    player_id == state.active_player,
     Error(error.InvalidAction("Only the active player can play a land")),
   )
 
@@ -139,20 +149,20 @@ fn handle_play_land(
   use p <- result.try(player.find(state.players, player_id))
 
   // Validate: stack must be empty (playing lands is a special action)
-  use <- bool.guard(
-    state.stack != [],
+  use <- util.guard(
+    state.stack == [],
     Error(error.InvalidAction("Cannot play a land while the stack is not empty")),
   )
 
   // Validate: land-per-turn limit
-  use <- bool.guard(
-    p.lands_played_this_turn >= 1,
+  use <- util.guard(
+    p.lands_played_this_turn == 0,
     Error(error.InvalidAction("Already played a land this turn")),
   )
 
   use c <- result.try(card.find(p.hand, card_id))
-  use <- bool.guard(
-    c.card_type != card.Land,
+  use <- util.guard(
+    c.card_type == card.Land,
     Error(error.InvalidAction("Card is not a land")),
   )
 
@@ -189,14 +199,14 @@ fn handle_tap_land_for_mana(
   use perm <- result.try(permanent.find(p.battlefield, card_id))
 
   // Validate: card must be a land
-  use <- bool.guard(
-    perm.card.card_type != card.Land,
+  use <- util.guard(
+    perm.card.card_type == card.Land,
     Error(error.InvalidAction("Card is not a land")),
   )
 
   // Validate: permanent must be untapped
-  use <- bool.guard(
-    perm.tapped,
+  use <- util.guard(
+    !perm.tapped,
     Error(error.InvalidAction("Land is already tapped")),
   )
 
@@ -232,20 +242,17 @@ fn handle_cast_creature(
   use <- guard_priority(state, player_id)
 
   // Validate: must be active player
-  use <- bool.guard(
-    player_id != state.active_player,
+  use <- util.guard(
+    player_id == state.active_player,
     Error(error.InvalidAction("Only the active player can cast spells")),
   )
 
   // Validate: must be in a main phase (sorcery-speed for creatures)
-  use <- bool.guard(
-    state.step != game.PreCombatMain && state.step != game.PostCombatMain,
-    Error(error.InvalidAction("Can only cast creatures during a main phase")),
-  )
+  use <- guard_main(state)
 
   // Validate: stack must be empty (sorcery-speed restriction)
-  use <- bool.guard(
-    state.stack != [],
+  use <- util.guard(
+    state.stack == [],
     Error(error.InvalidAction("Can only cast creatures when the stack is empty")),
   )
 
@@ -256,8 +263,8 @@ fn handle_cast_creature(
   use c <- result.try(card.find(p.hand, card_id))
 
   // Validate: card must be a creature
-  use <- bool.guard(
-    c.card_type != card.Creature,
+  use <- util.guard(
+    c.card_type == card.Creature,
     Error(error.InvalidAction("Card is not a creature")),
   )
 
@@ -283,22 +290,22 @@ fn handle_declare_attackers(
   attacks: List(game.AttackPair),
 ) -> Result(game.State, error.Error) {
   // Validate: must be in DeclareAttackers step
-  use <- bool.guard(
-    state.step != game.DeclareAttackers,
+  use <- util.guard(
+    state.step == game.DeclareAttackers,
     Error(error.InvalidAction(
       "Can only declare attackers during DeclareAttackers step",
     )),
   )
 
   // Validate: must be active player
-  use <- bool.guard(
-    player_id != state.active_player,
+  use <- util.guard(
+    player_id == state.active_player,
     Error(error.InvalidAction("Only the active player can declare attackers")),
   )
 
   // Validate: attackers must not already be declared this step
-  use <- bool.guard(
-    option.is_some(state.attacking_creatures),
+  use <- util.guard(
+    option.is_none(state.attacking_creatures),
     Error(error.InvalidAction("Attackers have already been declared this step")),
   )
 
@@ -352,10 +359,8 @@ fn validate_attackers(
   // Validate each attacker
   list.try_map(attacks, fn(attack_pair) {
     // Validate: cannot attack yourself
-    use <- bool.guard(
-      case attack_pair.target {
-        game.AttackPlayer(player_id) -> player_id == attacking_player_id
-      },
+    use <- util.guard(
+      attack_pair.target.player_id != attacking_player_id,
       Error(error.InvalidAction("Cannot attack yourself")),
     )
 
@@ -363,20 +368,20 @@ fn validate_attackers(
     use perm <- result.try(permanent.find(battlefield, attack_pair.attacker))
 
     // Validate: must be a creature
-    use <- bool.guard(
-      perm.card.card_type != card.Creature,
+    use <- util.guard(
+      perm.card.card_type == card.Creature,
       Error(error.InvalidAction("Only creatures can attack")),
     )
 
     // Validate: must be untapped
-    use <- bool.guard(
-      perm.tapped,
+    use <- util.guard(
+      !perm.tapped,
       Error(error.InvalidAction("Cannot attack with tapped creature")),
     )
 
     // Validate: must not have summoning sickness
-    use <- bool.guard(
-      permanent.has_summoning_sickness(perm, current_cycle),
+    use <- util.guard(
+      !permanent.has_summoning_sickness(perm, current_cycle),
       Error(error.InvalidAction(
         "Cannot attack with creature that has summoning sickness",
       )),
@@ -393,24 +398,24 @@ fn handle_declare_blockers(
   blocks: List(game.BlockPair),
 ) -> Result(game.State, error.Error) {
   // Validate: must be the declare blockers step
-  use <- bool.guard(
-    state.step != game.DeclareBlockers,
+  use <- util.guard(
+    state.step == game.DeclareBlockers,
     Error(error.InvalidAction(
       "Can only declare blockers in the declare blockers step",
     )),
   )
   // Validate: must be the declaring player's turn
-  use <- bool.guard(
-    state.choice_player != Some(player_id),
+  use <- util.guard(
+    state.choice_player == Some(player_id),
     Error(error.InvalidAction("Not your turn to declare blockers")),
   )
 
   use defending_player <- result.try(player.find(state.players, player_id))
 
   // Validate: all blocks must be for this defending player
-  use <- bool.guard(
-    list.any(blocks, fn(b) {
-      result.is_error(permanent.find(defending_player.battlefield, b.blocker))
+  use <- util.guard(
+    list.all(blocks, fn(b) {
+      result.is_ok(permanent.find(defending_player.battlefield, b.blocker))
     }),
     Error(error.InvalidAction("Can only declare your own blocks")),
   )
@@ -470,8 +475,8 @@ fn validate_block_pair(
   // TODO (Phase 9): Check creature keywords for:
   //   - "can block an additional creature" -> max 2
   //   - "can block any number of creatures" -> unlimited
-  use <- bool.guard(
-    dict.get(seen_blockers, block.blocker) |> result.unwrap(0) >= 1,
+  use <- util.guard(
+    dict.get(seen_blockers, block.blocker) |> result.unwrap(0) == 0,
     Error(error.InvalidAction("A creature cannot block more than once")),
   )
 
@@ -479,20 +484,20 @@ fn validate_block_pair(
   use blocker_perm <- result.try(permanent.find(battlefield, block.blocker))
 
   // Validate: must be a creature
-  use <- bool.guard(
-    blocker_perm.card.card_type != card.Creature,
+  use <- util.guard(
+    blocker_perm.card.card_type == card.Creature,
     Error(error.InvalidAction("Only creatures can block")),
   )
 
   // Validate: must be untapped (rule 509.1a)
-  use <- bool.guard(
-    blocker_perm.tapped,
+  use <- util.guard(
+    !blocker_perm.tapped,
     Error(error.InvalidAction("Cannot block with tapped creature")),
   )
 
   // Validate: attacker exists and is attacking this defender
-  use <- bool.guard(
-    !is_attacking_defender(attacks, block.attacker, defending_player_id),
+  use <- util.guard(
+    is_attacking_defender(attacks, block.attacker, defending_player_id),
     Error(error.InvalidAction("Can only block creatures attacking you")),
   )
 
@@ -525,15 +530,15 @@ fn handle_assign_damage(
   assignments: List(game.DamageAssignment),
 ) -> Result(game.State, error.Error) {
   // Validate: must be the combat damage step
-  use <- bool.guard(
-    state.step != game.CombatDamage,
+  use <- util.guard(
+    state.step == game.CombatDamage,
     Error(error.InvalidAction(
       "Can only assign damage in the combat damage step",
     )),
   )
   // Validate: must be the assigning player's turn
-  use <- bool.guard(
-    state.choice_player != Some(player_id),
+  use <- util.guard(
+    state.choice_player == Some(player_id),
     Error(error.InvalidAction("Not your turn to assign damage")),
   )
 
@@ -780,16 +785,16 @@ fn validate_damage_assignment(
   let from_creature_power = option.unwrap(from_creature.card.power, 0)
 
   // Reject if creature has 0 power - should not assign damage at all
-  use <- bool.guard(
-    from_creature_power == 0,
+  use <- util.guard(
+    from_creature_power != 0,
     Error(error.InvalidAction(
       "Cannot assign damage from a creature with 0 power",
     )),
   )
 
   // Reject if assignment amount is invalid
-  use <- bool.guard(
-    assignment.amount <= 0 || assignment.amount > from_creature_power,
+  use <- util.guard(
+    assignment.amount > 0 && assignment.amount <= from_creature_power,
     Error(error.InvalidAction(
       "Damage assignment must be positive and not exceed the creature's power",
     )),

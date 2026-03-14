@@ -14,7 +14,7 @@
 - Depends only on the standard library (`gleam_stdlib`)
   - Documentation is found at https://hexdocs.pm/gleam_stdlib/gleam/<SUBMODULE>.html, e.g. https://hexdocs.pm/gleam_stdlib/gleam/result.html for `gleam/result`
 - Follow existing patterns in the code
-- **Must** use the `use` keyword, `result.try`, and `bool.guard` instead of nested pattern matching wherever possible
+- **Must** use the `use` keyword, `result.try`, and `util.guard` instead of nested pattern matching wherever possible
 
 ## Common commands
 - Type check code: `gleam check`
