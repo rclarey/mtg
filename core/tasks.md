@@ -63,20 +63,13 @@
 ## Phase 6: Basic Combat
 
 - [x] **Add declare attackers action** - Implement declaring attackers with basic validation
-
 - [x] **Test declare attackers** - Verify only legal creatures can attack
-
 - [x] **Add declare blockers action** - Implement declaring blockers with basic validation
-
 - [x] **Test declare blockers** - Verify only legal blocks are accepted
-
-- [ ] **Add combat damage** - Implement dealing combat damage to creatures and players
-
-- [ ] **Test combat damage** - Verify damage is calculated and dealt correctly
-
-- [ ] **Add state-based actions** - Implement checking for creature death and player loss
-
-- [ ] **Test state-based actions** - Verify dead creatures go to graveyard, players at 0 life lose
+- [x] **Add combat damage** - Implement dealing combat damage to creatures and players
+- [x] **Test combat damage** - Verify damage is calculated and dealt correctly
+- [x] **Add state-based actions** - Implement checking for creature death and player loss
+- [x] **Test state-based actions** - Verify dead creatures go to graveyard, players at 0 life lose
 
 ## Phase 7: Instants and Sorceries
 
