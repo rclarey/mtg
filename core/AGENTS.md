@@ -1,0 +1,29 @@
+# Intangible - a MTG rules engine
+
+## Project Outline
+
+- Implements a rules engine for Magic the Gathering by strictly following the rules in the `./rules/` directory
+  - `./rules/000-contents.md` is the entrypoint which contains a table of contents and links to other rules files
+- Rejects invalid game actions
+- Updates the game state as valid game actions occur
+
+## Programming Language and Paradigm
+
+- Written in idiomatic Gleam
+  - Refer to https://tour.gleam.run/everything/ for how to write Gleam
+- Depends only on the standard library (`gleam_stdlib`)
+  - Documentation is found at https://hexdocs.pm/gleam_stdlib/gleam/<SUBMODULE>.html, e.g. https://hexdocs.pm/gleam_stdlib/gleam/result.html for `gleam/result`
+- Follow existing patterns in the code
+- **Must** use the `use` keyword, `result.try`, and `bool.guard` instead of nested pattern matching wherever possible
+
+## Common commands
+- Type check code: `gleam check`
+- Run tests: `gleam test`
+- Format code: `gleam format`
+
+## Getting Started
+
+1. Review this file for the project specification
+2. Check tasks.md to see current progress and next tasks
+3. Implement tasks sequentially following the phase order
+4. Mark tasks complete as you finish them
