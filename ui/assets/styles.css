@@ -1,0 +1,17 @@
+body {
+    margin: 0;
+}
+
+main {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+img {
+    max-height: 264px;
+    border-radius: 2.84%;
+    user-select: none;
+}
