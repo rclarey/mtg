@@ -114,7 +114,7 @@ fn handle_pass_priority(
       Ok(
         game.State(
           ..state,
-          consecutive_passes:,
+          consecutive_passes: consecutive_passes,
           priority_player: Some(next_player.id),
         ),
       )
@@ -272,6 +272,83 @@ fn handle_cast_creature(
   use <- util.guard(
     c.card_type == card.Creature,
     Error(error.InvalidAction("Card is not a creature")),
+  )
+
+  // Try to pay the mana cost
+  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, c.mana_cost))
+  let new_hand = card.remove(p.hand, card_id)
+
+  Ok(
+    game.State(
+      ..state,
+      players: player.update(state.players, player_id, fn(_) {
+        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
+      }),
+      stack: [game.StackItem(card: c, controller_id: player_id), ..state.stack],
+    ),
+  )
+}
+
+// Handle casting an instant spell
+fn handle_cast_instant(
+  state: game.State,
+  player_id: Int,
+  card_id: String,
+) -> Result(game.State, error.Error) {
+  use <- guard_priority(state, player_id)
+
+  // Find the player
+  use p <- result.try(player.find(state.players, player_id))
+
+  // Validate: card must be in hand
+  use c <- result.try(card.find(p.hand, card_id))
+
+  // Validate: card must be an instant
+  use <- util.guard(
+    c.card_type == card.Instant,
+    Error(error.InvalidAction("Card is not an instant")),
+  )
+
+  // Try to pay the mana cost
+  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, c.mana_cost))
+  let new_hand = card.remove(p.hand, card_id)
+
+  Ok(
+    game.State(
+      ..state,
+      players: player.update(state.players, player_id, fn(_) {
+        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
+      }),
+      stack: [game.StackItem(card: c, controller_id: player_id), ..state.stack],
+    ),
+  )
+}
+
+// Handle casting a sorcery spell
+fn handle_cast_sorcery(
+  state: game.State,
+  player_id: Int,
+  card_id: String,
+) -> Result(game.State, error.Error) {
+  use <- guard_priority(state, player_id)
+  use <- guard_main(state)
+
+  // Validate: stack must be empty (sorcery-speed restriction)
+  use <- util.guard(
+    state.stack == [],
+    Error(error.InvalidAction("Can only cast sorceries when the stack is empty")),
+  )
+
+  // Find the player
+  use p <- result.try(player.find(state.players, player_id))
+
+  // Validate: card must be in hand
+  use c <- result.try(card.find(p.hand, card_id))
+
+  // Validate: card must be a sorcery
+  use <- util.guard(
+    c.card_type == card.Sorcery,
+    Error(error.InvalidAction("Card is not a sorcery")),
   )
 
   // Try to pay the mana cost
