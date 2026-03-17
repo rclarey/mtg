@@ -14,16 +14,14 @@
 - Depends only on the standard library (`gleam_stdlib`)
   - Documentation is found at https://hexdocs.pm/gleam_stdlib/gleam/<SUBMODULE>.html, e.g. https://hexdocs.pm/gleam_stdlib/gleam/result.html for `gleam/result`
 - Follow existing patterns in the code
-- **Must** use the `use` keyword, `result.try`, and `util.guard` instead of nested pattern matching wherever possible
+
+### Best practices
+- Use the `use` keyword, `result.try`, and `util.guard` instead of nested pattern matching wherever possible
+- Use shorthand syntax for record constructors (e.g. `Thing(field:)` which is equivalent to `Thing(field: field)`)
+- Use unqualified imports for common standard library types/constructors **only** (e.g. `import gleam/option.{Some, None}`), otherwise use qualified imports
+
 
 ## Common commands
 - Type check code: `gleam check`
 - Run tests: `gleam test`
 - Format code: `gleam format`
-
-## Getting Started
-
-1. Review this file for the project specification
-2. Check tasks.md to see current progress and next tasks
-3. Implement tasks sequentially following the phase order
-4. Mark tasks complete as you finish them
