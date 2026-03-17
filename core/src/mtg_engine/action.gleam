@@ -331,6 +331,13 @@ fn handle_cast_sorcery(
   card_id: String,
 ) -> Result(game.State, error.Error) {
   use <- guard_priority(state, player_id)
+
+  // Validate: must be active player
+  use <- util.guard(
+    player_id == state.active_player,
+    Error(error.InvalidAction("Only the active player can cast spells")),
+  )
+
   use <- guard_main(state)
 
   // Validate: stack must be empty (sorcery-speed restriction)
