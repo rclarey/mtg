@@ -16,6 +16,8 @@ pub type Action {
   PlayLand(player_id: Int, card_id: String)
   TapLandForMana(player_id: Int, card_id: String)
   CastCreature(player_id: Int, card_id: String)
+  CastInstant(player_id: Int, card_id: String)
+  CastSorcery(player_id: Int, card_id: String)
   DeclareAttackers(player_id: Int, attacks: List(game.AttackPair))
   DeclareBlockers(player_id: Int, blocks: List(game.BlockPair))
   AssignDamage(player_id: Int, assignment: List(game.DamageAssignment))
@@ -34,6 +36,10 @@ pub fn dispatch(
       handle_tap_land_for_mana(state, player_id, card_id)
     CastCreature(player_id, card_id) ->
       handle_cast_creature(state, player_id, card_id)
+    CastInstant(player_id, card_id) ->
+      handle_cast_instant(state, player_id, card_id)
+    CastSorcery(player_id, card_id) ->
+      handle_cast_sorcery(state, player_id, card_id)
     DeclareAttackers(player_id, attacks) ->
       handle_declare_attackers(state, player_id, attacks)
     DeclareBlockers(player_id, blocks) ->
