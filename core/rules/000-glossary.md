@@ -75,6 +75,10 @@ A keyword ability that lets a player cast one half of a split card only from the
 
 A keyword action that exiles one or more permanents and/or spells. The owner of each card exiled with airbend may cast it from exile by paying {2} rather than paying its mana cost. See rule 701.65, “Airbend.”
 
+### Alternate Name
+
+A different name used on promotional or alternate-art versions of some cards. This name has no rules meaning. See rule 201.6.
+
 ### Alternating Teams Variant
 
 A multiplayer variant played among two or more teams of equal size. See rule 811, “Alternating Teams Variant.”
@@ -82,10 +86,6 @@ A multiplayer variant played among two or more teams of equal size. See rule 811
 ### Alternative Cost
 
 A cost a spell may have that its controller can pay rather than paying its mana cost. See rule 118, “Costs,” and rule 601, “Casting Spells.”
-
-### Alternate Name
-
-A different name used on promotional or alternate-art versions of some cards. This name has no rules meaning. See rule 201.6.
 
 ### Amass
 
@@ -112,7 +112,7 @@ See rule 407, “Ante.”
 
 ### Any Target
 
-A spell or ability may require “any target.” “Any target” is the same as “target creature, player, or planeswalker.” See rule 115.4.
+A spell or ability may require “any target.” “Any target” is the same as “target creature, player, planeswalker, or battle.” See rule 115.4.
 
 ### APNAP Order
 
@@ -247,13 +247,13 @@ Effects that change the base power and/or base toughness of a creature set one o
 
 A supertype that’s normally relevant on lands. Any land with this supertype is a basic land. See rule 205.4, “Supertypes.”
 
-### Basic Landcycling
-
-See Typecycling.
-
 ### Basic Land Type
 
 There are five “basic land types”: Plains, Island, Swamp, Mountain, and Forest. Each one has a mana ability associated with it. See rule 305, “Lands.”
+
+### Basic Landcycling
+
+See Typecycling.
 
 ### Battle
 
@@ -286,6 +286,10 @@ A keyword action that allows a player to choose a permanent they control of a pa
 ### Bestow
 
 A keyword ability that lets a creature card be cast as an Aura. See rule 702.103, “Bestow.”
+
+### Blight
+
+A keyword action. To blight N means to put N -1/-1 counters on a creature you control. See rule 701.68, “Blight.”
 
 ### Blitz
 
@@ -399,13 +403,13 @@ An ability of a plane card that triggers “Whenever chaos ensues” in the Plan
 
 The chaos symbol appears on the planar die and near some triggered abilities of plane cards in the Planechase casual variant. See rule 107.12.
 
-### Characteristics
-
-Information that defines an object. See rule 109.3.
-
 ### Characteristic-Defining Ability
 
 A kind of static ability that conveys information about an object’s characteristics that would normally be found elsewhere on that object (such as in its mana cost, type line, or power/toughness box). See rule 604.3.
+
+### Characteristics
+
+Information that defines an object. See rule 109.3.
 
 ### Choose a Background
 
@@ -456,11 +460,6 @@ A number printed on most cards that has no effect on game play. See rule 213, �
 1. A characteristic of an object. See rule 105, “Colors,” and rule 202, “Mana Cost and Color.”
 2. An attribute mana may have. See rule 106, “Mana.”
 
-### Colorless
-
-1. An object with no color is colorless. Colorless is not a color. See rule 105, “Colors,” and rule 202, “Mana Cost and Color.”
-2. A type of mana. See rule 106, “Mana,” and rule 107.4c.
-
 ### Color Identity
 
 A set of colors that determines what cards may be included in a deck for the Commander casual variant. See rule 903.4.
@@ -468,6 +467,11 @@ A set of colors that determines what cards may be included in a deck for the Com
 ### Color Indicator
 
 A characteristic of an object. See rule 105, “Colors,” and rule 204, “Color Indicator.”
+
+### Colorless
+
+1. An object with no color is colorless. Colorless is not a color. See rule 105, “Colors,” and rule 202, “Mana Cost and Color.”
+2. A type of mana. See rule 106, “Mana,” and rule 107.4c.
 
 ### Combat Damage
 
@@ -538,13 +542,13 @@ A keyword ability that creates a copy of a spell. See rule 702.78, “Conspire.�
 
 A way of playing in which each player creates their own deck ahead of time. See rule 100.2a.
 
-### Continuous Effect
-
-An effect that modifies characteristics of objects, modifies control of objects, or affects players or the rules of the game, for a fixed or indefinite period. See rule 611, “Continuous Effects.”
-
 ### Continuous Artifact (Obsolete)
 
 An obsolete term that appeared on the type line of artifacts without activated abilities. Cards printed with this text have received errata in the Oracle card reference to simply say “Artifact.”
+
+### Continuous Effect
+
+An effect that modifies characteristics of objects, modifies control of objects, or affects players or the rules of the game, for a fixed or indefinite period. See rule 611, “Continuous Effects.”
 
 ### Control, Controller
 
@@ -552,7 +556,7 @@ An obsolete term that appeared on the type line of artifacts without activated a
 
 ### Control Another Player
 
-To make all choices and decisions that player is allowed to make, or is told to make, by rules or by any objects. See rule 722, “Controlling Another Player.”
+To make all choices and decisions that player is allowed to make, or is told to make, by rules or by any objects. See rule 723, “Controlling Another Player.”
 
 ### Convert
 
@@ -636,11 +640,11 @@ A keyword ability found on creature cards that allows them to be cast for an alt
 
 ### Day
 
-Along with night, a designation the game can have. See rule 730, “Day and Night,” and rule 702.145, “Daybound and Nightbound.”
+Along with night, a designation the game can have. See rule 731, “Day and Night,” and rule 702.145, “Daybound and Nightbound.”
 
 ### Daybound
 
-An ability found on the front faces of some double-faced cards. Cards with daybound and nightbound are face up when it’s day and face down when it’s night. See rule 702.145, “Daybound and Nightbound,” and rule 730, “Day and Night.”
+An ability found on the front faces of some double-faced cards. Cards with daybound and nightbound are face up when it’s day and face down when it’s night. See rule 702.145, “Daybound and Nightbound,” and rule 731, “Day and Night.”
 
 ### Deal
 
@@ -879,11 +883,11 @@ Part of the turn. This step is the first step of the ending phase. See rule 513,
 
 ### End the Combat Phase
 
-To “end the combat phase” as the result of an effect is to perform an expedited process that skips everything else that would happen that phase. See rule 723, “Ending Turns and Phases.”
+To “end the combat phase” as the result of an effect is to perform an expedited process that skips everything else that would happen that phase. See rule 724, “Ending Turns and Phases.”
 
 ### End the Turn
 
-To “end the turn” as the result of an effect is to perform an expedited process that skips nearly everything else that would happen that turn. See rule 723, “Ending Turns and Phases.”
+To “end the turn” as the result of an effect is to perform an expedited process that skips nearly everything else that would happen that turn. See rule 724, “Ending Turns and Phases.”
 
 ### Ending Phase
 
@@ -957,6 +961,10 @@ A keyword ability that lets you put a +1/+1 counter on a creature when a larger 
 
 A keyword ability that can make a creature better in combat. See rule 702.83, “Exalted.”
 
+### Excess Damage
+
+Damage dealt to a creature greater than what would be lethal damage or damage dealt to a planeswalker greater than its loyalty. See rule 120.4a.
+
 ### Exchange
 
 To swap two things, such as objects, sets of objects, or life totals. See rule 701.12, “Exchange.”
@@ -965,9 +973,9 @@ To swap two things, such as objects, sets of objects, or life totals. See rule 7
 
 A keyword action that stops a permanent from untapping during the next untap step of the player who exerted it. See rule 701.43, “Exert.”
 
-### Excess Damage
+### Exhaust
 
-Damage dealt to a creature greater than what would be lethal damage or damage dealt to a planeswalker greater than its loyalty. See rule 120.4a.
+A special kind of activated ability that may be activated only once. See rule 702.177, “Exhaust.”
 
 ### Exile
 
@@ -975,10 +983,6 @@ Damage dealt to a creature greater than what would be lethal damage or damage de
 2. To put an object into the exile zone from whatever zone it’s currently in. An “exiled” card is one that’s been put into the exile zone.
 
 See rule 406, “Exile.”
-
-### Exhaust
-
-A special kind of activated ability that may be activated only once. See rule 702.177, “Exhaust.”
 
 ### Expansion Symbol
 
@@ -1131,10 +1135,6 @@ An artifact subtype. Fortifications can be attached to lands. See rule 301, “A
 
 A keyword ability that lets a player attach a Fortification to a land they control. See rule 301, “Artifacts,” and rule 702.67, “Fortify.”
 
-### Frenzy
-
-A keyword ability that can make a creature better in combat. See rule 702.68, “Frenzy.”
-
 ### Free-for-All
 
 A multiplayer variant in which a group of players compete as individuals against each other. See rule 806, “Free-for-All Variant.”
@@ -1143,9 +1143,9 @@ A multiplayer variant in which a group of players compete as individuals against
 
 A keyword ability that allows certain spells to be cast for an alternative cost. See rule 702.173, “Freerunning.”
 
-### Friends Forever
+### Frenzy
 
-A variant of the partner ability that lets two legendary creature cardss be your commander in the Commander variant rather than one if both have the “friends forever” ability. See rule 702.124, “Partner,” and rule 903, “Commander.”
+A keyword ability that can make a creature better in combat. See rule 702.68, “Frenzy.”
 
 ### Full Party
 
@@ -1287,7 +1287,7 @@ See Intervening “If” Clause.
 
 ### Illegal Action
 
-An action that violates the rules of the game and/or requirements or restrictions created by effects. See rule 732, “Handling Illegal Actions.”
+An action that violates the rules of the game and/or requirements or restrictions created by effects. See rule 733, “Handling Illegal Actions.”
 
 ### Illegal Target
 
@@ -1321,6 +1321,10 @@ An obsolete term for the battlefield. Cards that were printed with text that con
 
 An instant spell that’s been cast, or an activated ability that’s been activated, while another spell or ability is on the stack has been cast or activated “in response to” the earlier spell or ability. See rule 117.7.
 
+### Increment
+
+A keyword ability that lets you put a +1/+1 counter on a creature whenever you cast a spell if the amount of mana you spent on it is greater than that creature’s power or toughness. See rule 702.191, “Increment.”
+
 ### Incubate
 
 A keyword action that creates an Incubator token with a specified number of +1/+1 counters on it. See rule 701.53, “Incubate.”
@@ -1352,7 +1356,7 @@ A keyword ability that can exile the top card of a player’s library. See rule 
 
 ### Initiative
 
-A designation a player can have. Some effects instruct a player to take the initiative. The player with the initiative ventures into Undercity whenever they take the initiative and at the beginning of their upkeep. See rule 725, “The Initiative.”
+A designation a player can have. Some effects instruct a player to take the initiative. The player with the initiative ventures into Undercity whenever they take the initiative and at the beginning of their upkeep. See rule 726, “The Initiative.”
 
 ### Instant
 
@@ -1458,13 +1462,13 @@ Information printed directly below the text box that has no effect on game play.
 
 An obsolete creature type. Cards printed with this subtype have been given errata in the Oracle card reference so they have the legendary supertype instead. See Legendary.
 
-### Legendary
-
-A supertype that’s normally relevant on permanents. See rule 205.4, “Supertypes.” See also Legend Rule.
-
 ### Legend Rule
 
 A state-based action that causes a player who controls two or more legendary permanents with the same name to put all but one into their owners’ graveyards. See rule 704.5j.
+
+### Legendary
+
+A supertype that’s normally relevant on permanents. See rule 205.4, “Supertypes.” See also Legend Rule.
 
 ### Lethal Damage
 
@@ -1543,7 +1547,7 @@ Informal term for the current system of mulligan rules. See rule 103.5.
 
 ### Loop
 
-A set of actions that could be repeated indefinitely. See rule 731, “Taking Shortcuts.”
+A set of actions that could be repeated indefinitely. See rule 732, “Taking Shortcuts.”
 
 ### Lose the Game
 
@@ -1564,7 +1568,7 @@ A keyword ability that lets a player cast a card they discard. See rule 702.35, 
 
 ### Main Game
 
-The game in which a spell (or ability) that created a subgame was cast (or activated). See rule 728, “Subgames.”
+The game in which a spell (or ability) that created a subgame was cast (or activated). See rule 729, “Subgames.”
 
 ### Main Phase
 
@@ -1612,7 +1616,7 @@ A keyword action that puts one of the top two cards of your library onto the bat
 
 ### Map
 
-A Map token is a colorless Map artifact token with “{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.” See rule 701.44, “Explore.” For more information about predefined tokens, see rule 110.10.
+A Map token is a colorless Map artifact token with “{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.” See rule 701.44, “Explore.” For more information about predefined tokens, see rule 111.10.
 
 ### Match
 
@@ -1657,7 +1661,7 @@ A keyword ability that lets your bigger creatures power up your smaller creature
 
 ### Merged Permanent
 
-A card or token may merge with a permanent to form a merged permanent. This merged permanent is represented by more than one card and/or token. See rule 729, “Merging with Permanents.”
+A card or token may merge with a permanent to form a merged permanent. This merged permanent is represented by more than one card and/or token. See rule 730, “Merging with Permanents.”
 
 ### Mill
 
@@ -1693,7 +1697,7 @@ A keyword ability that has a permanent enter the battlefield with +1/+1 counters
 
 ### Monarch
 
-A designation a player can have. Some effects instruct a player to become the monarch. The monarch draws a card at the beginning of their end step. Dealing combat damage to the monarch steals the title from that player. See rule 724, “The Monarch.”
+A designation a player can have. Some effects instruct a player to become the monarch. The monarch draws a card at the beginning of their end step. Dealing combat damage to the monarch steals the title from that player. See rule 725, “The Monarch.”
 
 ### Mono Artifact (Obsolete)
 
@@ -1763,7 +1767,7 @@ A keyword that lets a creature card be cast as a mutating creature spell. See ru
 
 ### Mutating Creature Spell
 
-A creature spell cast using the mutate keyword ability. As it resolves, if its target creature is legal, it merges with the target creature. The resulting creature has all characteristics of the topmost component and has the abilities of each component. See rule 702.140, “Mutate,” and rule 729, “Merging with Permanents.”
+A creature spell cast using the mutate keyword ability. As it resolves, if its target creature is legal, it merges with the target creature. The resulting creature has all characteristics of the topmost component and has the abilities of each component. See rule 702.140, “Mutate,” and rule 730, “Merging with Permanents.”
 
 ### Myriad
 
@@ -1775,11 +1779,11 @@ A characteristic, and part of a card. A card’s name is printed in its upper le
 
 ### Night
 
-Along with day, a designation the game can have. See rule 730, “Day and Night,” and rule 702.145, “Daybound and Nightbound.”
+Along with day, a designation the game can have. See rule 731, “Day and Night,” and rule 702.145, “Daybound and Nightbound.”
 
 ### Nightbound
 
-An ability found on the back faces of some double-faced cards. Cards with daybound and nightbound are face up when it’s day and face down when it’s night. See rule 702.145, “Daybound and Nightbound,” and rule 730, “Day and Night.”
+An ability found on the back faces of some double-faced cards. Cards with daybound and nightbound are face up when it’s day and face down when it’s night. See rule 702.145, “Daybound and Nightbound,” and rule 731, “Day and Night.”
 
 ### Ninjutsu
 
@@ -1857,9 +1861,9 @@ The player who (for purposes of the game) a card, permanent, token, or spell bel
 
 A term that describes a creature that’s been affected by a soulbond ability. See rule 702.95, “Soulbond.”
 
-### Paris Mulligan
+### Paradigm
 
-Informal term for a previous system of taking a mulligan. Using the Paris mulligan, a player who took a mulligan shuffled their hand into their library and drew one fewer card. For current mulligan rules, see rule 103.5.
+A keyword ability that allows you to cast a copy of a spell at the beginning of each of your first main phases. See rule 702.192, “Paradigm.”
 
 ### Partner, “Partner—[text],” “Partner with [name]”
 
@@ -2043,6 +2047,18 @@ A Powerstone token is a colorless artifact token with “{T}: Add {C}. This mana
 
 The first main phase of a turn. See Main Phase.
 
+### Preparation Card
+
+Cards with a two-part card frame (one part of which is inset on the right) on a single card. See rule 722, “Preparation Cards.”
+
+### Prepare Spell
+
+The inset frame of a preparation card that includes its alternative characteristics. See rule 722, “Preparation Cards.”
+
+### Prepared
+
+A designation a permanent may have that allows you to cast a copy of that card with its alternative characteristics. See rule 722, “Preparation Cards.”
+
 ### Prevent
 
 A word used by prevention effects to indicate what damage will not be dealt. See rule 615, “Prevention Effects.”
@@ -2097,7 +2113,7 @@ A zone in which all players can be expected to see the cards’ faces. See rule 
 
 ### Rad Counter
 
-A type of counter a player can have that causes that player to mill cards at the beginning of their precombat main phase, then lose 1 life and remove one rad counter for each nonland card milled this way. See rule 122, “Counters,” and rule 727, “Rad Counters.”
+A type of counter a player can have that causes that player to mill cards at the beginning of their precombat main phase, then lose 1 life and remove one rad counter for each nonland card milled this way. See rule 122, “Counters,” and rule 728, “Rad Counters.”
 
 ### Rampage
 
@@ -2155,7 +2171,7 @@ A keyword ability that lets a player put +1/+1 counters on a creature. See rule 
 
 Parenthetical text in italics in the text box of a card that summarizes a rule that applies to that card, but is not actually rules text and has no effect on play. See rule 207.2.
 
-### Removed from Combat
+### Remove from Combat
 
 Certain events can cause an attacking or blocking creature, or a planeswalker that’s being attacked, to be “removed from combat.” A permanent that’s removed from combat has no further involvement in that combat phase. See rule 506.4.
 
@@ -2187,13 +2203,13 @@ An effect that forces one or more creatures to attack or block. See rules 508.1d
 
 When the spell or ability on top of the stack “resolves,” its instructions are followed and it has its effect. See rule 608, “Resolving Spells and Abilities.”
 
-### Restart the Game
-
-To immediately end the current game and restart it. See rule 104, “Ending the Game.”
-
 ### Respond
 
 To cast an instant spell or activate an ability while another spell or ability is already on the stack. See rule 117.7.
+
+### Restart the Game
+
+To immediately end the current game and restart it. See rule 727, “Restarting the Game.”
 
 ### Restriction
 
@@ -2318,7 +2334,7 @@ A counter that protects a permanent from being damaged or destroyed. See rule 12
 
 ### Shortcut
 
-A mutually understood way for the game to advance forward a number of game choices (either taking an action or passing priority) without players needing to explicitly identify each such choice. See rule 731, “Taking Shortcuts.”
+A mutually understood way for the game to advance forward a number of game choices (either taking an action or passing priority) without players needing to explicitly identify each such choice. See rule 732, “Taking Shortcuts.”
 
 ### Shroud
 
@@ -2351,6 +2367,10 @@ A keyword ability that restricts how a creature may be blocked. See rule 702.118
 ### Slivercycling
 
 See Typecycling.
+
+### Sneak
+
+A keyword ability that allows a spell to be cast for an alternative cost, including returning an unblocked attacking creature to its owner’s hand. Creatures cast this way enter tapped and attacking.
 
 ### Snow
 
@@ -2469,13 +2489,13 @@ The player chosen to take the first turn of a game. See rule 103.1.
 
 The team chosen to take the first turn of a game using the shared team turns option. See rule 103.1.
 
-### State-Based Actions
-
-Game actions that happen automatically whenever certain conditions are met. See rule 704, “State-Based Actions.”
-
 ### State Trigger
 
 A triggered ability that triggers when a game state is true rather than triggering when an event occurs. See rule 603.8.
+
+### State-Based Actions
+
+Game actions that happen automatically whenever certain conditions are met. See rule 704, “State-Based Actions.”
 
 ### Static Ability
 
@@ -2519,7 +2539,7 @@ A counter that stops a permanent from untapping. See rule 122.1d.
 
 ### Subgame
 
-A completely separate Magic game created by an effect. See rule 728, “Subgames.”
+A completely separate Magic game created by an effect. See rule 729, “Subgames.”
 
 ### Substitute Card
 
@@ -2585,13 +2605,13 @@ See Landwalk.
 
 To turn a permanent sideways from an upright position. See rule 701.26, “Tap and Untap.”
 
-### Tapped
-
-A status a permanent may have. See rule 110.5 and rule 701.26, “Tap and Untap.” See also Untapped.
-
 ### Tap Symbol
 
 The tap symbol {T} in an activation cost means “Tap this permanent.” See rule 107.5.
+
+### Tapped
+
+A status a permanent may have. See rule 110.5 and rule 701.26, “Tap and Untap.” See also Untapped.
 
 ### Target
 
@@ -2601,13 +2621,13 @@ A preselected object or player a spell or ability will affect. See rule 115, “
 
 A group of players who share a common victory condition in a multiplayer game. See rule 808, “Team vs. Team Variant,” rule 809, “Emperor Variant,” rule 810, “Two-Headed Giant Variant,” and rule 811, “Alternating Teams Variant.”
 
-### Teammate
-
-In a multiplayer game between teams, a player’s teammates are the other players on their team. See rule 102.3.
-
 ### Team vs. Team Variant
 
 A multiplayer variant played among two or more teams, each of which sits together. See rule 808, “Team vs. Team Variant.”
+
+### Teammate
+
+In a multiplayer game between teams, a player’s teammates are the other players on their team. See rule 102.3.
 
 ### Text Box
 
@@ -2726,25 +2746,25 @@ Whenever a game event or game state matches a triggered ability’s trigger even
 
 The first part of a triggered ability, consisting of “when,” “whenever,” or “at” followed by a trigger event. See rule 603, “Handling Triggered Abilities.”
 
-### Triggered Ability
-
-A kind of ability. Triggered abilities begin with the word “when,” “whenever,” or “at.” They’re written as “[Trigger condition], [effect].” See rule 113, “Abilities,” and rule 603, “Handling Triggered Abilities.”
-
 ### Trigger Event
 
 The event that a triggered ability looks for. Whenever the trigger event occurs, the triggered ability triggers. See rule 603, “Handling Triggered Abilities.”
+
+### Triggered Ability
+
+A kind of ability. Triggered abilities begin with the word “when,” “whenever,” or “at.” They’re written as “[Trigger condition], [effect].” See rule 113, “Abilities,” and rule 603, “Handling Triggered Abilities.”
 
 ### Triple
 
 A keyword action that increases a creature’s power and/or toughness. See rule 701.11, “Triple.”
 
-### Turn-Based Actions
-
-Game actions that happen automatically when certain steps or phases begin, or when each step or phase ends. See rule 703, “Turn-Based Actions.”
-
 ### Turn Markers
 
 Markers used to keep track of which players are taking turns in a Grand Melee game. See rule 807.4.
+
+### Turn-Based Actions
+
+Game actions that happen automatically when certain steps or phases begin, or when each step or phase ends. See rule 703, “Turn-Based Actions.”
 
 ### Two-Headed Giant Variant
 
@@ -2819,6 +2839,10 @@ To give an unlocked designation to a permanent that has one or more locked halve
 
 One half of a split permanent is “unlocked” if it has the appropriate unlocked designation. See rule 709.5.
 
+### Unprepared
+
+A permanent that becomes unprepared loses the prepared designation. See rule 722, “Preparation Cards.” See also Prepared.
+
 ### Untap
 
 To rotate a permanent back to the upright position from a sideways position. See rule 701.26, “Tap and Untap.”
@@ -2838,10 +2862,6 @@ A default status a permanent may have. See rule 110.5 and rule 701.26, “Tap an
 ### Upkeep Step
 
 Part of the turn. This step is the second step of the beginning phase. See rule 503, “Upkeep Step.”
-
-### Vancouver Mulligan
-
-Informal term for a previous system of taking a mulligan. Using the Vancouver mulligan, a player who took a mulligan shuffled their hand into their library and drew one fewer card. After choosing to not mulligan, a player who took a mulligan looked at the top card of their library and could put it on the bottom of their library. For current mulligan rules, see rule 103.5.
 
 ### Vanguard
 

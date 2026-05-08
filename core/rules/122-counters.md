@@ -12,7 +12,7 @@ A counter is a marker placed on an object or player that modifies its characteri
 - f. If a player has ten or more poison counters, that player loses the game as a state-based action. See rule 704. A player is “poisoned” if they have one or more poison counters. (See rule 810 for additional rules for Two-Headed Giant games.)
 - g. The number of defense counters on a battle on the battlefield indicates how much defense it has. A battle with 0 defense is put into its owner’s graveyard if it isn’t the source of an ability that has triggered but not yet left the stack. This state-based action doesn’t use the stack. See rule 704.
 - h. One or more finality counters on a permanent create a single replacement effect that stops the permanent from going to the graveyard. That effect is “If this permanent would be put into a graveyard from the battlefield, exile it instead.”
-- i. One or more rad counters on a player cause a triggered ability to trigger at the beginning of that player’s precombat main phase. See rule 727, “Rad Counters.”
+- i. One or more rad counters on a player cause a triggered ability to trigger at the beginning of that player’s precombat main phase. See rule 728, “Rad Counters.”
 
 ## 122.2
 

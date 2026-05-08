@@ -330,16 +330,18 @@ fn render_markdown(nodes: List(MarkdownNode)) -> String {
   |> string.join("\n")
 }
 
+const rules_dir = "../core/rules"
+
 /// Creates the rules directory if it doesn't exist
 fn create_rules_directory() -> Result(Nil, String) {
-  simplifile.create_directory("../rules")
+  simplifile.create_directory(rules_dir)
   |> result.map_error(fn(_) { "Failed to create rules directory" })
   |> result.or(Ok(Nil))
 }
 
 /// Saves a section to a file
 fn save_section(filename: String, content: String) -> Result(Nil, String) {
-  let filepath = "../rules/" <> filename
+  let filepath = rules_dir <> "/" <> filename
 
   simplifile.write(filepath, content)
   |> result.map_error(fn(_) { "Failed to write file: " <> filepath })

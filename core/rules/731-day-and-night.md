@@ -1,12 +1,12 @@
-# 730. Day and Night
+# 731. Day and Night
 
-## 730.1
+## 731.1
 
 Day and night are designations that the game itself can have. The game starts with neither designation. “It becomes day” and “it becomes night” refer to the game gaining the day or night designation. It can become day or night through the daybound and nightbound keyword abilities (see rule 702.145). Other effects can also make it day or night. Once it has become day or night, the game will have exactly one of those designations from that point forward.
 
 - a. The phrases “day becomes night” and “night becomes day” refer to the game losing the first designation and gaining the second one.
 
-## 730.2
+## 731.2
 
 As the second part of the untap step, the game checks the previous turn to see if the game’s day/night designation should change. See rule 502, “Untap Step.”
 

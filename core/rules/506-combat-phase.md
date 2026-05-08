@@ -18,9 +18,10 @@ Only a creature can attack or block. Only a player, a planeswalker, or a battle 
 - a. If an effect would put a noncreature permanent onto the battlefield attacking or blocking, the permanent does enter the battlefield but it’s never considered to be an attacking or blocking permanent.
 - b. If an effect would put a creature onto the battlefield attacking under the control of any player except an attacking player, that creature does enter the battlefield, but it’s never considered to be an attacking creature.
 - c. If an effect would put a creature onto the battlefield attacking either a player not in the game or a permanent that’s no longer on the battlefield or isn’t either a planeswalker or a battle, that creature does enter the battlefield, but it’s never considered to be an attacking creature. See rule 508.4a.
-- d. If an effect would put a creature onto the battlefield blocking but the creature it would block isn’t attacking the entering creature’s controller, a planeswalker that player controls, or a battle that player protects, that creature does enter the battlefield, but it’s never considered to be a blocking creature.
-- e. If an effect would put a creature that’s also a battle onto the battlefield attacking or blocking, that permanent enters the battlefield but it’s never considered to be an attacking or blocking creature.
-- f. If a resolving spell or ability would cause a battle to become an attacking or blocking creature, that part of the effect does nothing.
+- d. If an effect puts a creature onto the battlefield attacking during the declare blockers step, combat damage step, or end of combat step, that creature enters the battlefield unblocked. See rule 508.4d.
+- e. If an effect would put a creature onto the battlefield blocking but the creature it would block isn’t attacking the entering creature’s controller, a planeswalker that player controls, or a battle that player protects, that creature does enter the battlefield, but it’s never considered to be a blocking creature.
+- f. If an effect would put a creature that’s also a battle onto the battlefield attacking or blocking, that permanent enters the battlefield but it’s never considered to be an attacking or blocking creature.
+- g. If a resolving spell or ability would cause a battle to become an attacking or blocking creature, that part of the effect does nothing.
 
 ## 506.4
 

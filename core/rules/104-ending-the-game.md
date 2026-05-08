@@ -49,4 +49,4 @@ If a player loses the game, that player leaves the game. If the game is a draw f
 
 ## 104.6
 
-One card (Karn Liberated) restarts the game. All players still in the game when it restarts then immediately begin a new game. See rule 726, “Restarting the Game.”
+One card (Karn Liberated) restarts the game. All players still in the game when it restarts then immediately begin a new game. See rule 727, “Restarting the Game.”

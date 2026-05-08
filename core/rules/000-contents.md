@@ -1,6 +1,6 @@
 # Magic: The Gathering Comprehensive Rules
 
-These rules are effective as of November 14, 2025.
+These rules are effective as of April 17, 2026.
 
 ## Introduction
 
@@ -147,17 +147,18 @@ Changes may have been made to this document since its publication. You can downl
 - [719. Case Cards](./719-case-cards.md)
 - [720. Omen Cards](./720-omen-cards.md)
 - [721. Station Cards](./721-station-cards.md)
-- [722. Controlling Another Player](./722-controlling-another-player.md)
-- [723. Ending Turns and Phases](./723-ending-turns-and-phases.md)
-- [724. The Monarch](./724-the-monarch.md)
-- [725. The Initiative](./725-the-initiative.md)
-- [726. Restarting the Game](./726-restarting-the-game.md)
-- [727. Rad Counters](./727-rad-counters.md)
-- [728. Subgames](./728-subgames.md)
-- [729. Merging with Permanents](./729-merging-with-permanents.md)
-- [730. Day and Night](./730-day-and-night.md)
-- [731. Taking Shortcuts](./731-taking-shortcuts.md)
-- [732. Handling Illegal Actions](./732-handling-illegal-actions.md)
+- [722. Preparation Cards](./722-preparation-cards.md)
+- [723. Controlling Another Player](./723-controlling-another-player.md)
+- [724. Ending Turns and Phases](./724-ending-turns-and-phases.md)
+- [725. The Monarch](./725-the-monarch.md)
+- [726. The Initiative](./726-the-initiative.md)
+- [727. Restarting the Game](./727-restarting-the-game.md)
+- [728. Rad Counters](./728-rad-counters.md)
+- [729. Subgames](./729-subgames.md)
+- [730. Merging with Permanents](./730-merging-with-permanents.md)
+- [731. Day and Night](./731-day-and-night.md)
+- [732. Taking Shortcuts](./732-taking-shortcuts.md)
+- [733. Handling Illegal Actions](./733-handling-illegal-actions.md)
 
 ### 8. Multiplayer Rules
 
@@ -201,7 +202,7 @@ The Magic: The Gathering game was designed by Richard Garfield, with contributio
 
 Thanks to all our project team members and the many others too numerous to mention who have contributed to this product.
 
-These rules are effective as of November 14, 2025.
+These rules are effective as of April 17, 2026.
 
 Published by Wizards of the Coast LLC, PO Box 707, Renton, WA 98057-0707, USA. Wizards of the Coast, Magic: The Gathering, Magic, their respective logos, Mirrodin, Kamigawa, Lorwyn, Zendikar, Innistrad, Ravnica, Khans of Tarkir, Magic Origins, Magic: The Gathering—Conspiracy, Ixalan, Unfinity, Dominaria, Ikoria, Kaldheim, Baldur’s Gate, The Brothers’ War, and Planeswalker Decks are trademarks of Wizards of the Coast LLC in the USA and other countries. ©2025 Wizards. U.S. Pat. No. RE 37,957.
 
@@ -215,4 +216,6 @@ Moogle; Qu; Fang, Fearless l’Cie; Vanille, Cheerful l’Cie; and Ragnarok, Div
 
 © 2025 MARVEL.
 
-©2025 Viacom International Inc. All Rights Reserved. Nickelodeon, Avatar: The Last Airbender and all related titles, logos and characters are trademarks of Viacom International Inc
+© 2025 Viacom International Inc. All Rights Reserved. Nickelodeon, Avatar: The Last Airbender and all related titles, logos and characters are trademarks of Viacom International Inc.
+
+© 2026 Viacom International Inc. All Rights Reserved. Nickelodeon, Teenage Mutant Ninja Turtles and all related titles, logos and characters are trademarks of Viacom International Inc.

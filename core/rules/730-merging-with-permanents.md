@@ -1,10 +1,10 @@
-# 729. Merging with Permanents
+# 730. Merging with Permanents
 
-## 729.1
+## 730.1
 
 One keyword causes an object to merge with a permanent. See rule 702.140, “Mutate.”
 
-## 729.2
+## 730.2
 
 To merge an object with a permanent, place that object on top of or under that permanent. That permanent becomes a merged permanent represented by the card or copy that represented that object in addition to any other components that were representing it.
 
@@ -19,7 +19,7 @@ To merge an object with a permanent, place that object on top of or under that p
 - i. A merged permanent is not a double-faced permanent even if it contains one or more double-faced components. If a merged permanent contains one or more double-faced components that can transform (see rule 712), transforming or converting that permanent causes each of those double-faced components to turn so that its other face is up.
 - j. A face-up merged permanent that contains a double-faced component can’t be turned face down.
 
-## 729.3
+## 730.3
 
 If a merged permanent leaves the battlefield, one permanent leaves the battlefield and each of the individual components are put into the appropriate zone.
 
