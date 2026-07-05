@@ -1,11 +1,12 @@
 import mtg_engine/action
-import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{pass_until}
 
 pub fn produce_single_white_mana_test() {
-  let state = game.new()
+  let state = state.new()
   let mana =
     mana.Produced(white: 1, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
 
@@ -23,7 +24,7 @@ pub fn produce_single_white_mana_test() {
 
 // Test producing multiple colors at once
 pub fn produce_multiple_colors_mana_test() {
-  let state = game.new()
+  let state = state.new()
   let mana =
     mana.Produced(white: 1, blue: 2, black: 0, red: 0, green: 1, colorless: 0)
 
@@ -37,7 +38,7 @@ pub fn produce_multiple_colors_mana_test() {
 
 // Test mana accumulates with multiple productions
 pub fn mana_accumulates_test() {
-  let state = game.new()
+  let state = state.new()
   let mana1 =
     mana.Produced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0)
   let mana2 =
@@ -52,7 +53,7 @@ pub fn mana_accumulates_test() {
 
 // Test producing mana for different players
 pub fn produce_mana_different_players_test() {
-  let state = game.new()
+  let state = state.new()
   let mana_p1 =
     mana.Produced(white: 2, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
   let mana_p2 =
@@ -72,7 +73,7 @@ pub fn produce_mana_different_players_test() {
 
 // Test producing zero mana (edge case)
 pub fn produce_zero_mana_test() {
-  let state = game.new()
+  let state = state.new()
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
 
@@ -89,7 +90,7 @@ pub fn produce_zero_mana_test() {
 
 // Test mana persists within a step (doesn't empty on priority pass)
 pub fn mana_persists_within_step_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let mana =
     mana.Produced(white: 2, blue: 1, black: 0, red: 0, green: 0, colorless: 0)
 

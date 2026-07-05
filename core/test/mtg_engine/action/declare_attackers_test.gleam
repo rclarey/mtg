@@ -1,10 +1,12 @@
 import gleam/option.{None, Some}
 import mtg_engine/action
+import mtg_engine/combat
 import mtg_engine/error
-import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{
   add_card_to_hand, add_creature_to_battlefield, add_land_to_battlefield,
   create_test_creature, create_test_land, pass_until,
@@ -12,17 +14,17 @@ import test_helpers.{
 
 // Test declaring attackers successfully
 pub fn declare_attackers_success_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness (entered in cycle -1)
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare attackers
-  let attack_pairs = [game.AttackPair("creature1", game.AttackPlayer(2))]
+  let attack_pairs = [combat.AttackPair("creature1", combat.AttackPlayer(2))]
   let assert Ok(state) =
     action.dispatch(state, action.DeclareAttackers(1, attack_pairs))
 
@@ -43,7 +45,7 @@ pub fn declare_attackers_success_test() {
 
 // Test declaring multiple attackers
 pub fn declare_multiple_attackers_test() {
-  let state = game.new()
+  let state = state.new()
   let creature1 = create_test_creature("creature1", "Bear 1")
   let creature2 = create_test_creature("creature2", "Bear 2")
 
@@ -52,12 +54,12 @@ pub fn declare_multiple_attackers_test() {
   let state = add_creature_to_battlefield(state, 1, creature2, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare both attackers
   let attack_pairs = [
-    game.AttackPair("creature1", game.AttackPlayer(2)),
-    game.AttackPair("creature2", game.AttackPlayer(2)),
+    combat.AttackPair("creature1", combat.AttackPlayer(2)),
+    combat.AttackPair("creature2", combat.AttackPlayer(2)),
   ]
   let assert Ok(state) =
     action.dispatch(state, action.DeclareAttackers(1, attack_pairs))
@@ -75,7 +77,7 @@ pub fn declare_multiple_attackers_test() {
 
 // Test cannot declare attackers with tapped creature
 pub fn declare_attackers_tapped_creature_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
@@ -83,7 +85,7 @@ pub fn declare_attackers_tapped_creature_test() {
 
   // Tap the creature manually
   let state =
-    game.State(
+    state.State(
       ..state,
       players: player.update(state.players, 1, fn(p) {
         player.Player(
@@ -96,14 +98,14 @@ pub fn declare_attackers_tapped_creature_test() {
     )
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Try to declare tapped creature as attacker - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
   assert result
@@ -112,22 +114,22 @@ pub fn declare_attackers_tapped_creature_test() {
 
 // Test cannot declare attackers with summoning sickness
 pub fn declare_attackers_summoning_sickness_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield with summoning sickness (current cycle)
-  let current_cycle = game.turn_cycle(state)
+  let current_cycle = state.turn_cycle(state)
   let state = add_creature_to_battlefield(state, 1, creature, current_cycle)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Try to attack with creature that has summoning sickness - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
   assert result
@@ -138,21 +140,21 @@ pub fn declare_attackers_summoning_sickness_test() {
 
 // Test non-active player cannot declare attackers
 pub fn declare_attackers_not_active_player_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 2's battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 2, creature, -1)
 
   // Advance to DeclareAttackers step (player 1 is active)
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Player 2 tries to declare attackers - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(2, [
-        game.AttackPair("creature1", game.AttackPlayer(1)),
+        combat.AttackPair("creature1", combat.AttackPlayer(1)),
       ]),
     )
   assert result
@@ -161,21 +163,21 @@ pub fn declare_attackers_not_active_player_test() {
 
 // Test cannot declare attackers in wrong step
 pub fn declare_attackers_wrong_step_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Stay in PreCombatMain (wrong step)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Try to declare attackers in wrong step - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
   assert result
@@ -186,14 +188,14 @@ pub fn declare_attackers_wrong_step_test() {
 
 // Test priority is given to active player after declaring attackers
 pub fn declare_attackers_retains_priority_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Verify no one has priority yet (attackers not declared)
   assert state.priority_player == None
@@ -203,7 +205,7 @@ pub fn declare_attackers_retains_priority_test() {
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
 
@@ -213,7 +215,7 @@ pub fn declare_attackers_retains_priority_test() {
 
 // Test cannot declare attackers more than once
 pub fn declare_attackers_already_declared_test() {
-  let state = game.new()
+  let state = state.new()
   let creature1 = create_test_creature("creature1", "Bear 1")
   let creature2 = create_test_creature("creature2", "Bear 2")
 
@@ -222,14 +224,14 @@ pub fn declare_attackers_already_declared_test() {
   let state = add_creature_to_battlefield(state, 1, creature2, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare first attacker
   let assert Ok(state) =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
 
@@ -238,7 +240,7 @@ pub fn declare_attackers_already_declared_test() {
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature2", game.AttackPlayer(2)),
+        combat.AttackPair("creature2", combat.AttackPlayer(2)),
       ]),
     )
   assert result
@@ -249,21 +251,21 @@ pub fn declare_attackers_already_declared_test() {
 
 // Test cannot declare non-creature as attacker
 pub fn declare_attackers_not_creature_test() {
-  let state = game.new()
+  let state = state.new()
   let land = create_test_land("land1", "Forest")
 
   // Add land to battlefield
   let state = add_land_to_battlefield(state, 1, land)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Try to declare land as attacker - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("land1", game.AttackPlayer(2)),
+        combat.AttackPair("land1", combat.AttackPlayer(2)),
       ]),
     )
   assert result == Error(error.InvalidAction("Only creatures can attack"))
@@ -271,21 +273,21 @@ pub fn declare_attackers_not_creature_test() {
 
 // Test non-active player cannot declare attackers (already tested above but keeping for completeness)
 pub fn declare_attackers_without_priority_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 2, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Player 2 (non-active) tries to declare attackers - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(2, [
-        game.AttackPair("creature1", game.AttackPlayer(1)),
+        combat.AttackPair("creature1", combat.AttackPlayer(1)),
       ]),
     )
   assert result
@@ -294,10 +296,10 @@ pub fn declare_attackers_without_priority_test() {
 
 // Test attacking with no creatures (empty list)
 pub fn declare_attackers_empty_list_test() {
-  let state = game.new()
+  let state = state.new()
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare no attackers
   let assert Ok(state) = action.dispatch(state, action.DeclareAttackers(1, []))
@@ -311,24 +313,24 @@ pub fn declare_attackers_empty_list_test() {
 
 // Test attacking_creatures is cleared when advancing to new turn
 pub fn attacking_creatures_cleared_after_combat_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare attackers
-  let attack_pairs = [game.AttackPair("creature1", game.AttackPlayer(2))]
+  let attack_pairs = [combat.AttackPair("creature1", combat.AttackPlayer(2))]
   let assert Ok(state) =
     action.dispatch(state, action.DeclareAttackers(1, attack_pairs))
 
   // Verify attackers are set
   assert state.attacking_creatures == Some(attack_pairs)
 
-  let state = pass_until(state, game.PostCombatMain)
+  let state = pass_until(state, step.PostCombatMain)
 
   // Verify attacking_creatures was cleared
   assert state.attacking_creatures == None
@@ -336,14 +338,14 @@ pub fn attacking_creatures_cleared_after_combat_test() {
 
 // Test cannot declare attackers twice even if first declaration was empty
 pub fn declare_attackers_twice_with_empty_first_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare no attackers
   let assert Ok(state) = action.dispatch(state, action.DeclareAttackers(1, []))
@@ -358,20 +360,20 @@ pub fn declare_attackers_twice_with_empty_first_test() {
   let assert Ok(state) = action.dispatch(state, action.PassPriority(2))
 
   // We should now be in DeclareBlockers step
-  assert state.step == game.DeclareBlockers
+  assert state.step == step.DeclareBlockers
 
   // But let's test the scenario where we're still in DeclareAttackers
   // (for example, if player 2 had cast a spell)
   // We'll manually set the game state back to simulate this
 
-  let state = game.State(..state, step: game.DeclareAttackers)
+  let state = state.State(..state, step: step.DeclareAttackers)
 
   // Try to declare attackers again - should fail because attackers were already declared
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(2)),
+        combat.AttackPair("creature1", combat.AttackPlayer(2)),
       ]),
     )
   assert result
@@ -382,10 +384,10 @@ pub fn declare_attackers_twice_with_empty_first_test() {
 
 // Test cannot pass priority in DeclareAttackers step before declaring attackers
 pub fn cannot_pass_priority_before_declaring_attackers_test() {
-  let state = game.new()
+  let state = state.new()
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Try to pass priority without declaring attackers - should fail
   let result = action.dispatch(state, action.PassPriority(1))
@@ -394,10 +396,10 @@ pub fn cannot_pass_priority_before_declaring_attackers_test() {
 
 // Test can pass priority after declaring attackers
 pub fn can_pass_priority_after_declaring_attackers_test() {
-  let state = game.new()
+  let state = state.new()
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Declare no attackers
   let assert Ok(state) = action.dispatch(state, action.DeclareAttackers(1, []))
@@ -409,7 +411,7 @@ pub fn can_pass_priority_after_declaring_attackers_test() {
 
 // Test cannot play land before declaring attackers
 pub fn cannot_play_land_before_declaring_attackers_test() {
-  let state = game.new()
+  let state = state.new()
   let land = create_test_land("land1", "Forest")
 
   // Add land to player 1's hand
@@ -418,9 +420,9 @@ pub fn cannot_play_land_before_declaring_attackers_test() {
   // Manually set to DeclareAttackers step with no priority
   // (normally you can't get here, but testing the validation)
   let state =
-    game.State(
+    state.State(
       ..state,
-      step: game.DeclareAttackers,
+      step: step.DeclareAttackers,
       priority_player: None,
       attacking_creatures: None,
     )
@@ -432,7 +434,7 @@ pub fn cannot_play_land_before_declaring_attackers_test() {
 
 // Test cannot tap land before declaring attackers
 pub fn cannot_tap_land_before_declaring_attackers_test() {
-  let state = game.new()
+  let state = state.new()
   let land = create_test_land("land1", "Forest")
 
   // Add land to battlefield
@@ -440,9 +442,9 @@ pub fn cannot_tap_land_before_declaring_attackers_test() {
 
   // Manually set to DeclareAttackers step with no priority
   let state =
-    game.State(
+    state.State(
       ..state,
-      step: game.DeclareAttackers,
+      step: step.DeclareAttackers,
       priority_player: None,
       attacking_creatures: None,
     )
@@ -454,7 +456,7 @@ pub fn cannot_tap_land_before_declaring_attackers_test() {
 
 // Test cannot cast creature before declaring attackers
 pub fn cannot_cast_creature_before_declaring_attackers_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
@@ -466,24 +468,24 @@ pub fn cannot_cast_creature_before_declaring_attackers_test() {
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
 
   let state =
-    game.State(
+    state.State(
       ..state,
-      step: game.DeclareAttackers,
+      step: step.DeclareAttackers,
       priority_player: None,
       attacking_creatures: None,
     )
 
   // Try to cast creature - should fail
-  let result = action.dispatch(state, action.CastCreature(1, "creature1"))
+  let result = action.dispatch(state, action.CastCreature(1, "creature1", 0))
   assert result == Error(error.DoNotHavePriority)
 }
 
 // Test no one can pass priority before attackers declared (priority is None)
 pub fn non_active_player_can_act_before_attackers_declared_test() {
-  let state = game.new()
+  let state = state.new()
 
   // Advance to DeclareAttackers step (priority_player will be None)
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Verify priority is None
   assert state.priority_player == None
@@ -495,21 +497,21 @@ pub fn non_active_player_can_act_before_attackers_declared_test() {
 
 // Test cannot attack yourself
 pub fn declare_attackers_cannot_attack_yourself_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield without summoning sickness
   let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   // Advance to DeclareAttackers step
-  let state = pass_until(state, game.DeclareAttackers)
+  let state = pass_until(state, step.DeclareAttackers)
 
   // Try to attack yourself - should fail
   let result =
     action.dispatch(
       state,
       action.DeclareAttackers(1, [
-        game.AttackPair("creature1", game.AttackPlayer(1)),
+        combat.AttackPair("creature1", combat.AttackPlayer(1)),
       ]),
     )
   assert result == Error(error.InvalidAction("Cannot attack yourself"))

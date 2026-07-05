@@ -1,9 +1,10 @@
 import mtg_engine/action
 import mtg_engine/error
-import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{
   add_card_to_hand, add_land_to_battlefield, create_test_creature,
   create_test_land, pass_until,
@@ -11,7 +12,7 @@ import test_helpers.{
 
 // Test tapping a Forest for green mana
 pub fn tap_forest_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let forest = create_test_land("land1", "Forest")
 
   // Add forest to battlefield
@@ -39,7 +40,7 @@ pub fn tap_forest_for_mana_test() {
 
 // Test tapping a Mountain for red mana
 pub fn tap_mountain_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let mountain = create_test_land("land1", "Mountain")
 
   // Add mountain to battlefield
@@ -64,7 +65,7 @@ pub fn tap_mountain_for_mana_test() {
 
 // Test tapping an Island for blue mana
 pub fn tap_island_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let island = create_test_land("land1", "Island")
 
   // Add island to battlefield
@@ -89,7 +90,7 @@ pub fn tap_island_for_mana_test() {
 
 // Test tapping a Plains for white mana
 pub fn tap_plains_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let plains = create_test_land("land1", "Plains")
 
   // Add plains to battlefield
@@ -114,7 +115,7 @@ pub fn tap_plains_for_mana_test() {
 
 // Test tapping a Swamp for black mana
 pub fn tap_swamp_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let swamp = create_test_land("land1", "Swamp")
 
   // Add swamp to battlefield
@@ -139,7 +140,7 @@ pub fn tap_swamp_for_mana_test() {
 
 // Test cannot tap already tapped land
 pub fn tap_already_tapped_land_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let forest = create_test_land("land1", "Forest")
 
   // Add forest to battlefield
@@ -156,7 +157,7 @@ pub fn tap_already_tapped_land_test() {
 
 // Test cannot tap land not on battlefield
 pub fn tap_land_not_on_battlefield_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let forest = create_test_land("land1", "Forest")
 
   // Add forest to hand instead of battlefield
@@ -169,7 +170,7 @@ pub fn tap_land_not_on_battlefield_test() {
 
 // Test cannot tap non-land permanent
 pub fn tap_non_land_for_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to battlefield
@@ -182,7 +183,7 @@ pub fn tap_non_land_for_mana_test() {
 
 // Test tapping multiple lands accumulates mana
 pub fn tap_multiple_lands_accumulates_mana_test() {
-  let state = game.new() |> pass_until(game.PreCombatMain)
+  let state = state.new() |> pass_until(step.PreCombatMain)
   let forest1 = create_test_land("land1", "Forest")
   let forest2 = create_test_land("land2", "Forest")
   let mountain = create_test_land("land3", "Mountain")

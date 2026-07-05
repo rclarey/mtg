@@ -2,20 +2,22 @@ import gleam/list
 import gleam/option.{None}
 import mtg_engine/action
 import mtg_engine/card
+import mtg_engine/card_type
 import mtg_engine/error
-import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{add_card_to_hand, pass_until}
 
 // Test casting an instant when the stack is non-empty (should succeed)
 pub fn test_cast_instant_non_empty_stack() {
-  let state = game.new()
+  let state = state.new()
   let instant =
     card.Card(
       id: "instant1",
       name: "Test Instant",
-      card_type: card.Instant,
+      card_type: card_type.Instant,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -24,12 +26,17 @@ pub fn test_cast_instant_non_empty_stack() {
         red: 0,
         green: 1,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, instant)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -38,12 +45,12 @@ pub fn test_cast_instant_non_empty_stack() {
 
   // Put something on the stack first by casting the instant
   let assert Ok(state) =
-    action.dispatch(state, action.CastInstant(1, "instant1"))
+    action.dispatch(state, action.CastInstant(1, "instant1", 0))
 
   // Try to cast another instant while the stack is non-empty
   // This should succeed because instants can be cast anytime caster has priority
   let assert Ok(state) =
-    action.dispatch(state, action.CastInstant(1, "instant1"))
+    action.dispatch(state, action.CastInstant(1, "instant1", 0))
 
   // Verify both instants are on the stack
   assert list.length(state.stack) == 2
@@ -51,12 +58,12 @@ pub fn test_cast_instant_non_empty_stack() {
 
 // Test attempting to cast a sorcery as a non-active player (should fail)
 pub fn test_cast_sorcery_non_active_player() {
-  let state = game.new()
+  let state = state.new()
   let sorcery =
     card.Card(
       id: "sorcery1",
       name: "Test Sorcery",
-      card_type: card.Sorcery,
+      card_type: card_type.Sorcery,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -65,12 +72,17 @@ pub fn test_cast_sorcery_non_active_player() {
         red: 0,
         green: 2,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, sorcery)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -79,17 +91,17 @@ pub fn test_cast_sorcery_non_active_player() {
 
   // Try to cast as player 2 (non-active player) - should fail
   let assert Error(error.InvalidAction(_)) =
-    action.dispatch(state, action.CastSorcery(2, "sorcery1"))
+    action.dispatch(state, action.CastSorcery(2, "sorcery1", 0))
 }
 
 // Test successful casting of a sorcery by active player during main phase with empty stack
 pub fn test_cast_sorcery_success() {
-  let state = game.new()
+  let state = state.new()
   let sorcery =
     card.Card(
       id: "sorcery1",
       name: "Test Sorcery",
-      card_type: card.Sorcery,
+      card_type: card_type.Sorcery,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -98,12 +110,17 @@ pub fn test_cast_sorcery_success() {
         red: 0,
         green: 2,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, sorcery)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -112,7 +129,7 @@ pub fn test_cast_sorcery_success() {
 
   // Cast sorcery as active player - should succeed
   let assert Ok(state) =
-    action.dispatch(state, action.CastSorcery(1, "sorcery1"))
+    action.dispatch(state, action.CastSorcery(1, "sorcery1", 0))
 
   // Verify sorcery is removed from hand
   let assert Ok(player) = player.find(state.players, 1)
@@ -127,12 +144,12 @@ pub fn test_cast_sorcery_success() {
 
 // Test that casting an instant with empty stack succeeds
 pub fn test_cast_instant_empty_stack() {
-  let state = game.new()
+  let state = state.new()
   let instant =
     card.Card(
       id: "instant1",
       name: "Test Instant",
-      card_type: card.Instant,
+      card_type: card_type.Instant,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -141,12 +158,17 @@ pub fn test_cast_instant_empty_stack() {
         red: 0,
         green: 1,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, instant)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -155,7 +177,7 @@ pub fn test_cast_instant_empty_stack() {
 
   // Cast instant with empty stack - should succeed
   let assert Ok(state) =
-    action.dispatch(state, action.CastInstant(1, "instant1"))
+    action.dispatch(state, action.CastInstant(1, "instant1", 0))
 
   // Verify instant is removed from hand
   let assert Ok(player) = player.find(state.players, 1)
@@ -170,12 +192,12 @@ pub fn test_cast_instant_empty_stack() {
 
 // Test that the active player guard works for sorcery casting
 pub fn test_sorcery_active_player_guard() {
-  let state = game.new()
+  let state = state.new()
   let sorcery =
     card.Card(
       id: "sorcery1",
       name: "Test Sorcery",
-      card_type: card.Sorcery,
+      card_type: card_type.Sorcery,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -184,12 +206,17 @@ pub fn test_sorcery_active_player_guard() {
         red: 0,
         green: 2,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, sorcery)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -198,20 +225,21 @@ pub fn test_sorcery_active_player_guard() {
 
   // Try to cast sorcery as non-active player (player 2) - should fail
   let assert Error(error.InvalidAction(_)) =
-    action.dispatch(state, action.CastSorcery(2, "sorcery1"))
+    action.dispatch(state, action.CastSorcery(2, "sorcery1", 0))
 
   // Cast sorcery as active player (player 1) - should succeed
-  let assert Ok(_) = action.dispatch(state, action.CastSorcery(1, "sorcery1"))
+  let assert Ok(_) =
+    action.dispatch(state, action.CastSorcery(1, "sorcery1", 0))
 }
 
 // Test casting a sorcery as a non-active player (should fail)
 pub fn test_cast_sorcery_non_active_player_fails() {
-  let state = game.new()
+  let state = state.new()
   let sorcery =
     card.Card(
       id: "sorcery1",
       name: "Test Sorcery",
-      card_type: card.Sorcery,
+      card_type: card_type.Sorcery,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -220,12 +248,17 @@ pub fn test_cast_sorcery_non_active_player_fails() {
         red: 0,
         green: 2,
         colorless: 0,
+        x: 0,
       ),
       power: None,
       toughness: None,
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
   let state = add_card_to_hand(state, 1, sorcery)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add green mana for casting
   let mana =
@@ -234,5 +267,5 @@ pub fn test_cast_sorcery_non_active_player_fails() {
 
   // Try to cast as player 2 (non-active player) - should fail
   let assert Error(error.InvalidAction(_)) =
-    action.dispatch(state, action.CastSorcery(2, "sorcery1"))
+    action.dispatch(state, action.CastSorcery(2, "sorcery1", 0))
 }

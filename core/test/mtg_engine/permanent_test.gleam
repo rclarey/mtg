@@ -1,18 +1,20 @@
 import gleam/dict
+import gleam/option.{None}
 import mtg_engine/action
-import mtg_engine/game
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{add_card_to_hand, create_test_creature, pass, pass_until}
 
 pub fn creature_has_summoning_sickness_same_turn_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to hand and advance to main phase
   let state = add_card_to_hand(state, 1, creature)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Give player mana to cast
   let mana =
@@ -21,7 +23,7 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
 
   // Cast and resolve the creature
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
   let state = pass(state)
 
   // Get the creature from the battlefield
@@ -30,7 +32,7 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
     dict.get(player.battlefield, "creature1")
 
   // Verify the creature has summoning sickness (entered this turn cycle)
-  let current_cycle = game.turn_cycle(state)
+  let current_cycle = state.turn_cycle(state)
   assert permanent.has_summoning_sickness(
       creature_on_battlefield,
       current_cycle,
@@ -40,12 +42,12 @@ pub fn creature_has_summoning_sickness_same_turn_test() {
 
 // Test that a creature does NOT have summoning sickness on the next turn
 pub fn creature_no_summoning_sickness_next_turn_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to hand and advance to main phase
   let state = add_card_to_hand(state, 1, creature)
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Give player mana to cast
   let mana =
@@ -54,11 +56,11 @@ pub fn creature_no_summoning_sickness_next_turn_test() {
 
   // Cast and resolve the creature (turn_index 0, player 1, cycle 0)
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
   let state = pass(state)
 
   // Verify creature entered on cycle 0
-  let cycle_entered = game.turn_cycle(state)
+  let cycle_entered = state.turn_cycle(state)
   assert cycle_entered == 0
 
   // Get the creature from the battlefield
@@ -93,6 +95,11 @@ pub fn summoning_sickness_only_for_permanents_test() {
       tapped: False,
       entered_battlefield_cycle: 0,
       damage: 0,
+      granted_keywords: [],
+      attached_to: None,
+      static_bonus_power: 0,
+      static_bonus_toughness: 0,
+      static_bonus_keywords: [],
     )
 
   // Creature should have summoning sickness on the same cycle it entered

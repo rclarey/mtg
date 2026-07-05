@@ -3,29 +3,31 @@ import gleam/list
 import gleam/option.{Some}
 import mtg_engine/action
 import mtg_engine/card
-import mtg_engine/game
+import mtg_engine/card_type
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
+import mtg_engine/state
+import mtg_engine/step
 import test_helpers.{add_card_to_hand, create_test_creature, pass, pass_until}
 
 // Test resolving a creature spell from the stack
 pub fn resolve_creature_spell_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Verify creature is on stack
   assert list.length(state.stack) == 1
@@ -48,21 +50,21 @@ pub fn resolve_creature_spell_test() {
 
 // Test creature enters battlefield untapped
 pub fn creature_enters_untapped_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass priority - spell resolves automatically
   let state = pass(state)
@@ -76,36 +78,36 @@ pub fn creature_enters_untapped_test() {
 
 // Test cannot resolve from empty stack
 pub fn resolve_empty_stack_test() {
-  let state = game.new()
+  let state = state.new()
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // When both players pass with empty stack, should just advance step
   // (not error - this is normal behavior)
   let state = pass(state)
 
   // Should have advanced to next step, not errored
-  assert state.step == game.BeginCombat
+  assert state.step == step.BeginCombat
 }
 
 // Test resolving puts creature on controller's battlefield
 pub fn resolve_creature_to_controller_battlefield_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass priority - spell resolves automatically
   let state = pass(state)
@@ -120,13 +122,13 @@ pub fn resolve_creature_to_controller_battlefield_test() {
 
 // Test resolving multiple creatures in sequence
 pub fn resolve_multiple_creatures_test() {
-  let state = game.new()
+  let state = state.new()
   let creature1 = create_test_creature("creature1", "Grizzly Bears")
   let creature2 =
     card.Card(
       id: "creature2",
       name: "Another Bear",
-      card_type: card.Creature,
+      card_type: card_type.Creature,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -135,9 +137,14 @@ pub fn resolve_multiple_creatures_test() {
         red: 0,
         green: 1,
         colorless: 0,
+        x: 0,
       ),
       power: Some(2),
       toughness: Some(2),
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
 
   // Add creatures to player 1's hand
@@ -145,14 +152,14 @@ pub fn resolve_multiple_creatures_test() {
   let state = add_card_to_hand(state, 1, creature2)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast first creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 2, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Verify first creature is on stack
   assert list.length(state.stack) == 1
@@ -167,7 +174,7 @@ pub fn resolve_multiple_creatures_test() {
 
   // Cast second creature
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature2"))
+    action.dispatch(state, action.CastCreature(1, "creature2", 0))
 
   // Verify second creature is on stack
   assert list.length(state.stack) == 1
@@ -184,12 +191,12 @@ pub fn resolve_multiple_creatures_test() {
 
 // Test creature retains power and toughness when resolving
 pub fn resolve_creature_retains_stats_test() {
-  let state = game.new()
+  let state = state.new()
   let creature =
     card.Card(
       id: "creature1",
       name: "Big Creature",
-      card_type: card.Creature,
+      card_type: card_type.Creature,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -198,23 +205,28 @@ pub fn resolve_creature_retains_stats_test() {
         red: 0,
         green: 1,
         colorless: 0,
+        x: 0,
       ),
       power: Some(5),
       toughness: Some(4),
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass priority - spell resolves automatically
   let state = pass(state)
@@ -229,21 +241,21 @@ pub fn resolve_creature_retains_stats_test() {
 
 // Test spell automatically resolves when all players pass priority
 pub fn automatic_resolution_when_all_pass_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Verify creature is on stack
   assert list.length(state.stack) == 1
@@ -260,21 +272,21 @@ pub fn automatic_resolution_when_all_pass_test() {
 
 // Test priority resets to active player after automatic resolution
 pub fn automatic_resolution_resets_priority_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass priority - should resolve and reset priority
   let state = pass(state)
@@ -289,13 +301,13 @@ pub fn automatic_resolution_resets_priority_test() {
 
 // Test multiple spells resolve in LIFO order
 pub fn automatic_resolution_lifo_order_test() {
-  let state = game.new()
+  let state = state.new()
   let creature1 = create_test_creature("creature1", "First Bear")
   let creature2 =
     card.Card(
       id: "creature2",
       name: "Second Bear",
-      card_type: card.Creature,
+      card_type: card_type.Creature,
       mana_cost: mana.Cost(
         generic: 0,
         white: 0,
@@ -304,9 +316,14 @@ pub fn automatic_resolution_lifo_order_test() {
         red: 0,
         green: 1,
         colorless: 0,
+        x: 0,
       ),
       power: Some(2),
       toughness: Some(2),
+      supertypes: [],
+      subtypes: [],
+      abilities: [],
+      is_token: False,
     )
 
   // Add creatures to player 1's hand
@@ -314,14 +331,14 @@ pub fn automatic_resolution_lifo_order_test() {
   let state = add_card_to_hand(state, 1, creature2)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast first creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 2, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass - first creature resolves
   let state = pass(state)
@@ -333,7 +350,7 @@ pub fn automatic_resolution_lifo_order_test() {
 
   // Cast second creature
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature2"))
+    action.dispatch(state, action.CastCreature(1, "creature2", 0))
 
   // Both players pass - second creature resolves
   let state = pass(state)
@@ -347,21 +364,21 @@ pub fn automatic_resolution_lifo_order_test() {
 
 // Test players get priority after spell resolves
 pub fn priority_after_automatic_resolution_test() {
-  let state = game.new()
+  let state = state.new()
   let creature = create_test_creature("creature1", "Grizzly Bears")
 
   // Add creature to player 1's hand
   let state = add_card_to_hand(state, 1, creature)
 
   // Advance to PreCombatMain
-  let state = pass_until(state, game.PreCombatMain)
+  let state = pass_until(state, step.PreCombatMain)
 
   // Add mana and cast the creature
   let mana =
     mana.Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
   let assert Ok(state) = action.dispatch(state, action.ProduceMana(1, mana))
   let assert Ok(state) =
-    action.dispatch(state, action.CastCreature(1, "creature1"))
+    action.dispatch(state, action.CastCreature(1, "creature1", 0))
 
   // Both players pass - creature resolves automatically
   let state = pass(state)

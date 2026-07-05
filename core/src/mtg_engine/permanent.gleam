@@ -1,4 +1,6 @@
 import gleam/dict.{type Dict}
+import gleam/list
+import gleam/option.{type Option, None}
 import gleam/result
 import mtg_engine/card
 import mtg_engine/error
@@ -14,6 +16,14 @@ pub type Permanent {
     entered_battlefield_cycle: Int,
     // Track damage marked on this permanent (cleared during cleanup step)
     damage: Int,
+    // Track keywords temporarily granted by effects (e.g. PumpCreature)
+    granted_keywords: List(String),
+    // Track what this permanent is attached to (for Auras/Equipment)
+    attached_to: Option(String),
+    // Track static effect bonuses (reset on each dispatch)
+    static_bonus_power: Int,
+    static_bonus_toughness: Int,
+    static_bonus_keywords: List(String),
   )
 }
 
@@ -29,6 +39,11 @@ pub fn from_card(
     tapped: False,
     entered_battlefield_cycle: current_cycle,
     damage: 0,
+    granted_keywords: [],
+    attached_to: None,
+    static_bonus_power: 0,
+    static_bonus_toughness: 0,
+    static_bonus_keywords: [],
   )
 }
 
@@ -53,8 +68,12 @@ pub fn update(
   }
 }
 
-pub fn has_summoning_sickness(permanent: Permanent, current_cycle: Int) -> Bool {
+pub fn has_summoning_sickness(
+  permanent: Permanent,
+  current_cycle: Int,
+) -> Bool {
   // Creature has summoning sickness if it entered this turn cycle
-  // TODO: Add haste keyword support to bypass this check
+  // and doesn't have haste
   permanent.entered_battlefield_cycle >= current_cycle
+  && !list.contains(permanent.granted_keywords, "Haste")
 }

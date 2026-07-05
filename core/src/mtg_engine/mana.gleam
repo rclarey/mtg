@@ -11,6 +11,7 @@ pub type Cost {
     red: Int,
     green: Int,
     colorless: Int,
+    x: Int,
   )
 }
 
@@ -68,8 +69,8 @@ pub fn pay_cost(pool: Produced, cost: Cost) -> Result(Produced, error.Error) {
       colorless: pool.colorless - cost.colorless,
     )
 
-  // Then pay the generic cost from remaining mana
-  pay_generic_from_pool(after_specific, cost.generic)
+  // Then pay the generic + X cost from remaining mana
+  pay_generic_from_pool(after_specific, cost.generic + cost.x)
 }
 
 fn pay_generic_from_pool(
@@ -79,8 +80,16 @@ fn pay_generic_from_pool(
   // Base case: no generic cost to pay
   use <- util.guard(generic_cost > 0, Ok(pool))
 
-  // TODO some smarter heuristic for deducting mana
-  // For now try to deduct from each mana type in WUBRG order
+  // Prefer to use colorless mana first to preserve colored mana
+  use <- util.guard(
+    pool.colorless <= 0,
+    pay_generic_from_pool(
+      Produced(..pool, colorless: pool.colorless - 1),
+      generic_cost - 1,
+    ),
+  )
+
+  // Then use any colored mana in WUBRG order
   use <- util.guard(
     pool.white <= 0,
     pay_generic_from_pool(
@@ -113,30 +122,23 @@ fn pay_generic_from_pool(
       generic_cost - 1,
     ),
   )
-  use <- util.guard(
-    pool.colorless <= 0,
-    pay_generic_from_pool(
-      Produced(..pool, colorless: pool.colorless - 1),
-      generic_cost - 1,
-    ),
-  )
 
   not_enough_mana
 }
 
 // Get mana produced by a land based on its name
-pub fn from_basic_land(land_name: String) -> Produced {
+pub fn from_basic_land(land_name: String) -> Result(Produced, error.Error) {
   case land_name {
     "Forest" ->
-      Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0)
+      Ok(Produced(white: 0, blue: 0, black: 0, red: 0, green: 1, colorless: 0))
     "Mountain" ->
-      Produced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0)
+      Ok(Produced(white: 0, blue: 0, black: 0, red: 1, green: 0, colorless: 0))
     "Island" ->
-      Produced(white: 0, blue: 1, black: 0, red: 0, green: 0, colorless: 0)
+      Ok(Produced(white: 0, blue: 1, black: 0, red: 0, green: 0, colorless: 0))
     "Plains" ->
-      Produced(white: 1, blue: 0, black: 0, red: 0, green: 0, colorless: 0)
+      Ok(Produced(white: 1, blue: 0, black: 0, red: 0, green: 0, colorless: 0))
     "Swamp" ->
-      Produced(white: 0, blue: 0, black: 1, red: 0, green: 0, colorless: 0)
-    _ -> panic as "Tried to tap a non existent basic land"
+      Ok(Produced(white: 0, blue: 0, black: 1, red: 0, green: 0, colorless: 0))
+    _ -> Error(error.InvalidAction("Unknown basic land: " <> land_name))
   }
 }
