@@ -39,14 +39,27 @@ Any abilities of a face-up scheme card in the command zone function from that zo
 
 Immediately after the archenemy’s precombat main phase begins during each of their turns, that player moves the top card of their scheme deck off that scheme deck and turns it face up. This is called “setting that scheme in motion.” (See rule 701.32.) This turn-based action doesn’t use the stack. Abilities of that scheme card that trigger “When you set this scheme in motion” trigger.
 
-- 0.  If a non-ongoing scheme card is face up in the command zone, and no triggered abilities of any scheme are on the stack or waiting to be put on the stack, that scheme card is turned face down and put on the bottom of its owner’s scheme deck the next time a player would receive priority. (This is a state-based action. See rule 704.)
-1.  Once an ongoing scheme card is set in motion, it remains face up in the command zone until an ability causes it to be abandoned (see rule 701.33).
-2.  Supervillain Rumble Option
-2.  As an alternative option, players may play a Free-for-All game in which each player has their own scheme deck. The attack multiple players option (see rule 802) is used; no other multiplayer options are used.
-2.  Each player in this game is an archenemy.
-2.  As in a normal Free-for-All game, the starting player is randomly determined. All other rules that apply to the archenemy in an Archenemy game apply to each player in a Supervillain Rumble game.
-3.  Archenemy Commander Option
-3.  As an alternative option, players may play a Commander game (see rule 903, “Commander”) using the Archenemy rules. The normal rules for Commander apply, as modified by the Archenemy rules, with the following exceptions.
-3.  The archenemy starts with 60 life. The opposing team has a shared life total that starts at 60 life rather than individual life totals. The use of a shared life total is detailed in rules 810.8 and 810.9 of the Two-Headed Giant variant.
-3.  Poison counters are not shared. If the archenemy has ten or more poison counters, they lose the game. If any individual member of the opposing team has ten or more poison counters, they lose the game. (This is a state-based action. See rule 704.)
-3.  The archenemy’s scheme deck must contain at least ten cards, and each card must have a different English name.
+## 904.10
+
+If a non-ongoing scheme card is face up in the command zone, and no triggered abilities of any scheme are on the stack or waiting to be put on the stack, that scheme card is turned face down and put on the bottom of its owner’s scheme deck the next time a player would receive priority. (This is a state-based action. See rule 704.)
+
+## 904.11
+
+Once an ongoing scheme card is set in motion, it remains face up in the command zone until an ability causes it to be abandoned (see rule 701.33).
+
+## 904.12
+
+Supervillain Rumble Option
+
+- a. As an alternative option, players may play a Free-for-All game in which each player has their own scheme deck. The attack multiple players option (see rule 802) is used; no other multiplayer options are used.
+- b. Each player in this game is an archenemy.
+- c. As in a normal Free-for-All game, the starting player is randomly determined. All other rules that apply to the archenemy in an Archenemy game apply to each player in a Supervillain Rumble game.
+
+## 904.13
+
+Archenemy Commander Option
+
+- a. As an alternative option, players may play a Commander game (see rule 903, “Commander”) using the Archenemy rules. The normal rules for Commander apply, as modified by the Archenemy rules, with the following exceptions.
+- b. The archenemy starts with 60 life. The opposing team has a shared life total that starts at 60 life rather than individual life totals. The use of a shared life total is detailed in rules 810.8 and 810.9 of the Two-Headed Giant variant.
+- c. Poison counters are not shared. If the archenemy has ten or more poison counters, they lose the game. If any individual member of the opposing team has ten or more poison counters, they lose the game. (This is a state-based action. See rule 704.)
+- d. The archenemy’s scheme deck must contain at least ten cards, and each card must have a different English name.

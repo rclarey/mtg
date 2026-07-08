@@ -44,33 +44,44 @@ A token that has left the battlefield can’t move to another zone or come back 
 
 Some effects instruct a player to create a legendary token. These may be written “create [name], a . . .” and list characteristics for the token. This is the same as an instruction to create a token with the listed characteristics that has the given name.
 
-- 0.  Some effects instruct a player to create a predefined token. These effects use the definition below to determine the characteristics the token is created with. The effect that creates a predefined token may also modify or add to the predefined characteristics.
-- 0.  A Treasure token is a colorless Treasure artifact token with “{T}, Sacrifice this token: Add one mana of any color.”
-- 0.  A Food token is a colorless Food artifact token with “{2}, {T}, Sacrifice this token: You gain 3 life.”
-- 0.  A Gold token is a colorless Gold artifact token with “Sacrifice this token: Add one mana of any color.”
-- 0.  A Walker token is a 2/2 black Zombie creature token named Walker.
-- 0.  A Shard token is a colorless Shard enchantment token with “{2}, Sacrifice this token: Scry 1, then draw a card.”
-- 0.  A Clue token is a colorless Clue artifact token with “{2}, Sacrifice this token: Draw a card.”
-- 0.  A Blood token is a colorless Blood artifact token with “{1}, {T}, Discard a card, Sacrifice this token: Draw a card.”
-- 0.  A Powerstone token is a colorless Powerstone artifact token with “{T}: Add {C}. This mana can’t be spent to cast a nonartifact spell.”
-- 0.  An Incubator token is a double-faced token. Its front face is a colorless Incubator artifact with “{2}: Transform this token.” Its back face is a 0/0 colorless Phyrexian artifact creature named Phyrexian Token.
-- 0.  A Cursed Role token is a colorless Aura Role enchantment token named Cursed with enchant creature and “Enchanted creature has base power and toughness 1/1.”
-- 0.  A Monster Role token is a colorless Aura Role enchantment token named Monster with enchant creature and “Enchanted creature gets +1/+1 and has trample.”
-- 0.  A Royal Role token is a colorless Aura Role enchantment token named Royal with enchant creature and “Enchanted creature gets +1/+1 and has ward {1}.”
-- 0.  A Sorcerer Role token is a colorless Aura Role enchantment token named Sorcerer with enchant creature and “Enchanted creature gets +1/+1 and has ‘Whenever this creature attacks, scry 1.’”
-- 0.  A Virtuous Role token is a colorless Aura Role enchantment token named Virtuous with enchant creature and “Enchanted creature gets +1/+1 for each enchantment you control.”
-- 0.  A Wicked Role token is a colorless Aura Role enchantment token named Wicked with enchant creature, “Enchanted creature gets +1/+1,” and “When this token is put into a graveyard from the battlefield, each opponent loses 1 life.”
-- 0.  A Young Hero Role token is a colorless Aura Role enchantment token named Young Hero with enchant creature and “Enchanted creature has ‘Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.’”
-- 0.  A Map token is a colorless Map artifact token with “{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.” See rule 701.44, “Explore.”
-- 0.  A Junk token is a colorless Junk artifact token with “{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.”
-- 0.  A Lander token is a colorless Lander artifact token with “{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.”
-- 0.  A Mutagen token is a colorless Mutagen artifact token with “{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.”
-1.  If an effect instructs a player to create a token by name, doesn’t define any other characteristics for that token, and the name is not one of the types in the list of predefined tokens above, that player uses the card with that name in the Oracle card reference to determine the characteristics of that token.
+## 111.10
+
+Some effects instruct a player to create a predefined token. These effects use the definition below to determine the characteristics the token is created with. The effect that creates a predefined token may also modify or add to the predefined characteristics.
+
+- a. A Treasure token is a colorless Treasure artifact token with “{T}, Sacrifice this token: Add one mana of any color.”
+- b. A Food token is a colorless Food artifact token with “{2}, {T}, Sacrifice this token: You gain 3 life.”
+- c. A Gold token is a colorless Gold artifact token with “Sacrifice this token: Add one mana of any color.”
+- d. A Walker token is a 2/2 black Zombie creature token named Walker.
+- e. A Shard token is a colorless Shard enchantment token with “{2}, Sacrifice this token: Scry 1, then draw a card.”
+- f. A Clue token is a colorless Clue artifact token with “{2}, Sacrifice this token: Draw a card.”
+- g. A Blood token is a colorless Blood artifact token with “{1}, {T}, Discard a card, Sacrifice this token: Draw a card.”
+- h. A Powerstone token is a colorless Powerstone artifact token with “{T}: Add {C}. This mana can’t be spent to cast a nonartifact spell.”
+- i. An Incubator token is a double-faced token. Its front face is a colorless Incubator artifact with “{2}: Transform this token.” Its back face is a 0/0 colorless Phyrexian artifact creature named Phyrexian Token.
+- j. A Cursed Role token is a colorless Aura Role enchantment token named Cursed with enchant creature and “Enchanted creature has base power and toughness 1/1.”
+- k. A Monster Role token is a colorless Aura Role enchantment token named Monster with enchant creature and “Enchanted creature gets +1/+1 and has trample.”
+- m. A Royal Role token is a colorless Aura Role enchantment token named Royal with enchant creature and “Enchanted creature gets +1/+1 and has ward {1}.”
+- n. A Sorcerer Role token is a colorless Aura Role enchantment token named Sorcerer with enchant creature and “Enchanted creature gets +1/+1 and has ‘Whenever this creature attacks, scry 1.’”
+- p. A Virtuous Role token is a colorless Aura Role enchantment token named Virtuous with enchant creature and “Enchanted creature gets +1/+1 for each enchantment you control.”
+- q. A Wicked Role token is a colorless Aura Role enchantment token named Wicked with enchant creature, “Enchanted creature gets +1/+1,” and “When this token is put into a graveyard from the battlefield, each opponent loses 1 life.”
+- r. A Young Hero Role token is a colorless Aura Role enchantment token named Young Hero with enchant creature and “Enchanted creature has ‘Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.’”
+- s. A Map token is a colorless Map artifact token with “{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.” See rule 701.44, “Explore.”
+- t. A Junk token is a colorless Junk artifact token with “{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.”
+- u. A Lander token is a colorless Lander artifact token with “{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.”
+- v. A Mutagen token is a colorless Mutagen artifact token with “{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.”
+- w. A Vibranium token is a colorless Vibranium artifact token with indestructible and “{T}: Add {C}. This mana can’t be spent to cast a nonartifact spell.”
+
+## 111.11
+
+If an effect instructs a player to create a token by name, doesn’t define any other characteristics for that token, and the name is not one of the types in the list of predefined tokens above, that player uses the card with that name in the Oracle card reference to determine the characteristics of that token.
 
 Example: Disa the Restless has the ability “Whenever one or more creatures you control deal combat damage to a player, create a Tarmogoyf token.” As that ability resolves, its controller creates a token with the same characteristics as the card named Tarmogoyf, as determined by the Oracle card reference.
 
-2.  If an effect instructs a player to create a token that is a copy of a nonexistent object, no token is created (see rule 707, “Copying Objects”). This does not apply to an effect that would use the last known information of an object.
+## 111.12
+
+If an effect instructs a player to create a token that is a copy of a nonexistent object, no token is created (see rule 707, “Copying Objects”). This does not apply to an effect that would use the last known information of an object.
 
 Example: Mimic Vat has a triggered ability whose effect gives you the option to exile a card and an activated ability that says “Create a token that’s a copy of a card exiled with this artifact. It gains haste. Exile it at the beginning of the next end step.” If no card has been exiled with Mimic Vat’s triggered ability, no token is created.
 
-3.  A copy of a permanent spell becomes a token as it resolves. The token has the characteristics of the spell that became that token. The token is not “created” for the purposes of any replacement effects or triggered abilities that refer to creating a token.
+## 111.13
+
+A copy of a permanent spell becomes a token as it resolves. The token has the characteristics of the spell that became that token. The token is not “created” for the purposes of any replacement effects or triggered abilities that refer to creating a token.

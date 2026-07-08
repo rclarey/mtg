@@ -31,4 +31,4 @@ The owner of a conspiracy card is the player who put it into the command zone at
 
 At any time, you may look at a face-down conspiracy card you control. You can’t look at face-down conspiracy cards controlled by other players.
 
-- n. s
+4. Zones

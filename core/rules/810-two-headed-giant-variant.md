@@ -71,9 +71,16 @@ Example: In a Two-Headed Giant game, one team has 7 life and the other team has 
 - f. If an effect instructs a player to redistribute any number of players’ life totals, that player may not affect more than one member of each team this way.
 - g. If an effect says that a player can’t gain life, no player on that player’s team can gain life.
 - h. If an effect says that a player can’t lose life, no player on that player’s team can lose life or pay any amount of life other than 0.
-- 0.  Effects that cause players to get poison counters happen to each player individually. The poison counters are shared by the team.
-- 0.  If an effect needs to know how many poison counters an individual player has, that effect uses the number of poison counters that player’s team has. If an effect needs to know how many poison counters a player’s opponents have, that effect uses the number of poison counters opposing teams have.
-- 0.  If an effect says that a player loses poison counters, that player’s team loses that many poison counters.
-- 0.  If an effect says that a player can’t get poison counters, no player on that player’s team can get poison counters.
-- 0.  If a rule or effect needs to know what kinds of counters an individual player has, that effect uses the kinds of counters that player has and the kinds of counters that player’s team has. A player is “poisoned” if that player’s team has one or more poison counters.
-1.  The Two-Headed Giant variant can also be played with equally sized teams of more than two players. For each player a team has beyond the second, that team’s starting life total is increased by 15 and the number of poison counters required for the team to lose is increased by five. (These variants are called Three-Headed Giant, Four-Headed Giant, and so on.)
+
+## 810.10
+
+Effects that cause players to get poison counters happen to each player individually. The poison counters are shared by the team.
+
+- a. If an effect needs to know how many poison counters an individual player has, that effect uses the number of poison counters that player’s team has. If an effect needs to know how many poison counters a player’s opponents have, that effect uses the number of poison counters opposing teams have.
+- b. If an effect says that a player loses poison counters, that player’s team loses that many poison counters.
+- c. If an effect says that a player can’t get poison counters, no player on that player’s team can get poison counters.
+- d. If a rule or effect needs to know what kinds of counters an individual player has, that effect uses the kinds of counters that player has and the kinds of counters that player’s team has. A player is “poisoned” if that player’s team has one or more poison counters.
+
+## 810.11
+
+The Two-Headed Giant variant can also be played with equally sized teams of more than two players. For each player a team has beyond the second, that team’s starting life total is increased by 15 and the number of poison counters required for the team to lose is increased by five. (These variants are called Three-Headed Giant, Four-Headed Giant, and so on.)

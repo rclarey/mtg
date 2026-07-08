@@ -69,4 +69,4 @@ A power and toughness sticker is a sticker that has two numbers and a slash prin
 
 An art sticker on a permanent has no effect on game play other than to act as a marker that other spells and abilities can identify.
 
-- r. s of a Card
+2. Parts of a Card

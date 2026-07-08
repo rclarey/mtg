@@ -26,4 +26,4 @@ A player can’t attack opponents who aren’t seated next to them, planeswalker
 
 In the Alternating Teams variant, a team’s resources (cards in hand, mana, and so on) are not shared. Teammates can’t review each other’s hands unless they are sitting next to each other. Teammates may discuss strategies at any time. Teammates can’t manipulate each other’s cards or permanents.
 
-- s. al Variants
+9. Casual Variants

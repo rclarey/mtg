@@ -38,4 +38,6 @@ Some cards create a continuous effect that sets the name of an object. This chan
 
 A name sticker on a permanent or on a card not on the battlefield creates a continuous effect that adds a word to the text that represents the object’s name. (See rule 123.6.)
 
-- 0.  A splice ability changes a spell’s text by adding the rules text of the card with splice to the spell, following that spell’s own rules text. It doesn’t modify or replace any of that spell’s own text. (See rule 702.47, “Splice.”)
+## 612.10
+
+A splice ability changes a spell’s text by adding the rules text of the card with splice to the spell, following that spell’s own rules text. It doesn’t modify or replace any of that spell’s own text. (See rule 702.47, “Splice.”)

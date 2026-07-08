@@ -243,25 +243,74 @@ fn format_section_as_markdown(
   }
 }
 
-fn format_section_subrule(line: String) {
-  case string.split_once(line, ". ") {
-    Ok(#(x, rest)) -> {
-      case string.length(x) {
-        3 -> [H1(line)]
-        5 -> [Text(rest), H2(x)]
-        _ -> {
-          let assert Ok(#(letter, rest)) =
-            string.pop_grapheme(string.drop_start(line, 5))
-          [ListItem(letter, string.drop_start(rest, 1))]
+type RuleType {
+  MainRule
+  SubRule
+  Lettered
+  NotARule
+}
+
+fn is_digit(c: String) -> Bool {
+  string.contains("0123456789", c)
+}
+
+fn is_digit_or_period(c: String) -> Bool {
+  is_digit(c) || c == "."
+}
+
+fn classify_line(line: String) -> #(RuleType, String, String) {
+  case string.split_once(line, " ") {
+    Ok(#(raw_rule_num, content)) -> {
+      let clean = case string.ends_with(raw_rule_num, ".") {
+        True -> string.drop_end(raw_rule_num, 1)
+        False -> raw_rule_num
+      }
+      let first_three = string.slice(clean, 0, 3)
+      let is_3_digits =
+        string.length(first_three) == 3
+        && list.all(string.to_graphemes(first_three), is_digit)
+      case is_3_digits {
+        False -> #(NotARule, "", line)
+        True -> {
+          let assert Ok(#(last_char, _)) =
+            string.reverse(clean) |> string.pop_grapheme()
+          case string.contains("abcdefghijklmnopqrstuvwxyz", last_char) {
+            True -> {
+              let prefix = string.drop_end(clean, 1)
+              case string.length(prefix) > 3
+                && list.all(string.to_graphemes(prefix), is_digit_or_period) {
+                True -> #(Lettered, clean, content)
+                False -> #(NotARule, "", line)
+              }
+            }
+            False ->
+              case string.length(clean) {
+                3 -> #(MainRule, clean, content)
+                _ ->
+                  case list.all(string.to_graphemes(clean), is_digit_or_period) {
+                    True -> #(SubRule, clean, content)
+                    False -> #(NotARule, "", line)
+                  }
+              }
+          }
         }
       }
     }
-    _ -> {
-      let assert Ok(#(letter, rest)) =
-        string.drop_start(line, 5)
-        |> string.pop_grapheme()
-      [ListItem(letter, string.drop_start(rest, 1))]
+    _ -> #(NotARule, "", line)
+  }
+}
+
+fn format_section_subrule(line: String) {
+  let #(rule_type, rule_num, content) = classify_line(line)
+  case rule_type {
+    MainRule -> [H1(line)]
+    SubRule -> [Text(content), H2(rule_num)]
+    Lettered -> {
+      let assert Ok(#(letter, _)) =
+        string.reverse(rule_num) |> string.pop_grapheme()
+      [ListItem(letter, content)]
     }
+    NotARule -> [Text(line)]
   }
 }
 

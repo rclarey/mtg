@@ -11,4 +11,5 @@ Each card features text printed below the text box that has no effect on game pl
 - e. The three-character code representing the set in which a card is printed and the two-character code representing the language in which a card is printed are separated by a bullet point. If a card is premium, these codes are instead separated by a star.
 - f. The illustration credit for a card follows the paintbrush icon or, on older cards, the abbreviation “Illus.”
 - g. Legal text (the fine print at the bottom or bottom-right of the card) lists the trademark and copyright information.
-- r.  Types
+
+3. Card Types
