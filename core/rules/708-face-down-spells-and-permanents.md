@@ -39,6 +39,14 @@ As a face-down permanent is turned face up, its copiable values revert to its no
 
 If a face-down permanent or a face-down component of a merged permanent moves from the battlefield to any other zone, its owner must reveal it to all players as they move it. If a face-down spell moves from the stack to any zone other than the battlefield, its owner must reveal it to all players as they move it. If a player leaves the game, all face-down permanents, face-down components of merged permanents, and face-down spells owned by that player must be revealed to all players. At the end of each game, all face-down permanents, face-down components of merged permanents, and face-down spells must be revealed to all players.
 
-- 0.  If a face-down permanent becomes a copy of another permanent, its copiable values become the copiable values of that permanent, as modified by its face-down status. Its characteristics therefore remain the same: the characteristics listed by the ability or rules that allowed it to be turned face down. However, if it is turned face up, its copiable values become the values it copied from the other permanent. See rule 707.3.
-1.  If a face-down permanent would have an “As [this permanent] is turned face up . . .” ability after it’s turned face up, that ability is applied while that permanent is being turned face up, not afterward.
-2.  If a spell or ability that instructs a player to reveal a face-down permanent needs information about the revealed object, it uses the characteristics of that object ignoring any continuous effects that may be applying to it.
+## 708.10
+
+If a face-down permanent becomes a copy of another permanent, its copiable values become the copiable values of that permanent, as modified by its face-down status. Its characteristics therefore remain the same: the characteristics listed by the ability or rules that allowed it to be turned face down. However, if it is turned face up, its copiable values become the values it copied from the other permanent. See rule 707.3.
+
+## 708.11
+
+If a face-down permanent would have an “As [this permanent] is turned face up . . .” ability after it’s turned face up, that ability is applied while that permanent is being turned face up, not afterward.
+
+## 708.12
+
+If a spell or ability that instructs a player to reveal a face-down permanent needs information about the revealed object, it uses the characteristics of that object ignoring any continuous effects that may be applying to it.

@@ -6,11 +6,6 @@ import mtg_engine/targeting
 import mtg_engine/trigger
 import mtg_engine/zone
 
-pub type ActivationCost {
-  NoCost
-  Costs(List(CostComponent))
-}
-
 pub type CostComponent {
   Mana(mana.Cost)
   TapSelf
@@ -30,7 +25,7 @@ pub type SpellAbility {
 
 pub type ActivatedAbility {
   ActivatedAbility(
-    cost: ActivationCost,
+    cost: List(CostComponent),
     targets: List(targeting.TargetInfo),
     effect: effects.Effect,
   )
@@ -55,36 +50,4 @@ pub type Ability {
   Activated(ActivatedAbility)
   Triggered(TriggeredAbility)
   Static(StaticAbility)
-}
-
-pub fn tap_cost() -> ActivationCost {
-  Costs([TapSelf])
-}
-
-pub fn tap_mana_cost(cost: mana.Cost) -> ActivationCost {
-  Costs([TapSelf, Mana(cost)])
-}
-
-pub fn sacrifice_cost(filter: filters.CardFilter) -> ActivationCost {
-  Costs([Sacrifice(filter)])
-}
-
-pub fn sacrifice_this_cost() -> ActivationCost {
-  Costs([SacrificeThis])
-}
-
-pub fn tap_sacrifice_cost(filter: filters.CardFilter) -> ActivationCost {
-  Costs([TapSelf, Sacrifice(filter)])
-}
-
-pub fn tap_sacrifice_this_cost() -> ActivationCost {
-  Costs([TapSelf, SacrificeThis])
-}
-
-pub fn life_cost(life: Int) -> ActivationCost {
-  Costs([PayLife(life)])
-}
-
-pub fn mana_life_cost(cost: mana.Cost, life: Int) -> ActivationCost {
-  Costs([Mana(cost), PayLife(life)])
 }

@@ -54,9 +54,18 @@ If an object in the exile zone is exiled, it doesn’t change zones, but it beco
 
 If a face-up object in the command zone is turned face down, it becomes a new object.
 
-- 0.  If an object in the command zone is put into the command zone, it doesn’t change zones, but it becomes a new object that has just entered the command zone.
-1.  An object is outside the game if it isn’t in any of the game’s zones. Outside the game is not a zone.
-1.  Cards in a player’s sideboard are outside the game. See rule 100.4.
-1.  Some effects bring cards into a game from outside the game. Those cards remain in the game until the game ends, their owner leaves the game, or a rule or effect removes them from the game, whichever comes first.
-1.  Cards outside the game can’t be affected by spells or abilities, except for characteristic-defining abilities printed on them (see rule 604.3) and spells and abilities that allow those cards to be brought into the game.
-2.  Some effects instruct a player to do something to a zone (such as “Shuffle your hand into your library”). That action is performed on all cards in that zone. The zone itself is not affected.
+## 400.10
+
+If an object in the command zone is put into the command zone, it doesn’t change zones, but it becomes a new object that has just entered the command zone.
+
+## 400.11
+
+An object is outside the game if it isn’t in any of the game’s zones. Outside the game is not a zone.
+
+- a. Cards in a player’s sideboard are outside the game. See rule 100.4.
+- b. Some effects bring cards into a game from outside the game. Those cards remain in the game until the game ends, their owner leaves the game, or a rule or effect removes them from the game, whichever comes first.
+- c. Cards outside the game can’t be affected by spells or abilities, except for characteristic-defining abilities printed on them (see rule 604.3) and spells and abilities that allow those cards to be brought into the game.
+
+## 400.12
+
+Some effects instruct a player to do something to a zone (such as “Shuffle your hand into your library”). That action is performed on all cards in that zone. The zone itself is not affected.

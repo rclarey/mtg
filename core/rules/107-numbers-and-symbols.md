@@ -80,16 +80,45 @@ The text box of a leveler card contains two level symbols, each of which is a ke
 
 A tombstone icon appears to the left of the name of many Odyssey™ block cards with abilities that are relevant in a player’s graveyard. The purpose of the icon is to make those cards stand out when they’re in a graveyard. This icon has no effect on game play.
 
-- 0.  A type icon appears in the upper left corner of each card from the Future Sight™ set printed with an alternate “timeshifted” frame. If the card has a single card type, this icon indicates what it is: claw marks for creature, a flame for sorcery, a lightning bolt for instant, a sunrise for enchantment, a chalice for artifact, and a pair of mountain peaks for land. If the card has multiple card types, that’s indicated by a black and white cross. This icon has no effect on game play.
-1.  The Planeswalker symbol is {PW}. It appears on one face of the planar die used in the Planechase casual variant. It has five tines at the top and tapers to a point at the bottom. See rule 901, “Planechase.”
-2.  The chaos symbol is {CHAOS}. It appears on one face of the planar die used in the Planechase casual variant, as well as in abilities that refer to the results of rolling the planar die. It looks like a swirling vortex. See rule 901, “Planechase.”
-3.  A color indicator is a circular symbol that appears to the left of the type line on some cards. The color of the symbol defines the card’s color or colors. See rule 202, “Mana Cost and Color.”
-4.  The energy symbol is {E}. It represents one energy counter. To pay {E}, a player removes one energy counter from themselves.
-5.  The text box of a Saga card contains chapter symbols, each of which is a keyword ability that represents a triggered ability. A chapter symbol includes a Roman numeral, indicated here as “rN”. The text printed in the text box striation to the right of a chapter symbol is the effect of the triggered ability it represents. See rule 714, “Saga Cards.”
-5.  “{rN}—[Effect]” means “When one or more lore counters are put onto this Saga, if the number of lore counters on it was less than N and became at least N, [effect].”
-5.  “{rN1}, {rN2}—[Effect]” is the same as “{rN1}—[Effect]” and “{rN2}—[Effect].”
-6.  The text box of a Class card contains class level bars, each of which is a keyword ability that represents both an activated ability and a static ability. A class level bar includes the activation cost of its activated ability and a level number. Any abilities printed within the same text box section as the class level bar are part of its static ability. See rule 716, “Class Cards.”
-6.  “[Cost]: Level N — [Abilities]” means “[Cost]: This Class’s level becomes N. Activate only if this Class is level N-1 and only as a sorcery” and “As long as this Class is level N or greater, it has [abilities].”
-7.  The ticket symbol is {TK}. It represents one ticket counter.
-7.  A ticket symbol with a number inside it represents a ticket cost. To pay that cost, a player removes that many ticket counters from themselves.
-8.  The pawprint symbol is {P}. This symbol is used to indicate the modes on some modal spells, and does not represent a cost, mana, counters, or any type of persistent resource. See rule 700.2i.
+## 107.10
+
+A type icon appears in the upper left corner of each card from the Future Sight™ set printed with an alternate “timeshifted” frame. If the card has a single card type, this icon indicates what it is: claw marks for creature, a flame for sorcery, a lightning bolt for instant, a sunrise for enchantment, a chalice for artifact, and a pair of mountain peaks for land. If the card has multiple card types, that’s indicated by a black and white cross. This icon has no effect on game play.
+
+## 107.11
+
+The Planeswalker symbol is {PW}. It appears on one face of the planar die used in the Planechase casual variant. It has five tines at the top and tapers to a point at the bottom. See rule 901, “Planechase.”
+
+## 107.12
+
+The chaos symbol is {CHAOS}. It appears on one face of the planar die used in the Planechase casual variant, as well as in abilities that refer to the results of rolling the planar die. It looks like a swirling vortex. See rule 901, “Planechase.”
+
+## 107.13
+
+A color indicator is a circular symbol that appears to the left of the type line on some cards. The color of the symbol defines the card’s color or colors. See rule 202, “Mana Cost and Color.”
+
+## 107.14
+
+The energy symbol is {E}. It represents one energy counter. To pay {E}, a player removes one energy counter from themselves.
+
+## 107.15
+
+The text box of a Saga card contains chapter symbols, each of which is a keyword ability that represents a triggered ability. A chapter symbol includes a Roman numeral, indicated here as “rN”. The text printed in the text box striation to the right of a chapter symbol is the effect of the triggered ability it represents. See rule 714, “Saga Cards.”
+
+- a. “{rN}—[Effect]” means “When one or more lore counters are put onto this Saga, if the number of lore counters on it was less than N and became at least N, [effect].”
+- b. “{rN1}, {rN2}—[Effect]” is the same as “{rN1}—[Effect]” and “{rN2}—[Effect].”
+
+## 107.16
+
+The text box of a Class card contains class level bars, each of which is a keyword ability that represents both an activated ability and a static ability. A class level bar includes the activation cost of its activated ability and a level number. Any abilities printed within the same text box section as the class level bar are part of its static ability. See rule 716, “Class Cards.”
+
+- a. “[Cost]: Level N — [Abilities]” means “[Cost]: This Class’s level becomes N. Activate only if this Class is level N-1 and only as a sorcery” and “As long as this Class is level N or greater, it has [abilities].”
+
+## 107.17
+
+The ticket symbol is {TK}. It represents one ticket counter.
+
+- a. A ticket symbol with a number inside it represents a ticket cost. To pay that cost, a player removes that many ticket counters from themselves.
+
+## 107.18
+
+The pawprint symbol is {P}. This symbol is used to indicate the modes on some modal spells, and does not represent a cost, mana, counters, or any type of persistent resource. See rule 700.2i.

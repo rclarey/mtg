@@ -25,4 +25,4 @@ A replacement or prevention effect can become applicable to an event as the resu
 
 Example: One effect reads “If you would gain life, draw that many cards instead,” and another reads “If you would draw a card, return a card from your graveyard to your hand instead.” Both effects combine (regardless of the order they came into existence): Instead of gaining 1 life, the player puts a card from their graveyard into their hand.
 
-- d. tional Rules
+7. Additional Rules

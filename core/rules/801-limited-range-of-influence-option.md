@@ -67,23 +67,33 @@ An Aura can’t enchant an object or player outside its controller’s range of 
 
 An Equipment can’t equip an object outside its controller’s range of influence, and a Fortification can’t fortify an object outside its controller’s range of influence. If an Equipment or Fortification is attached to an illegal permanent, it becomes unattached from that permanent but remains on the battlefield. This is a state-based action. See rule 704.
 
-- 0.  Spells and abilities can’t affect objects or players outside their controller’s range of influence. The parts of the effect that attempt to affect an out-of-range object or player will do nothing. The rest of the effect will work normally.
+## 801.10
+
+Spells and abilities can’t affect objects or players outside their controller’s range of influence. The parts of the effect that attempt to affect an out-of-range object or player will do nothing. The rest of the effect will work normally.
 
 Example: In a six-player game in which each player has range of influence 1, Alex casts Pyroclasm, which reads, “Pyroclasm deals 2 damage to each creature.” Pyroclasm deals 2 damage to each creature controlled by Alex, the player to Alex’s left, and the player to Alex’s right. No other creatures are dealt damage.
 
-1.  If a spell or ability requires information from the game, it gets only information from within its controller’s range of influence. It doesn’t see objects or events outside its controller’s range of influence.
+## 801.11
+
+If a spell or ability requires information from the game, it gets only information from within its controller’s range of influence. It doesn’t see objects or events outside its controller’s range of influence.
 
 Example: In the same game, Rob is sitting to the right of Alex. Coat of Arms will boost Rob’s creatures based on what creatures are controlled by players within Alex’s range of influence, including the player sitting to Alex’s left, who’s out of Rob’s range of influence.
 
 Example: In a six-player game where each player has range of influence 1, Alex controls Coat of Arms, which reads, “Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it.” Coat of Arms will boost Alex’s creatures based only on what creatures are controlled by Alex, the player to Alex’s left, and the player to Alex’s right. It won’t take other creatures into account.
 
-2.  The “world rule” (see rule 704.5k) applies to a permanent only if other world permanents are within its controller’s range of influence.
-3.  Replacement and prevention effects watch for a particular event to happen and then completely or partially replace that event. The limited range of influence option can cause the modified event to contain instructions that can’t be carried out, in which case the player simply ignores the impossible instructions. See rule 614, “Replacement Effects,” and rule 615, “Prevention Effects.”
-3.  If a replacement effect tries to cause a spell or ability to affect an object or player outside its controller’s range of influence, that portion of the event does nothing.
+## 801.12
+
+The “world rule” (see rule 704.5k) applies to a permanent only if other world permanents are within its controller’s range of influence.
+
+## 801.13
+
+Replacement and prevention effects watch for a particular event to happen and then completely or partially replace that event. The limited range of influence option can cause the modified event to contain instructions that can’t be carried out, in which case the player simply ignores the impossible instructions. See rule 614, “Replacement Effects,” and rule 615, “Prevention Effects.”
+
+- a. If a replacement effect tries to cause a spell or ability to affect an object or player outside its controller’s range of influence, that portion of the event does nothing.
 
 Example: Alex casts Lava Axe (“Lava Axe deals 5 damage to target player or planeswalker.”) targeting Rob. In response, Rob casts Captain’s Maneuver (“The next X damage that would be dealt to target creature, planeswalker, or player this turn is dealt to another target creature, planeswalker, or player instead.”) with X equal to 3, targeting Carissa. Carissa isn’t in Alex’s range of influence. When Lava Axe resolves, it deals 2 damage to Rob and no damage to Carissa.
 
-3.  If a spell or ability creates an effect that prevents damage that would be dealt by a source, it can affect only sources within the spell or ability’s controller’s range of influence. If a spell or ability creates an effect that prevents damage that would be dealt to a permanent or player, it can affect only permanents and players within the spell or ability’s controller’s range of influence. If a spell or ability creates an effect that prevents damage, but neither the source nor the would-be recipient of the damage is specified, it prevents damage only if both the source and recipient of that damage are within the spell or ability’s controller’s range of influence.
+- b. If a spell or ability creates an effect that prevents damage that would be dealt by a source, it can affect only sources within the spell or ability’s controller’s range of influence. If a spell or ability creates an effect that prevents damage that would be dealt to a permanent or player, it can affect only permanents and players within the spell or ability’s controller’s range of influence. If a spell or ability creates an effect that prevents damage, but neither the source nor the would-be recipient of the damage is specified, it prevents damage only if both the source and recipient of that damage are within the spell or ability’s controller’s range of influence.
 
 Example: Rob is within Alex’s range of influence, but Carissa is not. Carissa attacks Rob with a creature, and Rob blocks with a creature. Alex casts Fog (“Prevent all combat damage that would be dealt this turn.”) Carissa and Rob’s creatures deal combat damage to each other.
 
@@ -91,8 +101,22 @@ Example: Rob is within Alex’s range of influence, but Carissa is not. Carissa 
 
 Example: Rob is within Alex’s range of influence, but Carissa is not. Alex controls an enchantment that says, “Prevent all damage that would be dealt by creatures.” Carissa attacks Rob with a creature. The creature deals combat damage to Rob.
 
-4.  If an effect states that a player wins the game, all of that player’s opponents within that player’s range of influence lose the game instead.
-5.  If the effect of a spell or ability states that the game is a draw, the game is a draw for that spell or ability’s controller and all players within that player’s range of influence. They leave the game. All remaining players continue to play the game.
-6.  If the game somehow enters a “loop” of mandatory actions, repeating a sequence of events with no way to stop, the game is a draw for each player who controls an object that’s involved in that loop, as well as for each player within the range of influence of any of those players. They leave the game. All remaining players continue to play the game.
-7.  Effects that restart the game (see rule 727) are exempt from the limited range of influence option. All players in the game will be involved in the new game.
-8.  In multiplayer Planechase games other than Grand Melee games, plane cards and phenomenon cards are exempt from the limited range of influence option. Their abilities, and the effects of those abilities, affect all applicable objects and players in the game. See rule 901, “Planechase.”
+## 801.14
+
+If an effect states that a player wins the game, all of that player’s opponents within that player’s range of influence lose the game instead.
+
+## 801.15
+
+If the effect of a spell or ability states that the game is a draw, the game is a draw for that spell or ability’s controller and all players within that player’s range of influence. They leave the game. All remaining players continue to play the game.
+
+## 801.16
+
+If the game somehow enters a “loop” of mandatory actions, repeating a sequence of events with no way to stop, the game is a draw for each player who controls an object that’s involved in that loop, as well as for each player within the range of influence of any of those players. They leave the game. All remaining players continue to play the game.
+
+## 801.17
+
+Effects that restart the game (see rule 727) are exempt from the limited range of influence option. All players in the game will be involved in the new game.
+
+## 801.18
+
+In multiplayer Planechase games other than Grand Melee games, plane cards and phenomenon cards are exempt from the limited range of influence option. Their abilities, and the effects of those abilities, affect all applicable objects and players in the game. See rule 901, “Planechase.”
