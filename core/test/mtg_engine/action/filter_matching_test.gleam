@@ -19,8 +19,8 @@ import mtg_engine/supertype
 import mtg_engine/targeting
 import mtg_engine/zone
 import test_helpers.{
-  add_creature_to_battlefield, add_land_to_battlefield, create_creature,
-  create_test_land, get_permanent, get_player, pass, pass_until,
+  add_card_to_hand, add_creature_to_battlefield, add_land_to_battlefield,
+  create_creature, create_test_land, get_permanent, get_player, pass, pass_until,
 }
 
 fn noop_mana() -> mana.Produced {
@@ -104,19 +104,6 @@ fn add_card_to_library(
     ..state,
     players: player.update(state.players, player_id, fn(p) {
       player.Player(..p, library: [c, ..p.library])
-    }),
-  )
-}
-
-fn add_card_to_hand(
-  state: state.State,
-  player_id: Int,
-  c: card.Card,
-) -> state.State {
-  state.State(
-    ..state,
-    players: player.update(state.players, player_id, fn(p) {
-      player.Player(..p, hand: [c, ..p.hand])
     }),
   )
 }
@@ -233,13 +220,13 @@ pub fn goblin_king_only_goblins_get_mountainwalk_test() {
   let goblin_perm = get_permanent(state, 1, goblin_card.id)
   assert goblin_perm.card.power == Some(2)
   assert goblin_perm.card.toughness == Some(2)
-  assert list.contains(goblin_perm.granted_keywords, "Mountainwalk")
+  assert list.contains(goblin_perm.granted_keywords, effects.Mountainwalk)
 
   // Non-goblin should be unaffected
   let non_goblin_perm = get_permanent(state, 1, non_goblin.id)
   assert non_goblin_perm.card.power == Some(2)
   assert non_goblin_perm.card.toughness == Some(2)
-  assert !list.contains(non_goblin_perm.granted_keywords, "Mountainwalk")
+  assert !list.contains(non_goblin_perm.granted_keywords, effects.Mountainwalk)
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -331,7 +318,7 @@ pub fn color_filter_matches_black_creature_test() {
   let ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [2],
       is_tapped: None,
@@ -484,7 +471,7 @@ pub fn with_restriction_tapped_matches_only_tapped_test() {
   let tapped_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: Some(True),
@@ -494,7 +481,7 @@ pub fn with_restriction_tapped_matches_only_tapped_test() {
   let untapped_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: Some(False),
@@ -504,7 +491,7 @@ pub fn with_restriction_tapped_matches_only_tapped_test() {
   let none_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -561,7 +548,7 @@ pub fn supertype_filter_matches_basic_test() {
   let ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -593,7 +580,7 @@ pub fn zone_filter_matches_correct_zone_test() {
   let graveyard_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -603,7 +590,7 @@ pub fn zone_filter_matches_correct_zone_test() {
   let hand_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -635,7 +622,7 @@ pub fn with_controller_opponent_matches_only_opponents_test() {
   let p1_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [2],
       is_tapped: None,
@@ -645,7 +632,7 @@ pub fn with_controller_opponent_matches_only_opponents_test() {
   let p2_ctx =
     filter_matcher.FilterContext(
       controller_id: 2,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [2],
       is_tapped: None,

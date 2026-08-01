@@ -43,6 +43,6 @@ pub fn artifacts_and_enchantments() -> CardFilter {
   Types([card_type.Artifact, card_type.Enchantment])
 }
 
-pub fn creature_target_controls() -> CardFilter {
+pub fn opponent_creatures() -> CardFilter {
   And(Types([card_type.Creature]), WithController(Opponent))
 }

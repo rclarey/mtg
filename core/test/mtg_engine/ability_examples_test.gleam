@@ -11,6 +11,34 @@ import mtg_engine/targeting
 import mtg_engine/trigger
 import mtg_engine/zone
 
+fn is_spell(ab: ability.Ability) -> Bool {
+  case ab {
+    ability.Spell(_) -> True
+    _ -> False
+  }
+}
+
+fn is_activated(ab: ability.Ability) -> Bool {
+  case ab {
+    ability.Activated(_) -> True
+    _ -> False
+  }
+}
+
+fn is_static(ab: ability.Ability) -> Bool {
+  case ab {
+    ability.Static(_) -> True
+    _ -> False
+  }
+}
+
+fn is_triggered(ab: ability.Ability) -> Bool {
+  case ab {
+    ability.Triggered(_) -> True
+    _ -> False
+  }
+}
+
 // ── Simple Targeted Spells ──────────────────────────────────────
 // Shock — "2 damage to any target"
 pub fn test_shock() {
@@ -24,7 +52,7 @@ pub fn test_shock() {
         source_is_combat: False,
       )),
     ))
-  let _ = shock
+  let assert True = is_spell(shock)
 }
 
 // Giant Growth — "Target creature gets +3/+3 until end of turn"
@@ -41,7 +69,7 @@ pub fn test_giant_growth() {
         duration: effects.EndOfTurn,
       )),
     ))
-  let _ = growth
+  let assert True = is_spell(growth)
 }
 
 // Counterspell — "Counter target spell"
@@ -54,7 +82,7 @@ pub fn test_counterspell() {
         target: targeting.PrimaryTarget,
       )),
     ))
-  let _ = counterspell
+  let assert True = is_spell(counterspell)
 }
 
 // Inspiration — "Target player draws two cards"
@@ -68,7 +96,7 @@ pub fn test_inspiration() {
         target: targeting.PrimaryTarget,
       )),
     ))
-  let _ = inspiration
+  let assert True = is_spell(inspiration)
 }
 
 // ── Activated Abilities ─────────────────────────────────────────
@@ -89,7 +117,7 @@ pub fn test_llanowar_elves() {
         )),
       ),
     ))
-  let _ = elves
+  let assert True = is_activated(elves)
 }
 
 // Prodigal Sorcerer — "{T}: Deal 1 damage to any target"
@@ -104,7 +132,7 @@ pub fn test_prodigal_sorcerer() {
         source_is_combat: False,
       )),
     ))
-  let _ = prodigal
+  let assert True = is_activated(prodigal)
 }
 
 // Seeker of Skybreak — "{T}: Untap target creature"
@@ -118,7 +146,7 @@ pub fn test_seeker_of_skybreak() {
         mode: effects.Untap,
       )),
     ))
-  let _ = seeker
+  let assert True = is_activated(seeker)
 }
 
 // ── Destroy Effects ─────────────────────────────────────────────
@@ -138,7 +166,7 @@ pub fn test_disenchant() {
         cant_regenerate: False,
       )),
     ))
-  let _ = disenchant
+  let assert True = is_spell(disenchant)
 }
 
 // Wrath of God — "Destroy all creatures. They can't be regenerated."
@@ -152,7 +180,7 @@ pub fn test_wrath_of_god() {
         cant_regenerate: True,
       )),
     ))
-  let _ = wrath
+  let assert True = is_spell(wrath)
 }
 
 // Dark Banishing — "Destroy target nonblack creature. It can't be regenerated."
@@ -171,7 +199,7 @@ pub fn test_dark_banishing() {
         cant_regenerate: True,
       )),
     ))
-  let _ = dark_banishing
+  let assert True = is_spell(dark_banishing)
 }
 
 // ── Modal Spells ────────────────────────────────────────────────
@@ -201,7 +229,7 @@ pub fn test_healing_salve() {
         ]),
       ),
     ))
-  let _ = salve
+  let assert True = is_spell(salve)
 }
 
 // ── Compound Effects ────────────────────────────────────────────
@@ -230,7 +258,7 @@ pub fn test_corrupt() {
         ),
       ]),
     ))
-  let _ = corrupt
+  let assert True = is_spell(corrupt)
 }
 
 // Tolarian Winds — "Discard your hand, then draw that many cards."
@@ -247,7 +275,7 @@ pub fn test_tolarian_winds() {
         ),
       ]),
     ))
-  let _ = winds
+  let assert True = is_spell(winds)
 }
 
 // ── Prevention ──────────────────────────────────────────────────
@@ -262,7 +290,7 @@ pub fn test_fog() {
         mode: effects.GlobalCombat,
       )),
     ))
-  let _ = fog
+  let assert True = is_spell(fog)
 }
 
 // Samite Healer — "{T}: Prevent next 1 damage to any target"
@@ -276,7 +304,7 @@ pub fn test_samite_healer() {
         mode: effects.Shield(amount: effects.Fixed(1)),
       )),
     ))
-  let _ = healer
+  let assert True = is_activated(healer)
 }
 
 // ── Extra Turn / Delayed Trigger ────────────────────────────────
@@ -297,7 +325,7 @@ pub fn test_final_fortune() {
         )),
       ]),
     ))
-  let _ = fortune
+  let assert True = is_spell(fortune)
 }
 
 // ── Variable Damage ─────────────────────────────────────────────
@@ -319,7 +347,7 @@ pub fn test_spitting_earth() {
         source_is_combat: False,
       )),
     ))
-  let _ = spitting_earth
+  let assert True = is_spell(spitting_earth)
 }
 
 // Starlight — "You gain 3 life for each black creature target opponent controls"
@@ -342,7 +370,7 @@ pub fn test_starlight() {
         target: targeting.Controller,
       )),
     ))
-  let _ = starlight
+  let assert True = is_spell(starlight)
 }
 
 // ── Sacrifice as Cost ───────────────────────────────────────────
@@ -358,7 +386,7 @@ pub fn test_ghitu_fire_eater() {
         source_is_combat: False,
       )),
     ))
-  let _ = ghitu
+  let assert True = is_activated(ghitu)
 }
 
 // ── Divided Damage ──────────────────────────────────────────────
@@ -375,7 +403,7 @@ pub fn test_pyrotechnics() {
         effects.DealDividedDamage(total_amount: effects.Fixed(4)),
       ),
     ))
-  let _ = pyro
+  let assert True = is_spell(pyro)
 }
 
 // ── Search Library ──────────────────────────────────────────────
@@ -397,7 +425,7 @@ pub fn test_rampant_growth() {
         tapped: True,
       )),
     ))
-  let _ = rampant
+  let assert True = is_spell(rampant)
 }
 
 // ── Pay Life as Cost ────────────────────────────────────────────
@@ -424,7 +452,7 @@ pub fn test_greed() {
         target: targeting.Controller,
       )),
     ))
-  let _ = greed
+  let assert True = is_activated(greed)
 }
 
 // Necrologia — "As an additional cost, pay X life. You draw X cards."
@@ -432,13 +460,13 @@ pub fn test_necrologia() {
   let necrologia =
     ability.Spell(ability.SpellAbility(
       targets: [],
-      additional_costs: [ability.PayLife(effects.X)],
+      additional_costs: [ability.PayLife(0)],
       effect: effects.Single(effects.DrawCards(
         num: effects.X,
         target: targeting.Controller,
       )),
     ))
-  let _ = necrologia
+  let assert True = is_spell(necrologia)
 }
 
 // ── Static Abilities ────────────────────────────────────────────
@@ -459,7 +487,7 @@ pub fn test_glorious_anthem() {
         zones: [zone.Battlefield],
       ),
     )
-  let _ = anthem
+  let assert True = is_static(anthem)
 }
 
 // Goblin King — "Other Goblins get +1/+1 and have mountainwalk"
@@ -479,7 +507,7 @@ pub fn test_goblin_king() {
         zones: [zone.Battlefield],
       ),
     )
-  let _ = king
+  let assert True = is_static(king)
 }
 
 // ── Triggered Abilities ─────────────────────────────────────────
@@ -499,7 +527,7 @@ pub fn test_abyssal_specter() {
       optional: False,
       intervening_if: None,
     ))
-  let _ = specter
+  let assert True = is_triggered(specter)
 }
 
 // Seasoned Marshal — "Whenever ~ attacks, you may tap target creature"
@@ -515,7 +543,7 @@ pub fn test_seasoned_marshal() {
       optional: True,
       intervening_if: None,
     ))
-  let _ = marshal
+  let assert True = is_triggered(marshal)
 }
 
 // ── Zone-Based Targeting ────────────────────────────────────────
@@ -536,7 +564,7 @@ pub fn test_strands_of_night() {
           colorless: 0,
           x: 0,
         )),
-        ability.PayLife(effects.Fixed(2)),
+        ability.PayLife(2),
         ability.Sacrifice(filters.And(
           filters.Types([card_type.Land]),
           filters.Name("Swamp"),
@@ -550,7 +578,7 @@ pub fn test_strands_of_night() {
       ],
       effect: effects.Single(effects.Bounce(target: targeting.PrimaryTarget)),
     ))
-  let _ = strands
+  let assert True = is_activated(strands)
 }
 
 // Gravedigger — "When Gravedigger enters the battlefield, return target
@@ -569,14 +597,7 @@ pub fn test_gravedigger() {
       optional: False,
       intervening_if: None,
     ))
-  let _ = gravedigger
-}
-
-// ── Amount.Multiply with CardFilter ─────────────────────────────
-// Verify Multiply composition works correctly
-pub fn test_amount_multiply() {
-  let amount = effects.Multiply(effects.Fixed(3), 2)
-  let _ = amount
+  let assert True = is_triggered(gravedigger)
 }
 
 // ── Activation Cost Helpers ─────────────────────────────────────
@@ -615,16 +636,8 @@ pub fn test_activation_cost_helpers() {
   let assert ability.NoCost = ability.tap_cost()
 }
 
-// ── NoCost ──────────────────────────────────────────────────────
-pub fn test_no_cost() {
-  let no_cost = ability.NoCost
-  let _ = no_cost
-}
-
 // ── Coin Flip Result type ───────────────────────────────────────
 pub fn test_coin_flip_result() {
-  let heads = effects.Heads
-  let tails = effects.Tails
-  let _ = heads
-  let _ = tails
+  let _ = effects.Heads
+  let _ = effects.Tails
 }

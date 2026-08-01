@@ -86,7 +86,7 @@ Example: A player controls both Mycosynth Lattice and March of the Machines, the
 4.  If a meld card is being melded with its counterpart, those cards enter the battlefield as a single permanent with their back faces up.
 5.  If an effect allows a player to cast a double-faced card as a face-down creature spell, or if a double-faced card enters the battlefield face down, it will have the characteristics given to it by the rule or effect that caused it to be face down. That card remains hidden, using a face-down substitute card (see rule 713) and/or opaque sleeves. See rule 708, “Face-Down Spells and Permanents.”
 5.  While face down, a double-faced permanent can’t transform or convert. If it’s turned face up, it will have its front face up.
-6.  Melded permanents and other double-faced permanents can’t be turned face down. If a spell or ability tries to turn a double-faced permanent face down, nothing happens.
+6.  Melded permanents and other double-faced permanents can’t be turned face down. If a spell or ability tries to turn a double-faced permanent face down, nothing happens and that effect doesn’t change any of its characteristics or their copiable values.
 7.  A double-faced card that is exiled face down remains hidden, using a face-down substitute card and/or opaque sleeves. See rule 713, “Substitute Cards.”
 8.  When a double-faced permanent transforms or converts, it doesn’t become a new object. Any effects that applied to that permanent will continue to apply to it.
 

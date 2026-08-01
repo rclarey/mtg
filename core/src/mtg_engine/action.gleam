@@ -22,6 +22,7 @@ import mtg_engine/stack
 import mtg_engine/state
 import mtg_engine/step
 import mtg_engine/targeting
+import mtg_engine/trigger
 import mtg_engine/util
 import mtg_engine/zone
 
@@ -69,15 +70,50 @@ pub fn dispatch(
     TapLandForMana(player_id, card_id) ->
       handle_tap_land_for_mana(state, player_id, card_id)
     CastCreature(player_id, card_id, x_value) ->
-      handle_cast_creature(state, player_id, card_id, x_value)
+      handle_cast_spell(
+        state,
+        player_id,
+        card_id,
+        x_value,
+        card_type.Creature,
+        True,
+      )
     CastInstant(player_id, card_id, x_value) ->
-      handle_cast_instant(state, player_id, card_id, x_value)
+      handle_cast_spell(
+        state,
+        player_id,
+        card_id,
+        x_value,
+        card_type.Instant,
+        False,
+      )
     CastSorcery(player_id, card_id, x_value) ->
-      handle_cast_sorcery(state, player_id, card_id, x_value)
+      handle_cast_spell(
+        state,
+        player_id,
+        card_id,
+        x_value,
+        card_type.Sorcery,
+        True,
+      )
     CastArtifact(player_id, card_id, x_value) ->
-      handle_cast_artifact(state, player_id, card_id, x_value)
+      handle_cast_spell(
+        state,
+        player_id,
+        card_id,
+        x_value,
+        card_type.Artifact,
+        True,
+      )
     CastEnchantment(player_id, card_id, x_value) ->
-      handle_cast_enchantment(state, player_id, card_id, x_value)
+      handle_cast_spell(
+        state,
+        player_id,
+        card_id,
+        x_value,
+        card_type.Enchantment,
+        True,
+      )
     DeclareAttackers(player_id, attacks) ->
       handle_declare_attackers(state, player_id, attacks)
     DeclareBlockers(player_id, blocks) ->
@@ -150,6 +186,13 @@ pub fn dispatch_with_ext(
   let state = state.State(..state, pending_removed_sources: [])
 
   let #(state, extensions) = check_delayed_triggers(state, extensions, old_step)
+
+  // Check if step changed and scan permanents for AtStep triggers
+  let state = case state.step != old_step {
+    True -> check_permanent_atstep_triggers(state)
+    False -> state
+  }
+
   Ok(#(state, extensions))
 }
 
@@ -178,6 +221,32 @@ fn check_delayed_triggers(
       )
     }
   }
+}
+
+// Scan all permanents on the battlefield for AtStep triggered abilities
+// matching the current step (rule 603.1).
+fn check_permanent_atstep_triggers(state: state.State) -> state.State {
+  let current_step = state.step
+  // Rule 603.3b: APNAP order
+  state.players_in_apnap_order(state)
+  |> list.fold(state, fn(s, player) {
+    dict.fold(player.battlefield, s, fn(acc, _card_id, perm) {
+      let triggered =
+        list.filter_map(perm.card.abilities, fn(a) {
+          case a {
+            ability.Triggered(ta) ->
+              case ta.trigger {
+                trigger.AtStep(step) if step == current_step -> Ok(ta)
+                _ -> Error(Nil)
+              }
+            _ -> Error(Nil)
+          }
+        })
+      list.fold(triggered, acc, fn(s, ta) {
+        effect_resolver.put_trigger_on_stack(s, player.id, ta, perm.card, None)
+      })
+    })
+  })
 }
 
 fn put_delayed_trigger_on_stack(
@@ -222,7 +291,7 @@ fn put_delayed_trigger_on_stack(
   ])
 }
 
-/// Make sure the player has priority before doing `action`
+// Make sure the player has priority before doing `action`
 fn guard_priority(
   state: state.State,
   player_id: Int,
@@ -235,7 +304,7 @@ fn guard_priority(
   )
 }
 
-/// Make sure it's a main phase (either pre or post combat) before doing `action`
+// Make sure it's a main phase (either pre or post combat) before doing `action`
 fn guard_main(
   state: state.State,
   action: fn() -> Result(a, error.Error),
@@ -264,11 +333,17 @@ fn handle_pass_priority(
       case state.stack {
         [] -> {
           // Stack is empty, advance to next step
+          let state = effect_resolver.check_state_based_actions(state)
+          let state = effect_resolver.check_state_triggers(state)
           Ok(state.advance_step(state))
         }
         _ -> {
           // Stack has items, resolve the top one and reset priority
           use state <- result.try(resolve_top_of_stack(state))
+          // Rule 704.3: Check state-based actions before priority
+          let state = effect_resolver.check_state_based_actions(state)
+          // Rule 603.8: Check state triggers before giving priority
+          let state = effect_resolver.check_state_triggers(state)
           // Reset consecutive passes and give priority to active player
           Ok(
             state.State(
@@ -283,6 +358,11 @@ fn handle_pass_priority(
     False -> {
       // Not all players passed yet, give priority to next player
       let next_player = state.next_player(state, player_id)
+
+      // Rule 704.3: Check state-based actions before priority
+      let state = effect_resolver.check_state_based_actions(state)
+      // Rule 603.8: Check state triggers before giving priority
+      let state = effect_resolver.check_state_triggers(state)
 
       Ok(
         state.State(
@@ -369,7 +449,7 @@ fn handle_tap_land_for_mana(
   player_id: Int,
   card_id: String,
 ) -> Result(state.State, error.Error) {
-  use <- guard_priority(state, player_id)
+  // Rule 605.1a: Mana abilities don't require priority
 
   // Find the player
   use p <- result.try(player.find(state.players, player_id))
@@ -412,296 +492,51 @@ fn handle_tap_land_for_mana(
   Ok(state.State(..state, players: new_players))
 }
 
-// Handle casting a creature spell
-fn handle_cast_creature(
+fn handle_cast_spell(
   state: state.State,
   player_id: Int,
   card_id: String,
   x_value: Int,
+  expected_type: card_type.CardType,
+  speed_check: Bool,
 ) -> Result(state.State, error.Error) {
   use <- guard_priority(state, player_id)
 
-  // Validate: must be active player
-  use <- util.guard(
-    player_id == state.active_player,
-    Error(error.InvalidAction("Only the active player can cast spells")),
-  )
+  // Speed check for sorcery-speed spells
+  use _ <- result.try(case speed_check {
+    True -> {
+      case player_id == state.active_player {
+        True -> Ok(Nil)
+        False ->
+          Error(error.InvalidAction("Only the active player can cast spells"))
+      }
+      |> result.try(fn(_) { guard_main(state, fn() { Ok(Nil) }) })
+      |> result.try(fn(_) {
+        case state.stack == [] {
+          True -> Ok(Nil)
+          False ->
+            Error(error.InvalidAction(
+              "Can only cast sorcery-speed spells when the stack is empty",
+            ))
+        }
+      })
+    }
+    False -> Ok(Nil)
+  })
 
-  // Validate: must be in a main phase (sorcery-speed for creatures)
-  use <- guard_main(state)
-
-  // Validate: stack must be empty (sorcery-speed restriction)
-  use <- util.guard(
-    state.stack == [],
-    Error(error.InvalidAction("Can only cast creatures when the stack is empty")),
-  )
-
-  // Find the player
   use p <- result.try(player.find(state.players, player_id))
-
-  // Validate: card must be in hand
   use c <- result.try(card.find(p.hand, card_id))
 
-  // Validate: card must be a creature
   use <- util.guard(
-    c.card_type == card_type.Creature,
-    Error(error.InvalidAction("Card is not a creature")),
-  )
-
-  // Find the SpellAbility to check for additional costs
-  let additional_costs = case
-    list.find(c.abilities, fn(a) {
-      case a {
-        ability.Spell(_) -> True
-        _ -> False
-      }
-    })
-  {
-    Ok(ability.Spell(sa)) -> sa.additional_costs
-    _ -> []
-  }
-
-  // Pay additional costs
-  use state <- result.try(pay_additional_costs(
-    state,
-    player_id,
-    card_id,
-    additional_costs,
-  ))
-
-  // Pay mana cost with X value
-  use p <- result.try(player.find(state.players, player_id))
-  let actual_cost = mana.Cost(..c.mana_cost, x: x_value)
-  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, actual_cost))
-  let new_hand = card.remove(p.hand, card_id)
-
-  Ok(
-    state.State(
-      ..state,
-      players: player.update(state.players, player_id, fn(_) {
-        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
-      }),
-      stack: [stack.make_stack_item(c, player_id, x_value), ..state.stack],
-    ),
-  )
-}
-
-// Handle casting an instant spell
-fn handle_cast_instant(
-  state: state.State,
-  player_id: Int,
-  card_id: String,
-  x_value: Int,
-) -> Result(state.State, error.Error) {
-  use <- guard_priority(state, player_id)
-
-  // Find the player
-  use p <- result.try(player.find(state.players, player_id))
-
-  // Validate: card must be in hand
-  use c <- result.try(card.find(p.hand, card_id))
-
-  // Validate: card must be an instant
-  use <- util.guard(
-    c.card_type == card_type.Instant,
-    Error(error.InvalidAction("Card is not an instant")),
-  )
-
-  // Find the SpellAbility to check for additional costs
-  let additional_costs = case
-    list.find(c.abilities, fn(a) {
-      case a {
-        ability.Spell(_) -> True
-        _ -> False
-      }
-    })
-  {
-    Ok(ability.Spell(sa)) -> sa.additional_costs
-    _ -> []
-  }
-
-  // Pay additional costs
-  use state <- result.try(pay_additional_costs(
-    state,
-    player_id,
-    card_id,
-    additional_costs,
-  ))
-
-  // Pay mana cost with X value
-  use p <- result.try(player.find(state.players, player_id))
-  let actual_cost = mana.Cost(..c.mana_cost, x: x_value)
-  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, actual_cost))
-  let new_hand = card.remove(p.hand, card_id)
-
-  Ok(
-    state.State(
-      ..state,
-      players: player.update(state.players, player_id, fn(_) {
-        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
-      }),
-      stack: [stack.make_stack_item(c, player_id, x_value), ..state.stack],
-    ),
-  )
-}
-
-// Handle casting a sorcery spell
-fn handle_cast_sorcery(
-  state: state.State,
-  player_id: Int,
-  card_id: String,
-  x_value: Int,
-) -> Result(state.State, error.Error) {
-  use <- guard_priority(state, player_id)
-
-  // Validate: must be active player
-  use <- util.guard(
-    player_id == state.active_player,
-    Error(error.InvalidAction("Only the active player can cast spells")),
-  )
-
-  use <- guard_main(state)
-
-  // Validate: stack must be empty (sorcery-speed restriction)
-  use <- util.guard(
-    state.stack == [],
-    Error(error.InvalidAction("Can only cast sorceries when the stack is empty")),
-  )
-
-  // Find the player
-  use p <- result.try(player.find(state.players, player_id))
-
-  // Validate: card must be in hand
-  use c <- result.try(card.find(p.hand, card_id))
-
-  // Validate: card must be a sorcery
-  use <- util.guard(
-    c.card_type == card_type.Sorcery,
-    Error(error.InvalidAction("Card is not a sorcery")),
-  )
-
-  // Find the SpellAbility to check for additional costs
-  let additional_costs = case
-    list.find(c.abilities, fn(a) {
-      case a {
-        ability.Spell(_) -> True
-        _ -> False
-      }
-    })
-  {
-    Ok(ability.Spell(sa)) -> sa.additional_costs
-    _ -> []
-  }
-
-  // Pay additional costs
-  use state <- result.try(pay_additional_costs(
-    state,
-    player_id,
-    card_id,
-    additional_costs,
-  ))
-
-  // Pay mana cost with X value
-  use p <- result.try(player.find(state.players, player_id))
-  let actual_cost = mana.Cost(..c.mana_cost, x: x_value)
-  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, actual_cost))
-  let new_hand = card.remove(p.hand, card_id)
-
-  Ok(
-    state.State(
-      ..state,
-      players: player.update(state.players, player_id, fn(_) {
-        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
-      }),
-      stack: [stack.make_stack_item(c, player_id, x_value), ..state.stack],
-    ),
-  )
-}
-
-fn handle_cast_artifact(
-  state: state.State,
-  player_id: Int,
-  card_id: String,
-  x_value: Int,
-) -> Result(state.State, error.Error) {
-  use <- guard_priority(state, player_id)
-  use <- util.guard(
-    player_id == state.active_player,
-    Error(error.InvalidAction("Only the active player can cast spells")),
-  )
-  use <- guard_main(state)
-  use <- util.guard(
-    state.stack == [],
-    Error(error.InvalidAction("Can only cast artifacts when the stack is empty")),
-  )
-  use p <- result.try(player.find(state.players, player_id))
-  use c <- result.try(card.find(p.hand, card_id))
-  use <- util.guard(
-    c.card_type == card_type.Artifact,
-    Error(error.InvalidAction("Card is not an artifact")),
-  )
-
-  // Find the SpellAbility to check for additional costs
-  let additional_costs = case
-    list.find(c.abilities, fn(a) {
-      case a {
-        ability.Spell(_) -> True
-        _ -> False
-      }
-    })
-  {
-    Ok(ability.Spell(sa)) -> sa.additional_costs
-    _ -> []
-  }
-
-  // Pay additional costs
-  use state <- result.try(pay_additional_costs(
-    state,
-    player_id,
-    card_id,
-    additional_costs,
-  ))
-
-  // Pay mana cost with X value
-  use p <- result.try(player.find(state.players, player_id))
-  let actual_cost = mana.Cost(..c.mana_cost, x: x_value)
-  use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, actual_cost))
-  let new_hand = card.remove(p.hand, card_id)
-  Ok(
-    state.State(
-      ..state,
-      players: player.update(state.players, player_id, fn(_) {
-        player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
-      }),
-      stack: [stack.make_stack_item(c, player_id, x_value), ..state.stack],
-    ),
-  )
-}
-
-fn handle_cast_enchantment(
-  state: state.State,
-  player_id: Int,
-  card_id: String,
-  x_value: Int,
-) -> Result(state.State, error.Error) {
-  use <- guard_priority(state, player_id)
-  use <- util.guard(
-    player_id == state.active_player,
-    Error(error.InvalidAction("Only the active player can cast spells")),
-  )
-  use <- guard_main(state)
-  use <- util.guard(
-    state.stack == [],
+    c.card_type == expected_type,
     Error(error.InvalidAction(
-      "Can only cast enchantments when the stack is empty",
+      "Card is not a " <> card_type.to_string(expected_type),
     )),
   )
-  use p <- result.try(player.find(state.players, player_id))
-  use c <- result.try(card.find(p.hand, card_id))
-  use <- util.guard(
-    c.card_type == card_type.Enchantment,
-    Error(error.InvalidAction("Card is not an enchantment")),
-  )
+
+  // Push to stack first (rule 601.2a)
+  let stack_item = stack.make_stack_item(c, player_id, x_value)
+  let state = state.State(..state, stack: [stack_item, ..state.stack])
 
   // Find the SpellAbility to check for additional costs
   let additional_costs = case
@@ -728,14 +563,15 @@ fn handle_cast_enchantment(
   use p <- result.try(player.find(state.players, player_id))
   let actual_cost = mana.Cost(..c.mana_cost, x: x_value)
   use new_mana_pool <- result.try(mana.pay_cost(p.mana_pool, actual_cost))
+
   let new_hand = card.remove(p.hand, card_id)
+
   Ok(
     state.State(
       ..state,
       players: player.update(state.players, player_id, fn(_) {
         player.Player(..p, hand: new_hand, mana_pool: new_mana_pool)
       }),
-      stack: [stack.make_stack_item(c, player_id, x_value), ..state.stack],
     ),
   )
 }
@@ -783,7 +619,7 @@ fn handle_declare_attackers(
   // Tap all attacking creatures (skip creatures with vigilance)
   let new_battlefield =
     list.fold(validated_attackers, p.battlefield, fn(battlefield, attacker) {
-      case list.contains(attacker.granted_keywords, "Vigilance") {
+      case list.contains(attacker.granted_keywords, effects.Vigilance) {
         True -> battlefield
         False ->
           permanent.update(battlefield, attacker.card.id, fn(perm) {
@@ -1011,12 +847,12 @@ fn validate_block_pair(
   let blocker_block_count =
     dict.get(seen_blockers, block.blocker) |> result.unwrap(0)
   let max_blocks = case
-    list.contains(blocker_perm.granted_keywords, "can_block_any_number")
+    list.contains(blocker_perm.granted_keywords, effects.CanBlockAnyNumber)
   {
     True -> 999
     False ->
       case
-        list.contains(blocker_perm.granted_keywords, "can_block_additional")
+        list.contains(blocker_perm.granted_keywords, effects.CanBlockAdditional)
       {
         True -> 2
         False -> 1
@@ -1033,9 +869,9 @@ fn validate_block_pair(
     block.attacker,
   ))
   use <- util.guard(
-    !list.contains(attacker_perm.granted_keywords, "Flying")
-      || list.contains(blocker_perm.granted_keywords, "Flying")
-      || list.contains(blocker_perm.granted_keywords, "Reach"),
+    !list.contains(attacker_perm.granted_keywords, effects.Flying)
+      || list.contains(blocker_perm.granted_keywords, effects.Flying)
+      || list.contains(blocker_perm.granted_keywords, effects.Reach),
     Error(error.InvalidAction(
       "Can't block flying creature without flying or reach",
     )),
@@ -1043,7 +879,7 @@ fn validate_block_pair(
 
   // Evasion: menace check - need at least 2 blockers
   use <- util.guard(
-    !list.contains(attacker_perm.granted_keywords, "Menace")
+    !list.contains(attacker_perm.granted_keywords, effects.Menace)
       || count_blockers_for_attacker(
       new_blocks,
       existing_blocks,
@@ -1116,68 +952,13 @@ fn handle_assign_damage(
   // Validate: each creature must assign damage equal to it's power
   use _ <- result.try(
     list.try_each(state.blocking_creatures, fn(block) {
-      let assigner_id = case state.active_player == player_id {
-        True -> block.attacker
-        False -> block.blocker
-      }
-      case permanent.find(assigning_player.battlefield, assigner_id) {
-        // the assigner for this block doesn't belong to the assigning player, so ignore
-        Error(_) -> Ok(Nil)
-        Ok(creature) -> {
-          // Skip creatures that can't assign damage in the current step (first strike/double strike)
-          case creatures_can_assign_damage(state, assigner_id) {
-            False -> Ok(Nil)
-            True -> {
-              let damage = dict.get(damage_per, assigner_id)
-              let power = option.unwrap(creature.card.power, 0)
-              let has_deathtouch =
-                list.contains(creature.granted_keywords, "Deathtouch")
-              let has_trample =
-                list.contains(creature.granted_keywords, "Trample")
-
-              // 0-power creatures should have no damage assignments
-              case power {
-                0 ->
-                  case damage {
-                    Error(_) -> Ok(Nil)
-                    Ok(_) ->
-                      Error(error.InvalidAction(
-                        "Cannot assign damage from a creature with 0 power",
-                      ))
-                  }
-                _ ->
-                  case damage {
-                    Error(_) ->
-                      Error(error.InvalidAction(
-                        "Must assign damage from each creature",
-                      ))
-                    Ok(assigned) ->
-                      case has_deathtouch || has_trample {
-                        True ->
-                          // Deathtouch/Trample: can assign less than full power
-                          // (at least 1 damage, excess goes to player with trample)
-                          case assigned >= 1 && assigned <= power {
-                            True -> Ok(Nil)
-                            False ->
-                              Error(error.InvalidAction(
-                                "Must assign at least 1 damage",
-                              ))
-                          }
-                        False ->
-                          case assigned == power {
-                            True -> Ok(Nil)
-                            False ->
-                              Error(error.InvalidAction(
-                                "Must assign all damage from each creature",
-                              ))
-                          }
-                      }
-                  }
-              }
-            }
-          }
-        }
-      }
+      validate_creature_damage_assignment(
+        state,
+        player_id,
+        assigning_player,
+        damage_per,
+        block,
+      )
     }),
   )
 
@@ -1226,8 +1007,8 @@ fn apply_combat_damage(state: state.State) -> state.State {
   effect_resolver.check_state_based_actions(state)
 }
 
-/// Check if an attacker can deal combat damage in the current step.
-/// Used by trample and unblocked damage functions.
+// Check if an attacker can deal combat damage in the current step.
+// Used by trample and unblocked damage functions.
 fn attacker_can_deal_damage(state: state.State, attacker_id: String) -> Bool {
   let creature =
     list.find_map(state.players, fn(p) {
@@ -1238,9 +1019,9 @@ fn attacker_can_deal_damage(state: state.State, attacker_id: String) -> Bool {
     Error(_) -> False
     Ok(perm) -> {
       let has_first_strike =
-        list.contains(perm.granted_keywords, "First strike")
+        list.contains(perm.granted_keywords, effects.FirstStrike)
       let has_double_strike =
-        list.contains(perm.granted_keywords, "Double strike")
+        list.contains(perm.granted_keywords, effects.DoubleStrike)
 
       case state.step {
         step.FirstStrikeDamage -> has_first_strike || has_double_strike
@@ -1283,7 +1064,7 @@ fn apply_assigned_damage_to_creatures(state: state.State) -> state.State {
       })
       |> result.map(fn(tup) {
         let #(from_perm, controller_id) = tup
-        case list.contains(from_perm.granted_keywords, "Lifelink") {
+        case list.contains(from_perm.granted_keywords, effects.Lifelink) {
           True ->
             player.update(players, controller_id, fn(p) {
               player.Player(..p, life: p.life + assignment.amount)
@@ -1360,7 +1141,10 @@ fn apply_trample_damage(state: state.State) -> state.State {
                     Error(_) -> #(players, s)
                     Ok(attacker_perm) -> {
                       case
-                        list.contains(attacker_perm.granted_keywords, "Trample")
+                        list.contains(
+                          attacker_perm.granted_keywords,
+                          effects.Trample,
+                        )
                       {
                         False -> #(players, s)
                         True -> {
@@ -1388,6 +1172,19 @@ fn apply_trample_damage(state: state.State) -> state.State {
                                     )
                                   },
                                 )
+                              // Lifelink: attacker's controller gains life equal to excess damage dealt
+                              let players = case
+                                list.contains(
+                                  attacker_perm.granted_keywords,
+                                  effects.Lifelink,
+                                )
+                              {
+                                True ->
+                                  player.update(players, state.active_player, fn(p) {
+                                    player.Player(..p, life: p.life + excess)
+                                  })
+                                False -> players
+                              }
                               // Check DealsCombatDamage triggers (trample damage to player)
                               let s =
                                 effect_resolver.check_deals_combat_damage_triggers(
@@ -1467,7 +1264,10 @@ fn apply_unblocked_attacker_damage(state: state.State) -> state.State {
                     )
                   // Lifelink: attacker's controller gains life equal to damage dealt
                   let players = case
-                    list.contains(attacker_perm.granted_keywords, "Lifelink")
+                    list.contains(
+                      attacker_perm.granted_keywords,
+                      effects.Lifelink,
+                    )
                   {
                     True ->
                       player.update(players, attacker_owner_id, fn(p) {
@@ -1550,9 +1350,9 @@ fn validate_damage_assignment(
   Ok(Nil)
 }
 
-/// Check if a creature can assign damage in the current combat damage step.
-/// In FirstStrikeDamage: creature must have "First strike" or "Double strike"
-/// In CombatDamage: creature must NOT have only "First strike" (double strike can assign again)
+// Check if a creature can assign damage in the current combat damage step.
+// In FirstStrikeDamage: creature must have "First strike" or "Double strike"
+// In CombatDamage: creature must NOT have only "First strike" (double strike can assign again)
 fn creatures_can_assign_damage(
   state: state.State,
   creature_id: String,
@@ -1567,14 +1367,80 @@ fn creatures_can_assign_damage(
     Error(_) -> False
     Ok(perm) -> {
       let has_first_strike =
-        list.contains(perm.granted_keywords, "First strike")
+        list.contains(perm.granted_keywords, effects.FirstStrike)
       let has_double_strike =
-        list.contains(perm.granted_keywords, "Double strike")
+        list.contains(perm.granted_keywords, effects.DoubleStrike)
 
       case state.step {
         step.FirstStrikeDamage -> has_first_strike || has_double_strike
         step.CombatDamage -> !has_first_strike || has_double_strike
         _ -> False
+      }
+    }
+  }
+}
+
+fn validate_creature_damage_assignment(
+  state: state.State,
+  active_player_id: Int,
+  assigning_player: player.Player,
+  damage_per: Dict(String, Int),
+  block: combat.BlockPair,
+) -> Result(Nil, error.Error) {
+  let assigner_id = case state.active_player == active_player_id {
+    True -> block.attacker
+    False -> block.blocker
+  }
+  case permanent.find(assigning_player.battlefield, assigner_id) {
+    Error(_) -> Ok(Nil)
+    Ok(creature) -> {
+      case creatures_can_assign_damage(state, assigner_id) {
+        False -> Ok(Nil)
+        True -> {
+          let damage = dict.get(damage_per, assigner_id)
+          let power = option.unwrap(creature.card.power, 0)
+          let has_deathtouch =
+            list.contains(creature.granted_keywords, effects.Deathtouch)
+          let has_trample =
+            list.contains(creature.granted_keywords, effects.Trample)
+
+          case power {
+            0 ->
+              case damage {
+                Error(_) -> Ok(Nil)
+                Ok(_) ->
+                  Error(error.InvalidAction(
+                    "Cannot assign damage from a creature with 0 power",
+                  ))
+              }
+            _ ->
+              case damage {
+                Error(_) ->
+                  Error(error.InvalidAction(
+                    "Must assign damage from each creature",
+                  ))
+                Ok(assigned) ->
+                  case has_deathtouch || has_trample {
+                    True ->
+                      case assigned >= 1 && assigned <= power {
+                        True -> Ok(Nil)
+                        False ->
+                          Error(error.InvalidAction(
+                            "Must assign at least 1 damage",
+                          ))
+                      }
+                    False ->
+                      case assigned == power {
+                        True -> Ok(Nil)
+                        False ->
+                          Error(error.InvalidAction(
+                            "Must assign all damage from each creature",
+                          ))
+                      }
+                  }
+              }
+          }
+        }
       }
     }
   }
@@ -1721,10 +1587,10 @@ fn validate_chosen_targets(
   })
 }
 
-/// Extract the `TargetInfo` list from the ability associated with a stack
-/// item. For spells (no effect override) this is the `SpellAbility`'s
-/// targets. For triggered/activated abilities, the matching ability's
-/// targets. For delayed triggers (no matching ability), returns `[]`.
+// Extract the `TargetInfo` list from the ability associated with a stack
+// item. For spells (no effect override) this is the `SpellAbility`'s
+// targets. For triggered/activated abilities, the matching ability's
+// targets. For delayed triggers (no matching ability), returns `[]`.
 fn find_target_infos(item: stack.StackItem) -> List(targeting.TargetInfo) {
   let abilities = item.card.abilities
   case item.effect_override {
@@ -1789,25 +1655,7 @@ fn handle_activate_ability(
     aa.cost,
   ))
 
-  // Validate chosen targets against the ability's TargetInfo filters.
-  let stack_item_for_validation =
-    stack.StackItem(
-      card: perm.card,
-      controller_id: player_id,
-      chosen_targets:,
-      chosen_mode: None,
-      damage_division: [],
-      x_value:,
-      effect_override: Some(aa.effect),
-      trigger_subject: None,
-      chosen_color: None,
-    )
-  use _ <- result.try(validate_chosen_targets(
-    state,
-    chosen_targets,
-    stack_item_for_validation,
-  ))
-
+  // Construct the stack item once, then validate and push
   let stack_item =
     stack.StackItem(
       card: perm.card,
@@ -1820,6 +1668,7 @@ fn handle_activate_ability(
       trigger_subject: None,
       chosen_color: None,
     )
+  use _ <- result.try(validate_chosen_targets(state, chosen_targets, stack_item))
 
   Ok(state.State(..state, stack: [stack_item, ..state.stack]))
 }
@@ -1831,9 +1680,9 @@ fn handle_choose_trigger(
   card_id: String,
   put_on_stack: Bool,
 ) -> Result(state.State, error.Error) {
-  use pending <- result.try(case state.pending_optional_trigger {
-    Some(pending) -> Ok(pending)
-    None -> Error(error.InvalidAction("No pending optional trigger to choose"))
+  use pending <- result.try(case state.pending_optional_triggers {
+    [pending, ..] -> Ok(pending)
+    [] -> Error(error.InvalidAction("No pending optional trigger to choose"))
   })
 
   use <- util.guard(
@@ -1846,9 +1695,14 @@ fn handle_choose_trigger(
     Error(error.InvalidAction("Card ID does not match pending trigger")),
   )
 
-  // Clear the pending trigger state
+  // Remove the trigger from pending list
+  let rest = list.drop(state.pending_optional_triggers, 1)
+  let choice_player = case rest {
+    [] -> None
+    _ -> Some(player_id)
+  }
   let state =
-    state.State(..state, pending_optional_trigger: None, choice_player: None)
+    state.State(..state, pending_optional_triggers: rest, choice_player:)
 
   case put_on_stack {
     True ->
@@ -1886,18 +1740,23 @@ fn pay_cost_component(
 ) -> Result(state.State, error.Error) {
   case component {
     ability.TapSelf -> {
+      use p <- result.try(player.find(state.players, player_id))
+      use perm <- result.try(permanent.find(p.battlefield, permanent_id))
+      // Rule 302.6: Creature's {T} ability requires no summoning sickness
+      use <- util.guard(
+        perm.card.card_type != card_type.Creature
+          || !permanent.has_summoning_sickness(perm, state.turn_cycle(state)),
+        Error(error.InvalidAction(
+          "Cannot activate {T} ability on a creature with summoning sickness",
+        )),
+      )
       let players =
-        list.map(state.players, fn(p) {
-          case p.id == player_id {
-            True -> {
-              let battlefield =
-                permanent.update(p.battlefield, permanent_id, fn(perm) {
-                  permanent.Permanent(..perm, tapped: True)
-                })
-              player.Player(..p, battlefield:)
-            }
-            False -> p
-          }
+        player.update(state.players, player_id, fn(p) {
+          let battlefield =
+            permanent.update(p.battlefield, permanent_id, fn(perm) {
+              permanent.Permanent(..perm, tapped: True)
+            })
+          player.Player(..p, battlefield:)
         })
       Ok(state.State(..state, players:))
     }
@@ -1911,146 +1770,98 @@ fn pay_cost_component(
       Ok(state.State(..state, players:))
     }
     ability.SacrificeThis -> {
-      // Find the permanent being sacrificed and check triggers
       use p <- result.try(player.find(state.players, player_id))
       use perm <- result.try(permanent.find(p.battlefield, permanent_id))
-      let state =
-        state.State(..state, pending_removed_sources: [
-          permanent_id,
-          ..state.pending_removed_sources
-        ])
-      let state =
-        effect_resolver.check_leaves_battlefield_triggers(
-          state,
-          perm.card,
-          player_id,
-        )
-      let state = case perm.card.card_type {
-        card_type.Creature ->
-          effect_resolver.check_dies_triggers(state, perm.card, player_id)
-        _ -> state
-      }
-      // Remove from battlefield and add to graveyard
-      let players =
-        list.map(state.players, fn(pl) {
-          case pl.id == player_id {
-            True ->
-              player.Player(
-                ..pl,
-                battlefield: dict.delete(pl.battlefield, permanent_id),
-                graveyard: [perm.card, ..pl.graveyard],
-              )
-            False -> pl
-          }
-        })
-      Ok(state.State(..state, players:))
+      sacrifice_permanent(state, player_id, permanent_id, perm.card)
     }
     ability.Sacrifice(filter) -> {
-      use p <- result.try(player.find(state.players, player_id))
-      let matching =
-        dict.fold(p.battlefield, [], fn(acc, id, perm) {
-          let ctx = permanent_context(state, player_id, player_id, perm)
-          case filter_matcher.matches(perm.card, filter, ctx) {
-            True -> [#(id, perm.card), ..acc]
-            False -> acc
-          }
-        })
-      case matching {
-        [#(sac_id, sac_card), ..] -> {
-          let state =
-            state.State(..state, pending_removed_sources: [
-              sac_id,
-              ..state.pending_removed_sources
-            ])
-          let state =
-            effect_resolver.check_leaves_battlefield_triggers(
-              state,
-              sac_card,
-              player_id,
-            )
-          let state = case sac_card.card_type {
-            card_type.Creature ->
-              effect_resolver.check_dies_triggers(state, sac_card, player_id)
-            _ -> state
-          }
-          let players =
-            list.map(state.players, fn(pl) {
-              case pl.id == player_id {
-                True ->
-                  player.Player(
-                    ..pl,
-                    battlefield: dict.delete(pl.battlefield, sac_id),
-                    graveyard: [sac_card, ..pl.graveyard],
-                  )
-                False -> pl
-              }
-            })
-          Ok(state.State(..state, players:))
-        }
-        [] -> Error(error.InvalidAction("No matching permanent to sacrifice"))
+  use p <- result.try(player.find(state.players, player_id))
+  let matching =
+    dict.fold(p.battlefield, [], fn(acc, id, perm) {
+      let ctx = filter_matcher.filter_context(
+        player_id,
+        player_id,
+        None,
+        list.filter(player_ids(state), fn(id) { id != player_id }),
+        Some(perm.tapped),
+        zone.Battlefield,
+      )
+      case filter_matcher.matches(perm.card, filter, ctx) {
+        True -> [#(id, perm.card), ..acc]
+        False -> acc
       }
-    }
-    ability.SacrificeAny(filter) -> {
-      use p <- result.try(player.find(state.players, player_id))
-      let matching =
-        dict.fold(p.battlefield, [], fn(acc, id, perm) {
-          let ctx = permanent_context(state, player_id, player_id, perm)
-          case filter_matcher.matches(perm.card, filter, ctx) {
-            True -> [#(id, perm.card), ..acc]
-            False -> acc
-          }
-        })
+    })
+  case matching {
+    [#(sac_id, sac_card), ..] ->
+      sacrifice_permanent(state, player_id, sac_id, sac_card)
+    [] -> Error(error.InvalidAction("No matching permanent to sacrifice"))
+  }
+}
+ability.SacrificeAny(filter) -> {
+  // TODO: Present player with a choice of eligible permanents
+  use p <- result.try(player.find(state.players, player_id))
+  let matching =
+    dict.fold(p.battlefield, [], fn(acc, id, perm) {
+      let ctx = filter_matcher.filter_context(
+        player_id,
+        player_id,
+        None,
+        list.filter(player_ids(state), fn(id) { id != player_id }),
+        Some(perm.tapped),
+        zone.Battlefield,
+      )
+      case filter_matcher.matches(perm.card, filter, ctx) {
+        True -> [#(id, perm.card), ..acc]
+        False -> acc
+      }
+    })
       case matching {
-        [#(sac_id, sac_card), ..] -> {
-          let state =
-            state.State(..state, pending_removed_sources: [
-              sac_id,
-              ..state.pending_removed_sources
-            ])
-          let state =
-            effect_resolver.check_leaves_battlefield_triggers(
-              state,
-              sac_card,
-              player_id,
-            )
-          let state = case sac_card.card_type {
-            card_type.Creature ->
-              effect_resolver.check_dies_triggers(state, sac_card, player_id)
-            _ -> state
-          }
-          let players =
-            list.map(state.players, fn(pl) {
-              case pl.id == player_id {
-                True ->
-                  player.Player(
-                    ..pl,
-                    battlefield: dict.delete(pl.battlefield, sac_id),
-                    graveyard: [sac_card, ..pl.graveyard],
-                  )
-                False -> pl
-              }
-            })
-          Ok(state.State(..state, players:))
-        }
+        [#(sac_id, sac_card), ..] ->
+          sacrifice_permanent(state, player_id, sac_id, sac_card)
         [] -> Error(error.InvalidAction("No matching permanent to sacrifice"))
       }
     }
     ability.PayLife(amount) -> {
-      let life_amount = resolve_life_cost(amount)
       let players =
         player.update(state.players, player_id, fn(pl) {
-          player.Player(..pl, life: pl.life - life_amount)
+          player.Player(..pl, life: pl.life - amount)
         })
       Ok(state.State(..state, players:))
     }
   }
 }
 
-fn resolve_life_cost(amount: effects.Amount) -> Int {
-  case amount {
-    effects.Fixed(n) -> n
-    _ -> 0
+fn sacrifice_permanent(
+  state: state.State,
+  player_id: Int,
+  permanent_id: String,
+  card: card.Card,
+) -> Result(state.State, error.Error) {
+  let state =
+    state.State(..state, pending_removed_sources: [
+      permanent_id,
+      ..state.pending_removed_sources
+    ])
+  let state =
+    effect_resolver.check_leaves_battlefield_triggers(state, card, player_id)
+  let state = case card.card_type {
+    card_type.Creature ->
+      effect_resolver.check_dies_triggers(state, card, player_id)
+    _ -> state
   }
+  let players =
+    list.map(state.players, fn(pl) {
+      case pl.id == player_id {
+        True ->
+          player.Player(
+            ..pl,
+            battlefield: dict.delete(pl.battlefield, permanent_id),
+            graveyard: [card, ..pl.graveyard],
+          )
+        False -> pl
+      }
+    })
+  Ok(state.State(..state, players:))
 }
 
 fn pay_additional_costs(
@@ -2070,7 +1881,7 @@ fn player_ids(state: state.State) -> List(Int) {
   list.map(state.players, fn(p) { p.id })
 }
 
-/// Find the controller of a permanent on the battlefield by card id.
+// Find the controller of a permanent on the battlefield by card id.
 fn find_controller(state: state.State, card_id: String) -> Option(Int) {
   case
     list.find_map(state.players, fn(p) {
@@ -2085,32 +1896,13 @@ fn find_controller(state: state.State, card_id: String) -> Option(Int) {
   }
 }
 
-/// Build a FilterContext for a permanent on the battlefield, evaluated
-/// from the perspective of the given active player ("you").
-fn permanent_context(
-  state: state.State,
-  controller_id: Int,
-  active_player: Int,
-  perm: permanent.Permanent,
-) -> filter_matcher.FilterContext {
-  filter_matcher.FilterContext(
-    controller_id:,
-    active_player:,
-    target_player: None,
-    opponent_ids: list.filter(player_ids(state), fn(id) { id != active_player }),
-    is_tapped: Some(perm.tapped),
-    zone: zone.Battlefield,
-    chosen_color: None,
-  )
-}
-
 // ── Static Effects Evaluation ─────────────────────────────────────
 
-/// Evaluate all static effects from extensions and apply them to the state.
-/// First resets any previously applied static bonuses, then re-applies all
-/// current static effects in MTG layer order (rule 613) and timestamp order
-/// within each layer. This ensures effects don't compound across multiple
-/// dispatch calls.
+// Evaluate all static effects from extensions and apply them to the state.
+// First resets any previously applied static bonuses, then re-applies all
+// current static effects in MTG layer order (rule 613) and timestamp order
+// within each layer. This ensures effects don't compound across multiple
+// dispatch calls.
 fn evaluate_static_effects(
   state: state.State,
   extensions: extensions.GameExtensions,
@@ -2131,10 +1923,15 @@ fn evaluate_static_effects(
                 t - perm.static_bonus_toughness
               }),
             )
-          // Remove previously granted static keywords from granted_keywords
+          // Remove previously granted static keywords (one occurrence each)
           let granted_keywords =
-            list.filter(perm.granted_keywords, fn(k) {
-              !list.contains(perm.static_bonus_keywords, k)
+            list.fold(perm.static_bonus_keywords, perm.granted_keywords, fn(kws, kw) {
+              let before = list.take_while(kws, fn(k) { k != kw })
+              let after = list.drop_while(kws, fn(k) { k != kw })
+              list.append(before, case after {
+                [] -> []
+                [_, ..rest] -> rest
+              })
             })
           permanent.Permanent(
             ..perm,
@@ -2189,8 +1986,8 @@ fn evaluate_static_effects(
   })
 }
 
-/// Apply a PumpAll static effect: give +power/+toughness and keywords to
-/// all permanents matching the filter.
+// Apply a PumpAll static effect: give +power/+toughness and keywords to
+// all permanents matching the filter.
 fn apply_pump_all(
   state: state.State,
   filter: filters.CardFilter,
@@ -2199,12 +1996,18 @@ fn apply_pump_all(
   keywords: List(effects.Keyword),
   active_player: Int,
 ) -> state.State {
-  let keyword_strings = list.map(keywords, effects.keyword_to_string)
   let players =
     list.map(state.players, fn(p) {
       let battlefield =
         dict.map_values(p.battlefield, fn(_, perm) {
-          let ctx = permanent_context(state, p.id, active_player, perm)
+          let ctx = filter_matcher.filter_context(
+            p.id,
+            active_player,
+            None,
+            list.filter(player_ids(state), fn(id) { id != active_player }),
+            Some(perm.tapped),
+            zone.Battlefield,
+          )
           case filter_matcher.matches(perm.card, filter, ctx) {
             True -> {
               let card =
@@ -2218,15 +2021,12 @@ fn apply_pump_all(
               permanent.Permanent(
                 ..perm,
                 card:,
-                granted_keywords: list.append(
-                  perm.granted_keywords,
-                  keyword_strings,
-                ),
+                granted_keywords: list.append(perm.granted_keywords, keywords),
                 static_bonus_power: perm.static_bonus_power + power,
                 static_bonus_toughness: perm.static_bonus_toughness + toughness,
                 static_bonus_keywords: list.append(
                   perm.static_bonus_keywords,
-                  keyword_strings,
+                  keywords,
                 ),
               )
             }
@@ -2238,29 +2038,32 @@ fn apply_pump_all(
   state.State(..state, players:)
 }
 
-/// Apply a GrantKeyword static effect: grant a keyword to all permanents
-/// matching the filter.
+// Apply a GrantKeyword static effect: grant a keyword to all permanents
+// matching the filter.
 fn apply_grant_keyword(
   state: state.State,
   filter: filters.CardFilter,
   keyword: effects.Keyword,
   active_player: Int,
 ) -> state.State {
-  let keyword_str = effects.keyword_to_string(keyword)
   let players =
     list.map(state.players, fn(p) {
       let battlefield =
         dict.map_values(p.battlefield, fn(_, perm) {
-          let ctx = permanent_context(state, p.id, active_player, perm)
+          let ctx = filter_matcher.filter_context(
+            p.id,
+            active_player,
+            None,
+            list.filter(player_ids(state), fn(id) { id != active_player }),
+            Some(perm.tapped),
+            zone.Battlefield,
+          )
           case filter_matcher.matches(perm.card, filter, ctx) {
             True ->
               permanent.Permanent(
                 ..perm,
-                granted_keywords: [keyword_str, ..perm.granted_keywords],
-                static_bonus_keywords: [
-                  keyword_str,
-                  ..perm.static_bonus_keywords
-                ],
+                granted_keywords: [keyword, ..perm.granted_keywords],
+                static_bonus_keywords: [keyword, ..perm.static_bonus_keywords],
               )
             False -> perm
           }

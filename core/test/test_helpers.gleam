@@ -4,6 +4,7 @@ import gleam/option.{None, Some}
 import mtg_engine/action
 import mtg_engine/card
 import mtg_engine/card_type
+import mtg_engine/effects
 import mtg_engine/mana
 import mtg_engine/permanent
 import mtg_engine/player
@@ -254,7 +255,7 @@ pub fn add_creature_with_keywords(
   player_id: Int,
   creature: card.Card,
   entered_cycle: Int,
-  keywords: List(String),
+  keywords: List(effects.Keyword),
 ) -> state.State {
   let creature_permanent =
     permanent.Permanent(

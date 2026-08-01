@@ -7,15 +7,12 @@ import mtg_engine/error
 import mtg_engine/mana
 import mtg_engine/supertype
 
-pub type Supertype =
-  supertype.Supertype
-
 // Card representation
 pub type Card {
   Card(
     id: String,
     name: String,
-    supertypes: List(Supertype),
+    supertypes: List(supertype.Supertype),
     subtypes: List(String),
     card_type: card_type.CardType,
     mana_cost: mana.Cost,

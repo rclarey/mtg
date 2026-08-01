@@ -13,6 +13,10 @@ import mtg_engine/step
 import mtg_engine/targeting
 import prng/random
 
+fn has_keyword(perm: permanent.Permanent, kw: effects.Keyword) -> Bool {
+  list.contains(perm.granted_keywords, kw)
+}
+
 pub type PendingTrigger {
   PendingTrigger(
     source_card: card.Card,
@@ -43,7 +47,7 @@ pub type State {
     prevention_shields: Dict(String, Int),
     global_combat_prevention: Bool,
     pending_delayed_triggers: List(effects.DelayedTrigger),
-    pending_optional_trigger: Option(PendingTrigger),
+    pending_optional_triggers: List(PendingTrigger),
     pending_removed_sources: List(String),
     // Task 5: Extra turn queue (rule 500.7). Player ids take their extra
     // turns in FIFO order before normal turn rotation resumes.
@@ -54,6 +58,8 @@ pub type State {
     source_prevention: List(String),
     // Task 7: Pending Scry awaiting the player's reorder decision.
     pending_scry: Option(ScryPending),
+    // Monotonically increasing counter for unique token IDs.
+    next_token_id: Int,
     // PRNG seed threaded through the state so random effects (coin flips,
     // library shuffles) are deterministic given an initial seed.
     seed: random.Seed,
@@ -87,12 +93,13 @@ pub fn new_multiplayer_with_seed(n: Int, seed: random.Seed) -> State {
     prevention_shields: dict.new(),
     global_combat_prevention: False,
     pending_delayed_triggers: [],
-    pending_optional_trigger: None,
+    pending_optional_triggers: [],
     pending_removed_sources: [],
     pending_extra_turns: [],
     regeneration_shields: dict.new(),
     source_prevention: [],
     pending_scry: None,
+    next_token_id: 0,
     seed:,
   )
 }
@@ -102,7 +109,18 @@ pub fn turn_cycle(state: State) -> Int {
   state.turn_index / num_players
 }
 
-pub fn next_player(state: State, current_player_id: Int) -> player.Player {
+/// Return players in APNAP order (Active Player, Non-Active Player).
+/// Active player first, then remaining players in turn order.
+pub fn players_in_apnap_order(state: State) -> List(player.Player) {
+  let ap = state.active_player
+  list.drop_while(state.players, fn(p) { p.id != ap })
+  |> list.append(list.take_while(state.players, fn(p) { p.id != ap }))
+}
+
+pub fn next_player(
+  state: State,
+  current_player_id: Int,
+) -> player.Player {
   case list.drop_while(state.players, fn(p) { p.id != current_player_id }) {
     [_, ..rest] ->
       case rest {
@@ -123,9 +141,10 @@ pub fn get_next_defending_player(
   state: State,
   current_player_id: Int,
 ) -> Option(Int) {
-  case next_player(state, current_player_id) {
-    player if player.id == state.active_player -> None
-    player -> {
+  let player = next_player(state, current_player_id)
+  case player.id == state.active_player {
+    True -> None
+    False -> {
       use attackers <- option.then(state.attacking_creatures)
       let is_attacked =
         list.any(attackers, fn(attack) {
@@ -266,8 +285,8 @@ fn has_first_strike_or_double_strike(state: State) -> Bool {
     list.any(creature_ids, fn(id) {
       case permanent.find(p.battlefield, id) {
         Ok(perm) ->
-          list.contains(perm.granted_keywords, "First strike")
-          || list.contains(perm.granted_keywords, "Double strike")
+          has_keyword(perm, effects.FirstStrike)
+          || has_keyword(perm, effects.DoubleStrike)
         Error(_) -> False
       }
     })

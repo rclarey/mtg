@@ -52,8 +52,7 @@ Create
 
 Destroy
 
-701.8a To destroy a permanent, move it from the battlefield to its owner’s graveyard.
-
+- a. To destroy a permanent, move it from the battlefield to its owner’s graveyard.
 - b. The only ways a permanent can be destroyed are as a result of an effect that uses the word “destroy” or as a result of the state-based actions that check for lethal damage (see rule 704.5g) or damage from a source with deathtouch (see rule 704.5h). If a permanent is put into its owner’s graveyard for any other reason, it hasn’t been “destroyed.”
 - c. A regeneration effect replaces a destruction event. See rule 701.19, “Regenerate.”
 
@@ -259,7 +258,7 @@ Example: A player owns and controls Midnight Scavengers and a token that’s a c
 4.  Explore
 4.  Certain spells and abilities instruct a permanent to explore. To do so, that permanent’s controller reveals the top card of their library. If a land card is revealed this way, that player puts that card into their hand. Otherwise, that player puts a +1/+1 counter on the exploring permanent and may put the revealed card into their graveyard.
 4.  A permanent “explores” after the process described in rule 701.44a is complete, even if some or all of those actions were impossible.
-4.  If a permanent changes zones before an effect causes it to explore, its last known information is used to determine which object explored and who controlled it.
+4.  If a permanent is no longer on the battlefield as an effect instructs it to explore, its last known information is used to determine which object explored and who controlled it.
 4.  If multiple permanents are instructed to explore at the same time, the first player in APNAP order who controls (or, in the case of a permanent no longer on the battlefield, last controlled; see rule 701.44c) one or more of those permanents chooses one of them and it explores. Then this process is repeated for each remaining instruction to explore.
 5.  Assemble
 5.  Assemble is a keyword action in the Unstable set that puts Contraptions onto the battlefield. Outside of silver-bordered cards, only one card (Steamflogger Boss) refers to assembling a Contraption. Cards and mechanics from the Unstable set aren’t included in these rules. See the Unstable FAQ for more information.
@@ -279,10 +278,11 @@ Example: A player owns and controls Midnight Scavengers and a token that’s a c
 9.  Venture into [quality] is a variant of venture into the dungeon. If a player is instructed to “venture into [quality]” while they don’t own a dungeon card in the command zone, they choose a dungeon card they own from outside the game with the indicated quality and put it into the command zone. They put their venture marker on the topmost room of that dungeon. If they already own a dungeon card in the command zone, they follow the normal procedure for venturing into the dungeon outlined in 701.49b–c.
 - 0.  Connive
 - 0.  Certain spells and abilities instruct a permanent to connive. To do so, that permanent’s controller draws a card, then discards a card. If a nonland card is discarded this way, that player puts a +1/+1 counter on the conniving permanent.
-- 0.  A permanent “connives” after the process described in rule 701.50a is complete, even if some or all of those actions were impossible.
-- 0.  If a permanent changes zones before an effect causes it to connive, its last known information is used to determine which object connived and who controlled it.
-- 0.  If multiple permanents are instructed to connive at the same time, the first player in APNAP order who controls (or, in the case of a permanent no longer on the battlefield, last controlled; see rule 701.50c) one or more of those permanents chooses one of them and it connives. Then this process is repeated for each remaining instruction to connive.
-- 0.  Connive N is a variant of connive. The permanent’s controller draws N cards, discards N cards, then puts a number of +1/+1 counters on the permanent equal to the number of nonland cards discarded this way.
+- 0.  If a permanent is no longer on the battlefield as an effect instructs it to connive, its last known information is used to determine which object connived and who controlled it.
+- 0.  If multiple permanents are instructed to connive at the same time, the first player in APNAP order who controls (or, in the case of a permanent no longer on the battlefield, last controlled; see rule 701.50b) one or more of those permanents chooses one of them and it connives. Then this process is repeated for each remaining instruction to connive.
+- 0.  Connive N is a variant of connive. To have a permanent connive N, the permanent’s controller draws N cards, discards N cards, then puts a number of +1/+1 counters on the permanent equal to the number of nonland cards discarded this way.
+- 0.  If a permanent would connive 0, no connive event occurs. Abilities that trigger whenever a permanent connives won’t trigger.
+- 0.  A permanent “connives” after the process described in either rule 701.50a or 701.50d is complete, even if some or all of those actions were impossible.
 1.  Open an Attraction
 1.  A player may open an Attraction only during a game in which that player is playing with an Attraction deck (see rule 717, “Attraction Cards”).
 1.  To open an Attraction, move the top card of your Attraction deck off the Attraction deck, turn it face up, and put it onto the battlefield under your control.
@@ -354,3 +354,5 @@ Example: A player owns and controls Midnight Scavengers and a token that’s a c
 8.  If a player is given the choice to blight but is unable to put N -1/-1 counters on a creature they control (usually because they control no creatures), they can’t choose to blight.
 8.  Some spells and abilities that instruct a player to blight refer to the “blighted creature.” This phrase refers to the object that the player who was instructed to blight chose to put -1/-1 counters on when blighting.
 8.  An ability that triggers whenever a player blights triggers after the process described in rule 701.68a is complete, regardless of what events actually occurred.
+9.  Heal
+9.  To heal damage already dealt to a permanent, remove that marked damage from that permanent. If an effect states that damage already dealt to a permanent “is healed,” that permanent’s controller removes all marked damage from that permanent.

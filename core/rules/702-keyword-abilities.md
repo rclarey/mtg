@@ -28,7 +28,7 @@ Deathtouch
 - b. A creature with toughness greater than 0 that’s been dealt damage by a source with deathtouch since the last time state-based actions were checked is destroyed as a state-based action. See rule 704.
 - c. Any nonzero amount of combat damage assigned to a creature by a source with deathtouch is considered to be lethal damage for the purposes of determining if excess damage is being dealt.
 - d. The deathtouch rules function no matter what zone an object with deathtouch deals damage from.
-- e. If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had deathtouch.
+- e. If an object is no longer in the zone it’s expected to be in as an effect causes it to deal damage, its last known information is used to determine whether it had deathtouch.
 - f. Multiple instances of deathtouch on the same object are redundant.
 
 ## 702.3
@@ -125,7 +125,7 @@ Example: If a player controls a snow Forest, that player can’t block an attack
 5.  Lifelink
 5.  Lifelink is a static ability.
 5.  Damage dealt by a source with lifelink causes that source’s controller, or its owner if it has no controller, to gain that much life (in addition to any other results that damage causes). See rule 120.3.
-5.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had lifelink.
+5.  If an object is no longer in the zone it’s expected to be in as an effect causes it to deal damage, its last known information is used to determine whether it had lifelink.
 5.  The lifelink rules function no matter what zone an object with lifelink deals damage from.
 5.  If multiple sources with lifelink deal damage at the same time, they cause separate life gain events (see rules 119.9–10).
 
@@ -352,7 +352,7 @@ Example: Heartless Summoning says, in part, “Creature spells you cast cost {2}
 3.  Although the transmute ability can be activated only if the card is in a player’s hand, it continues to exist while the object is on the battlefield and in all other zones. Therefore objects with transmute will be affected by effects that depend on objects having one or more activated abilities.
 4.  Bloodthirst
 4.  Bloodthirst is a static ability. “Bloodthirst N” means “If an opponent was dealt damage this turn, this permanent enters with N +1/+1 counters on it.”
-4.  “Bloodthirst X” is a special form of bloodthirst. “Bloodthirst X” means “This permanent enters with X +1/+1 counters on it, where X is the total damage your opponents have been dealt this turn.”
+4.  “Bloodthirst X” is a variant of the bloodthirst ability. “Bloodthirst X” means “This permanent enters with X +1/+1 counters on it, where X is the total damage your opponents have been dealt this turn.”
 4.  If an object has multiple instances of bloodthirst, each applies separately.
 5.  Haunt
 5.  Haunt is a triggered ability. “Haunt” on a permanent means “When this permanent is put into a graveyard from the battlefield, exile it haunting target creature.” “Haunt” on an instant or sorcery spell means “When this spell is put into a graveyard during its resolution, exile it haunting target creature.”
@@ -362,7 +362,7 @@ Example: Heartless Summoning says, in part, “Creature spells you cast cost {2}
 6.  Replicate is a keyword that represents two abilities. The first is a static ability that functions while the spell with replicate is on the stack. The second is a triggered ability that functions while the spell with replicate is on the stack. “Replicate [cost]” means “As an additional cost to cast this spell, you may pay [cost] any number of times” and “When you cast this spell, if a replicate cost was paid for it, copy it for each time its replicate cost was paid. If the spell has any targets, you may choose new targets for any of the copies.” Paying a spell’s replicate cost follows the rules for paying additional costs in rules 601.2b and 601.2f–h.
 6.  If a spell has multiple instances of replicate, each is paid separately and triggers based on the payments made for it, not any other instance of replicate.
 7.  Forecast
-7.  A forecast ability is a special kind of activated ability that can be activated only from a player’s hand. It’s written “Forecast — [Activated ability].”
+7.  A forecast ability is an activated ability that can be activated only from a player’s hand. It’s written “Forecast — [Activated ability].”
 7.  A forecast ability may be activated only during the upkeep step of the card’s owner and only once each turn. The controller of the forecast ability reveals the card with that ability from their hand as the ability is activated. That player plays with that card revealed in their hand until it leaves the player’s hand or until a step or phase that isn’t an upkeep step begins, whichever comes first.
 8.  Graft
 8.  Graft represents both a static ability and a triggered ability. “Graft N” means “This permanent enters with N +1/+1 counters on it” and “Whenever another creature enters, if this permanent has a +1/+1 counter on it, you may move a +1/+1 counter from this permanent onto that creature.”
@@ -439,7 +439,7 @@ Example: You activate the aura swap ability of an Aura. The only Aura card in yo
 9.  Persist is a triggered ability. “Persist” means “When this permanent is put into a graveyard from the battlefield, if it had no -1/-1 counters on it, return it to the battlefield under its owner’s control with a -1/-1 counter on it.”
 - 0.  Wither
 - 0.  Wither is a static ability. Damage dealt to a creature by a source with wither isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
-- 0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had wither.
+- 0.  If an object is no longer in the zone it’s expected to be in as an effect causes it to deal damage, its last known information is used to determine whether it had wither.
 - 0.  The wither rules function no matter what zone an object with wither deals damage from.
 - 0.  Multiple instances of wither on the same object are redundant.
 1.  Retrace
@@ -475,7 +475,7 @@ Example: You activate the aura swap ability of an Aura. The only Aura card in yo
 - 0.  Infect is a static ability.
 - 0.  Damage dealt to a player by a source with infect doesn’t cause that player to lose life. Rather, it causes that source’s controller to give the player that many poison counters. See rule 120.3.
 - 0.  Damage dealt to a creature by a source with infect isn’t marked on that creature. Rather, it causes that source’s controller to put that many -1/-1 counters on that creature. See rule 120.3.
-- 0.  If an object changes zones before an effect causes it to deal damage, its last known information is used to determine whether it had infect.
+- 0.  If an object is no longer in the zone it’s expected to be in as an effect causes it to deal damage, its last known information is used to determine whether it had infect.
 - 0.  The infect rules function no matter what zone an object with infect deals damage from.
 - 0.  Multiple instances of infect on the same object are redundant.
 1.  Battle Cry
@@ -592,8 +592,9 @@ Example: Aether Storm is an enchantment with the ability “Creature spells can�
 2. . Crew
 2. a Crew is an activated ability of Vehicle cards. “Crew N” means “Tap any number of other untapped creatures you control with total power N or greater: This permanent becomes an artifact creature until end of turn.”
 2. b A creature “crews a Vehicle” when it’s tapped to pay the cost to activate a Vehicle’s crew ability.
-2. c If an effect states that a creature “can’t crew Vehicles,” that creature can’t be tapped to pay the crew cost of a Vehicle.
-2. d Some Vehicles have abilities that trigger when they become crewed. “Whenever [this Vehicle] becomes crewed” means “Whenever a crew ability of [this Vehicle] resolves.” If that ability has an intervening “if” clause that refers to information about the creatures that crewed it, it means only creatures that were tapped to pay the cost of the crew ability that caused it to trigger.
+2. c A Vehicle is “crewed by” a creature if that creature was tapped to pay the cost to activate that Vehicle’s crew ability.
+2. d If an effect states that a creature “can’t crew Vehicles,” that creature can’t be tapped to pay the crew cost of a Vehicle.
+2. e Some Vehicles have abilities that trigger when they become crewed. “Whenever [this Vehicle] becomes crewed” means “Whenever a crew ability of [this Vehicle] resolves.” If that ability has an intervening “if” clause that refers to information about the creatures that crewed it, it means only creatures that were tapped to pay the cost of the crew ability that caused it to trigger.
 2. . Fabricate
 2. a Fabricate is a triggered ability. “Fabricate N” means “When this permanent enters, you may put N +1/+1 counters on it. If you don’t, create N 1/1 colorless Servo artifact creature tokens.”
 2. b If a permanent has multiple instances of fabricate, each triggers separately.
@@ -670,7 +671,7 @@ Example: Aether Storm is an enchantment with the ability “Creature spells can�
 4. . Encore
 4. a Encore is an activated ability that functions while the card with encore is in a graveyard. “Encore [cost]” means “[Cost], Exile this card from your graveyard: For each opponent, create a token that’s a copy of this card that attacks that opponent this turn if able. The tokens gain haste. Sacrifice them at the beginning of the next end step. Activate only as a sorcery.”
 4. . Boast
-4. a A boast ability is a special kind of activated ability. “Boast — [Cost]: [Effect]” means “[Cost]: [Effect]. Activate only if this creature attacked this turn and only once each turn.”
+4. a Boast is a keyword that adds additional rules to the activated ability that follows it. “Boast — [Cost]: [Effect]” means “[Cost]: [Effect]. Activate only if this creature attacked this turn and only once each turn.”
 4. b Effects may refer to boast abilities. If an effect refers to a creature boasting, it means its boast ability being activated.
 4. . Foretell
 4. a Foretell is a keyword that functions while the card with foretell is in a player’s hand. Any time a player has priority during their turn, that player may pay {2} and exile a card with foretell from their hand face down. That player may look at that card as long as it remains in exile. They may cast that card after the current turn has ended by paying any foretell cost it has rather than paying that spell’s mana cost. Casting a spell this way follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
@@ -810,16 +811,14 @@ Example: If a creature with toxic 2 gains toxic 1 due to another effect, its tot
 7. b If a spell has multiple instances of offspring, each is paid separately and triggers based on the payments made for it, not any other instances of offspring.
 7. . Impending
 7. a Impending is a keyword that represents four abilities. The first is a static ability that functions while the spell with impending is on the stack. The second is static ability that creates a replacement effect that may apply to the permanent with impending as it enters the battlefield from the stack. The third is a static ability that functions on the battlefield. The fourth is a triggered ability that functions on the battlefield. “Impending N—[cost]” means “You may choose to pay [cost] rather than pay this spell’s mana cost,” “If you chose to pay this permanent’s impending cost, it enters with N time counters on it,” “As long as this permanent’s impending cost was paid and it has a time counter on it, it’s not a creature,” and “At the beginning of your end step, if this permanent’s impending cost was paid and it has a time counter on it, remove a time counter from it.” Casting a spell for its impending cost follows the rules for paying alternative costs in rules 601.2b and 601.2f–h.
-
-702.177. Exhaust
-
-7. a An exhaust ability is a special kind of activated ability. “Exhaust — [Cost]: [Effect]” means “[Cost]: [Effect]. Activate only once.”
+7. . Exhaust
+7. a Exhaust is a keyword that adds additional rules to the activated ability that follows it. “Exhaust — [Cost]: [Effect]” means “[Cost]: [Effect]. Activate only once.”
 7. b An effect may allow you to take an action as long as you haven’t activated an exhaust ability this turn. Such an effect allows that action only if you haven’t begun to activate an exhaust ability this turn.
 
 Example: Elvish Refueler has an exhaust ability that costs mana and also has an ability that reads “During your turn, as long as you haven’t activated an exhaust ability this turn, you may activate exhaust abilities as though they haven’t been activated.” Loot, the Pathfinder has an exhaust ability that is also a mana ability. If you’ve already activated both of these abilities in a previous turn, you can’t activate Loot’s mana ability during the process of activating Elvish Refueler’s exhaust ability, because you have already begun to activate a different exhaust ability.
 
 7. . Max Speed
-7. a A max speed ability is a special kind of static ability. “Max speed — [Ability]” means “As long as your speed is 4, this object has ‘[Ability].’” See rule 702.179, “Start Your Engines!”
+7. a A max speed ability is a static ability. “Max speed — [Ability]” means “As long as your speed is 4, this object has ‘[Ability].’” See rule 702.179, “Start Your Engines!”
 7. b If an ability granted by a max speed ability states which zones it functions from, the max speed ability that grants that ability functions from those zones. (See rule 113.6c.)
 7. . Start Your Engines!
 7. a Start your engines! is a static ability. If a player controls a permanent with start your engines! and that player has no speed, their speed becomes 1. This is a state-based action. See rule 704.
@@ -868,3 +867,10 @@ Example: Tapestry Warden has as ability that reads “Each creature you control 
 9. b If a creature has multiple instances of increment, each one triggers separately.
 9. . Paradigm
 9. a Paradigm represents two spell abilities, one of which creates a delayed triggered ability. Paradigm means “If this is the first time a spell you control with this spell’s name has resolved this game, at the beginning of each of your precombat main phases for the rest of the game, create a copy of this object in exile. You may cast the copy without paying its mana cost” and “Exile this spell.” See rule 707.10.
+9. . Power-up
+9. a Power-up is a keyword that adds additional rules to the activated ability that follows it. “Power-up — [Cost]: [Effect]” means “[Cost]: [Effect]. If this permanent entered this turn, this ability’s cost is reduced by this permanent’s mana cost. Activate this ability only once.”
+9. b Generic mana in the permanent’s mana cost reduces generic mana in the cost to activate its power-up ability. Colored and colorless mana in the permanent’s mana cost reduces mana of the same type, and any excess reduces that much generic mana. (See rule 118.7.)
+9. . Teamwork
+9. a Teamwork represents a static ability that functions while the spell with teamwork is on the stack. “Teamwork N” means “As an additional cost to cast this spell, you may tap any number of creatures you control with total power N or more.” Paying a spell’s teamwork cost follows the rules for paying additional costs in rules 601.2b and 601.2f–h.
+9. b Abilities may refer to a spell cast “using teamwork” or similar. Such phrases refer to whether the player who cast the spell declared the intention to pay the spell’s teamwork cost as they cast that spell.
+9. c If part of a spell’s ability has its effect only if teamwork was used to cast it, and that part of the ability includes any targets, the spell’s controller chooses those targets only if teamwork was used to cast that spell. Otherwise, the spell is cast as if it did not have those targets. See rule 601.2c.

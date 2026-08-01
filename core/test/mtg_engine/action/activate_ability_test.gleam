@@ -166,7 +166,7 @@ fn spell_creature() -> card.Card {
 pub fn activate_ability_tap_for_mana_test() {
   let state = state.new()
   let elf = llanowar_elves()
-  let state = add_creature_to_battlefield(state, 1, elf, 0)
+  let state = add_creature_to_battlefield(state, 1, elf, -1)
 
   let state = pass_until(state, step.PreCombatMain)
 
@@ -294,7 +294,7 @@ pub fn activate_not_activated_ability_test() {
 pub fn activate_ability_sacrifice_this_test() {
   let state = state.new()
   let creature = sacrificer_creature()
-  let state = add_creature_to_battlefield(state, 1, creature, 0)
+  let state = add_creature_to_battlefield(state, 1, creature, -1)
 
   let state = pass_until(state, step.PreCombatMain)
 
@@ -384,7 +384,7 @@ pub fn activate_ability_pay_life_test() {
 pub fn activate_ability_permanent_not_moved_on_resolve_test() {
   let state = state.new()
   let elf = llanowar_elves()
-  let state = add_creature_to_battlefield(state, 1, elf, 0)
+  let state = add_creature_to_battlefield(state, 1, elf, -1)
 
   let state = pass_until(state, step.PreCombatMain)
 

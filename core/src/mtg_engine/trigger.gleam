@@ -13,4 +13,5 @@ pub type Trigger {
   DealsCombatDamage(filter: Option(TargetFilter))
   Discarded(filter: CardFilter)
   AtStep(step: step.Step)
+  StateTrigger
 }

@@ -315,7 +315,7 @@ pub fn cast_creature_stack_not_empty_test() {
   let result = action.dispatch(state, action.CastCreature(1, "creature2", 0))
   assert result
     == Error(error.InvalidAction(
-      "Can only cast creatures when the stack is empty",
+      "Can only cast sorcery-speed spells when the stack is empty",
     ))
 }
 

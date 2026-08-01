@@ -200,7 +200,7 @@ pub fn grant_keyword_adds_keyword_test() {
     )
 
   let perm = get_permanent(state, 1, creature.id)
-  assert list.contains(perm.granted_keywords, "Haste")
+  assert list.contains(perm.granted_keywords, effects.Haste)
 }
 
 pub fn grant_keyword_filter_non_matching_unaffected_test() {
@@ -231,11 +231,11 @@ pub fn grant_keyword_filter_non_matching_unaffected_test() {
 
   // Creature should have Trample
   let perm = get_permanent(state, 1, creature.id)
-  assert list.contains(perm.granted_keywords, "Trample")
+  assert list.contains(perm.granted_keywords, effects.Trample)
 
   // Land should not have Trample
   let land_perm = get_permanent(state, 1, land.id)
-  assert !list.contains(land_perm.granted_keywords, "Trample")
+  assert !list.contains(land_perm.granted_keywords, effects.Trample)
 }
 
 // ===== Combined Static Effects Tests =====
@@ -278,8 +278,8 @@ pub fn multiple_static_effects_combined_test() {
   assert perm.card.power == Some(3)
   assert perm.card.toughness == Some(3)
   // Should have Vigilance (from PumpAll) and Flying (from GrantKeyword)
-  assert list.contains(perm.granted_keywords, "Vigilance")
-  assert list.contains(perm.granted_keywords, "Flying")
+  assert list.contains(perm.granted_keywords, effects.Vigilance)
+  assert list.contains(perm.granted_keywords, effects.Flying)
 }
 
 // ===== Idempotency Tests =====
@@ -365,11 +365,11 @@ pub fn grant_keyword_does_not_compound_test() {
 
   let perm = get_permanent(state, 1, creature.id)
   // Should have Haste
-  assert list.contains(perm.granted_keywords, "Haste")
+  assert list.contains(perm.granted_keywords, effects.Haste)
   // Should NOT have Haste duplicated
   let haste_count =
     list.fold(perm.granted_keywords, 0, fn(count, kw) {
-      case kw == "Haste" {
+      case kw == effects.Haste {
         True -> count + 1
         False -> count
       }
@@ -655,8 +655,8 @@ pub fn grant_keyword_layer_before_pump_all_test() {
 
   let perm = get_permanent(state, 1, creature.id)
   // Creature should have both Flying (from GrantKeyword, Layer 6) and Trample (from PumpAll, Layer 7)
-  assert list.contains(perm.granted_keywords, "Flying")
-  assert list.contains(perm.granted_keywords, "Trample")
+  assert list.contains(perm.granted_keywords, effects.Flying)
+  assert list.contains(perm.granted_keywords, effects.Trample)
   // Power/Toughness should reflect the PumpAll bonus
   assert perm.card.power == Some(2)
   assert perm.card.toughness == Some(2)

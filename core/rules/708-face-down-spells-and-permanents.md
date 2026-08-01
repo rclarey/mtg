@@ -9,7 +9,7 @@ Some cards allow spells and permanents to be face down.
 Face-down spells and face-down permanents have no characteristics other than those listed by the ability or rules that allowed the spell or permanent to be face down. Any listed characteristics are the copiable values of that object’s characteristics. (See rule 613, “Interaction of Continuous Effects,” and rule 707, “Copying Objects.”)
 
 - a. If a face-up permanent is turned face down by a spell or ability that doesn’t list any characteristics for that object, it becomes a 2/2 face-down creature with no text, no name, no subtypes, and no mana cost. A permanent that enters the battlefield face down also has these characteristics unless otherwise specified by the effect that put it onto the battlefield face down or allowed it to be cast face down. These values are the copiable values of that object’s characteristics.
-- b. A face-down permanent can’t be turned face-down. If a spell or ability attempts to turn a face-down permanent face down, nothing happens and that effect doesn’t change any of its characteristics or their copiable values.
+- b. A face-down permanent can’t be turned face down. If a spell or ability attempts to turn a face-down permanent face down, nothing happens and that effect doesn’t change any of its characteristics or their copiable values.
 
 ## 708.3
 

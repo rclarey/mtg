@@ -5,6 +5,7 @@ import mtg_engine/ability
 import mtg_engine/action
 import mtg_engine/card
 import mtg_engine/card_type
+import mtg_engine/color
 import mtg_engine/effects
 import mtg_engine/error
 import mtg_engine/mana
@@ -122,7 +123,8 @@ pub fn target_opponent_hexproof_fails_test() {
   let creature = create_test_creature("target1", "Hexproof Bear")
 
   // Add creature with hexproof to opponent's (player 2) battlefield
-  let state = add_creature_with_keywords(state, 2, creature, 0, ["Hexproof"])
+  let state =
+    add_creature_with_keywords(state, 2, creature, 0, [effects.Hexproof])
 
   // Pass to PreCombatMain so instants can be cast
   let state = pass_until(state, step.PreCombatMain)
@@ -144,7 +146,8 @@ pub fn target_own_hexproof_succeeds_test() {
   let creature = create_test_creature("target1", "My Hexproof Bear")
 
   // Add creature with hexproof to player 1's battlefield
-  let state = add_creature_with_keywords(state, 1, creature, 0, ["Hexproof"])
+  let state =
+    add_creature_with_keywords(state, 1, creature, 0, [effects.Hexproof])
 
   // Pass to PreCombatMain so instants can be cast
   let state = pass_until(state, step.PreCombatMain)
@@ -165,7 +168,8 @@ pub fn target_shroud_fails_test() {
   let creature = create_test_creature("target1", "Shroud Bear")
 
   // Add creature with shroud to opponent's (player 2) battlefield
-  let state = add_creature_with_keywords(state, 2, creature, 0, ["Shroud"])
+  let state =
+    add_creature_with_keywords(state, 2, creature, 0, [effects.Shroud])
 
   // Pass to PreCombatMain so instants can be cast
   let state = pass_until(state, step.PreCombatMain)
@@ -186,7 +190,9 @@ pub fn target_protection_from_color_fails_test() {
 
   // Add creature with protection from red to opponent's (player 2) battlefield
   let state =
-    add_creature_with_keywords(state, 2, creature, 0, ["Protection from Red"])
+    add_creature_with_keywords(state, 2, creature, 0, [
+      effects.ProtectionFromColor(color.Red),
+    ])
 
   // Pass to PreCombatMain so instants can be cast
   let state = pass_until(state, step.PreCombatMain)
@@ -207,7 +213,9 @@ pub fn target_protection_from_different_color_succeeds_test() {
 
   // Add creature with protection from green to opponent's battlefield
   let state =
-    add_creature_with_keywords(state, 2, creature, 0, ["Protection from Green"])
+    add_creature_with_keywords(state, 2, creature, 0, [
+      effects.ProtectionFromColor(color.Green),
+    ])
 
   // Pass to PreCombatMain so instants can be cast
   let state = pass_until(state, step.PreCombatMain)
@@ -228,7 +236,7 @@ pub fn target_protection_from_card_type_fails_test() {
   // Add creature with protection from instants to opponent's battlefield
   let state =
     add_creature_with_keywords(state, 2, creature, 0, [
-      "Protection from instants",
+      effects.ProtectionFromType(card_type.Instant),
     ])
 
   // Pass to PreCombatMain so instants can be cast

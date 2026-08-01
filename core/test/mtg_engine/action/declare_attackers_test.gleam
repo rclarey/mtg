@@ -433,7 +433,7 @@ pub fn cannot_play_land_before_declaring_attackers_test() {
 }
 
 // Test cannot tap land before declaring attackers
-pub fn cannot_tap_land_before_declaring_attackers_test() {
+pub fn can_tap_land_before_declaring_attackers_test() {
   let state = state.new()
   let land = create_test_land("land1", "Forest")
 
@@ -449,9 +449,13 @@ pub fn cannot_tap_land_before_declaring_attackers_test() {
       attacking_creatures: None,
     )
 
-  // Try to tap land for mana - should fail
-  let result = action.dispatch(state, action.TapLandForMana(1, "land1"))
-  assert result == Error(error.DoNotHavePriority)
+  // Rule 605.1a: Mana abilities can be activated at any time, even without priority
+  let assert Ok(state2) =
+    action.dispatch(state, action.TapLandForMana(1, "land1"))
+  let assert Ok(p1) = player.find(state2.players, 1)
+  let assert Ok(perm) = permanent.find(p1.battlefield, "land1")
+  assert perm.tapped
+  assert p1.mana_pool.green == 1
 }
 
 // Test cannot cast creature before declaring attackers

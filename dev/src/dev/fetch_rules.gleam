@@ -27,6 +27,15 @@ pub fn fetch_and_split_rules() -> Result(Nil, String) {
   let rules_content =
     string.replace(rules_content, each: "\r\n", with: "\n")
     |> string.crop(before: "Magic")
+    // normalize whitespace-only lines to empty lines so paragraph splits on "\n\n" work
+    |> string.split("\n")
+    |> list.map(fn(line) {
+      case string.trim(line) {
+        "" -> ""
+        _ -> line
+      }
+    })
+    |> string.join("\n")
 
   let sections = split_into_sections(rules_content)
 

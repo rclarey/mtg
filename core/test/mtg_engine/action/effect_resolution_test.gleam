@@ -893,7 +893,7 @@ pub fn pump_creature_test() {
   let elf_perm = get_permanent(state, 1, "elf1")
   assert elf_perm.card.power == Some(3)
   assert elf_perm.card.toughness == Some(2)
-  assert list.contains(elf_perm.granted_keywords, "Flying")
+  assert list.contains(elf_perm.granted_keywords, effects.Flying)
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -14,7 +14,9 @@ import mtg_engine/step
 import mtg_engine/targeting
 import mtg_engine/trigger
 import mtg_engine/zone
-import test_helpers.{add_creature_to_battlefield, get_player, pass, pass_until}
+import test_helpers.{
+  add_card_to_hand, add_creature_to_battlefield, get_player, pass, pass_until,
+}
 
 fn add_card_to_graveyard(
   state: state.State,
@@ -25,19 +27,6 @@ fn add_card_to_graveyard(
     ..state,
     players: player.update(state.players, player_id, fn(p) {
       player.Player(..p, graveyard: [c, ..p.graveyard])
-    }),
-  )
-}
-
-fn add_card_to_hand(
-  state: state.State,
-  player_id: Int,
-  c: card.Card,
-) -> state.State {
-  state.State(
-    ..state,
-    players: player.update(state.players, player_id, fn(p) {
-      player.Player(..p, hand: [c, ..p.hand])
     }),
   )
 }
@@ -315,7 +304,7 @@ pub fn strands_of_night_no_creature_in_graveyard_fails_test() {
               colorless: 0,
               x: 0,
             )),
-            ability.PayLife(effects.Fixed(2)),
+            ability.PayLife(2),
             ability.Sacrifice(filters.And(
               filters.Types([card_type.Land]),
               filters.Name("Swamp"),

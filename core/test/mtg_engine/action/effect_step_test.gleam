@@ -19,17 +19,8 @@ import mtg_engine/targeting
 import mtg_engine/zone
 import prng/random
 import test_helpers.{
-  add_creature_to_battlefield, create_creature, get_permanent, get_player, pass,
-  pass_turn, pass_until,
-}
-
-fn add_card_to_hand(s, pid, c) {
-  state.State(
-    ..s,
-    players: player.update(s.players, pid, fn(p) {
-      player.Player(..p, hand: [c, ..p.hand])
-    }),
-  )
+  add_card_to_hand, add_creature_to_battlefield, create_creature, get_permanent,
+  get_player, pass, pass_turn, pass_until,
 }
 
 fn red_mana() -> mana.Produced {
@@ -181,7 +172,7 @@ pub fn choose_color_resolves_chosen_ref_test() {
   let ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -226,7 +217,7 @@ pub fn choose_color_resolves_chosen_ref_test() {
   let no_color_ctx =
     filter_matcher.FilterContext(
       controller_id: 1,
-      active_player: 1,
+      you_id: 1,
       target_player: None,
       opponent_ids: [],
       is_tapped: None,
@@ -385,12 +376,47 @@ pub fn deal_divided_damage_splits_correctly_test() {
 }
 
 pub fn deal_divided_damage_invalid_sum_rejected_test() {
-  // DealDividedDamage validates that allocations sum to total_amount.
-  // An invalid allocation (sum > total) causes resolution to fail with
-  // an InvalidAction error. This is tested at the resolver level; the
-  // full pass-based flow would panic on the error, so we verify the
-  // valid case above instead.
-  assert True
+  let target1 = create_creature("t1", "Target One", 1, 5)
+  let target2 = create_creature("t2", "Target Two", 1, 5)
+
+  let pyro =
+    instant_card(
+      "pyro_bad",
+      "Pyrotechnics Bad",
+      2,
+      2,
+      [targeting.target_info(targeting.Any)],
+      effects.Single(effects.DealDividedDamage(total_amount: effects.Fixed(4))),
+    )
+
+  let state =
+    state.new()
+    |> add_creature_to_battlefield(2, target1, 0)
+    |> add_creature_to_battlefield(2, target2, 0)
+    |> add_card_to_hand(1, pyro)
+    |> pass_until(step.PreCombatMain)
+
+  let mana =
+    mana.Produced(white: 0, blue: 0, black: 0, red: 2, green: 0, colorless: 2)
+  let targets = [
+    targeting.ChosenTargets(targets: [
+      targeting.TargetCard("t1"),
+      targeting.TargetCard("t2"),
+    ]),
+  ]
+  let assert Ok(state) = cast_instant(state, 1, pyro, mana, targets)
+
+  // Submit invalid damage_division — sum is 5, not 4
+  let assert Ok(state) =
+    action.dispatch(
+      state,
+      action.ChooseTargets(1, "pyro_bad", targets, None, [2, 3]),
+    )
+
+  // Both players pass priority — stack resolves and should fail
+  let assert Ok(state) = action.dispatch(state, action.PassPriority(1))
+  let result = action.dispatch(state, action.PassPriority(2))
+  let assert Error(error.InvalidAction(_)) = result
 }
 
 // ══════════════════════════════════════════════════════════════════════════

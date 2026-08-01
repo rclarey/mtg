@@ -3,6 +3,7 @@ import gleam/list
 import gleam/option.{type Option, None}
 import gleam/result
 import mtg_engine/card
+import mtg_engine/effects
 import mtg_engine/error
 
 // Permanent representation - wraps a card on the battlefield with permanent-specific state
@@ -17,13 +18,13 @@ pub type Permanent {
     // Track damage marked on this permanent (cleared during cleanup step)
     damage: Int,
     // Track keywords temporarily granted by effects (e.g. PumpCreature)
-    granted_keywords: List(String),
+    granted_keywords: List(effects.Keyword),
     // Track what this permanent is attached to (for Auras/Equipment)
     attached_to: Option(String),
     // Track static effect bonuses (reset on each dispatch)
     static_bonus_power: Int,
     static_bonus_toughness: Int,
-    static_bonus_keywords: List(String),
+    static_bonus_keywords: List(effects.Keyword),
   )
 }
 
@@ -72,8 +73,6 @@ pub fn has_summoning_sickness(
   permanent: Permanent,
   current_cycle: Int,
 ) -> Bool {
-  // Creature has summoning sickness if it entered this turn cycle
-  // and doesn't have haste
   permanent.entered_battlefield_cycle >= current_cycle
-  && !list.contains(permanent.granted_keywords, "Haste")
+  && !list.contains(permanent.granted_keywords, effects.Haste)
 }

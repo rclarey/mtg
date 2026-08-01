@@ -80,16 +80,6 @@ fn pay_generic_from_pool(
   // Base case: no generic cost to pay
   use <- util.guard(generic_cost > 0, Ok(pool))
 
-  // Prefer to use colorless mana first to preserve colored mana
-  use <- util.guard(
-    pool.colorless <= 0,
-    pay_generic_from_pool(
-      Produced(..pool, colorless: pool.colorless - 1),
-      generic_cost - 1,
-    ),
-  )
-
-  // Then use any colored mana in WUBRG order
   use <- util.guard(
     pool.white <= 0,
     pay_generic_from_pool(
@@ -119,6 +109,13 @@ fn pay_generic_from_pool(
     pool.green <= 0,
     pay_generic_from_pool(
       Produced(..pool, green: pool.green - 1),
+      generic_cost - 1,
+    ),
+  )
+  use <- util.guard(
+    pool.colorless <= 0,
+    pay_generic_from_pool(
+      Produced(..pool, colorless: pool.colorless - 1),
       generic_cost - 1,
     ),
   )

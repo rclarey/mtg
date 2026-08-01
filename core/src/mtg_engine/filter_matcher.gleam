@@ -6,6 +6,28 @@ import mtg_engine/filters
 import mtg_engine/mana
 import mtg_engine/zone
 
+/// Build a FilterContext — the single consolidated entry point for creating
+/// filter evaluation contexts. All code that needs a FilterContext should
+/// call this function instead of constructing FilterContext directly.
+pub fn filter_context(
+  controller_id: Int,
+  you_id: Int,
+  target_player: Option(Int),
+  opponent_ids: List(Int),
+  is_tapped: Option(Bool),
+  zone: zone.Zone,
+) -> FilterContext {
+  FilterContext(
+    controller_id:,
+    you_id:,
+    target_player:,
+    opponent_ids:,
+    is_tapped:,
+    zone:,
+    chosen_color: None,
+  )
+}
+
 /// Context required to evaluate a `CardFilter` against a card. Carries the
 /// information that is not available on `card.Card` itself.
 ///
@@ -21,11 +43,11 @@ pub type FilterContext {
     controller_id: Int,
     // The "you" reference: the spell/ability controller, or the source
     // permanent's controller for static effects.
-    active_player: Int,
+    you_id: Int,
     // The player targeted by the spell/ability, if any. Used by
     // `WithController(TargetPlayer)`.
     target_player: Option(Int),
-    // All players who are opponents of `active_player`.
+    // All players who are opponents of `you_id`.
     opponent_ids: List(Int),
     // The tapped state of the card if it is a permanent on the battlefield:
     // `Some(True)` for tapped, `Some(False)` for untapped, `None` for
@@ -87,7 +109,7 @@ fn controller_matches(
 ) -> Bool {
   case cf {
     filters.Any -> True
-    filters.You -> controller_id == context.active_player
+    filters.You -> controller_id == context.you_id
     filters.Opponent -> list.contains(context.opponent_ids, controller_id)
     filters.TargetPlayer ->
       case context.target_player {

@@ -3,6 +3,7 @@ import gleam/option.{None, Some}
 import gleam/result
 import mtg_engine/action
 import mtg_engine/combat
+import mtg_engine/effects
 import mtg_engine/permanent
 import mtg_engine/state
 import mtg_engine/step
@@ -1217,7 +1218,7 @@ pub fn first_strike_attacker_kills_blocker_before_it_deals_damage_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, attacker, -1, ["First strike"])
+    |> add_creature_with_keywords(1, attacker, -1, [effects.FirstStrike])
     |> add_creature_to_battlefield(2, blocker, -1)
     |> pass_until(step.DeclareAttackers)
 
@@ -1289,7 +1290,7 @@ pub fn first_strike_blocker_kills_attacker_before_it_deals_damage_test() {
   let state =
     state.new()
     |> add_creature_to_battlefield(1, attacker, -1)
-    |> add_creature_with_keywords(2, blocker, -1, ["First strike"])
+    |> add_creature_with_keywords(2, blocker, -1, [effects.FirstStrike])
     |> pass_until(step.DeclareAttackers)
 
   let assert Ok(state) =
@@ -1354,7 +1355,7 @@ pub fn double_strike_attacker_deals_damage_in_both_steps_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, attacker, -1, ["Double strike"])
+    |> add_creature_with_keywords(1, attacker, -1, [effects.DoubleStrike])
     |> add_creature_to_battlefield(2, blocker, -1)
     |> pass_until(step.DeclareAttackers)
 
@@ -1434,7 +1435,7 @@ pub fn double_strike_unblocked_attacker_deals_damage_twice_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, attacker, -1, ["Double strike"])
+    |> add_creature_with_keywords(1, attacker, -1, [effects.DoubleStrike])
     |> pass_until(step.DeclareAttackers)
 
   let assert Ok(state) =
@@ -1486,7 +1487,7 @@ pub fn first_strike_attacker_deals_unblocked_damage_before_regular_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, attacker, -1, ["First strike"])
+    |> add_creature_with_keywords(1, attacker, -1, [effects.FirstStrike])
     |> pass_until(step.DeclareAttackers)
 
   let assert Ok(state) =
@@ -1540,7 +1541,7 @@ pub fn mixed_first_strike_and_normal_attackers_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, fs_attacker, -1, ["First strike"])
+    |> add_creature_with_keywords(1, fs_attacker, -1, [effects.FirstStrike])
     |> add_creature_to_battlefield(1, normal_attacker, -1)
     |> add_creature_to_battlefield(2, blocker, -1)
     |> pass_until(step.DeclareAttackers)
@@ -1621,7 +1622,7 @@ pub fn first_strike_creature_cannot_assign_damage_in_regular_step_test() {
 
   let state =
     state.new()
-    |> add_creature_with_keywords(1, attacker, -1, ["First strike"])
+    |> add_creature_with_keywords(1, attacker, -1, [effects.FirstStrike])
     |> add_creature_to_battlefield(2, blocker, -1)
     |> pass_until(step.DeclareAttackers)
 

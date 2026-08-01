@@ -489,9 +489,9 @@ pub fn dies_trigger_fires_on_lethal_damage_test() {
   assert trigger_item.card.id == "creature1"
 }
 
-pub fn dies_trigger_does_not_fire_for_non_creature_test() {
-  // An artifact with a Dies trigger should NOT fire Dies
-  // (Dies specifically means a creature goes to graveyard from battlefield)
+pub fn dies_trigger_fires_for_non_creature_test() {
+  // Rule 700.4: "Dies" means "is put into a graveyard from the battlefield."
+  // Any permanent can die, not just creatures.
   let trigger_ability = make_gain_life_trigger(trigger.Dies)
   let artifact =
     card.Card(
@@ -519,15 +519,11 @@ pub fn dies_trigger_does_not_fire_for_non_creature_test() {
   let state = state.new()
   let state = add_creature_to_battlefield(state, 1, artifact, 0)
 
-  // Destroy the artifact via state-based actions (give it lethal damage won't work
-  // since it's not a creature, so use legend rule approach)
-  // Actually, for non-creatures, destroy only works through Destroy effects.
-  // Let's directly check that the Dies trigger isn't checked for non-creatures
-  // by calling check_dies_triggers directly (it's public):
+  // Call check_dies_triggers on the artifact
   let state = effect_resolver.check_dies_triggers(state, artifact, 1)
 
-  // Verify stack is empty (no Dies trigger for non-creature)
-  assert state.stack == []
+  // Verify stack has a Dies trigger (non-creatures can also die)
+  assert list.length(state.stack) == 1
 }
 
 // ── Attacks ───────────────────────────────────────────────
@@ -1176,8 +1172,8 @@ pub fn optional_enters_battlefield_trigger_does_not_go_on_stack_automatically_te
   // Verify stack is empty (optional trigger NOT put on stack automatically)
   assert state.stack == []
 
-  // Verify pending_optional_trigger is set
-  let assert Some(pending) = state.pending_optional_trigger
+  // Verify pending_optional_triggers is set
+  let assert [pending, ..] = state.pending_optional_triggers
   assert pending.source_card.id == "creature1"
   assert pending.controller == 1
   assert pending.ability.optional == True
@@ -1219,14 +1215,14 @@ pub fn optional_trigger_accepted_puts_trigger_on_stack_test() {
   let assert Ok(state) = action.dispatch(state, action.PassPriority(2))
 
   // Verify pending trigger is set
-  let assert Some(_) = state.pending_optional_trigger
+  let assert [_] = state.pending_optional_triggers
 
   // Accept the trigger
   let assert Ok(state) =
     action.dispatch(state, action.ChooseTrigger(1, "creature1", True))
 
-  // Verify pending_optional_trigger is cleared
-  assert state.pending_optional_trigger == None
+  // Verify pending_optional_triggers is cleared
+  assert state.pending_optional_triggers == []
   assert state.choice_player == None
 
   // Verify trigger is on the stack
@@ -1271,14 +1267,14 @@ pub fn optional_trigger_rejected_does_not_put_trigger_on_stack_test() {
   let assert Ok(state) = action.dispatch(state, action.PassPriority(2))
 
   // Verify pending trigger is set
-  let assert Some(_) = state.pending_optional_trigger
+  let assert [_] = state.pending_optional_triggers
 
   // Reject the trigger
   let assert Ok(state) =
     action.dispatch(state, action.ChooseTrigger(1, "creature1", False))
 
-  // Verify pending_optional_trigger is cleared
-  assert state.pending_optional_trigger == None
+  // Verify pending_optional_triggers is cleared
+  assert state.pending_optional_triggers == []
   assert state.choice_player == None
 
   // Verify stack is still empty (trigger was not put on stack)
@@ -1337,7 +1333,7 @@ pub fn non_optional_triggers_still_work_with_new_field_test() {
     )
 
   // No pending trigger
-  assert state.pending_optional_trigger == None
+  assert state.pending_optional_triggers == []
 }
 
 // ── CreateDelayedTrigger ─────────────────────────────────

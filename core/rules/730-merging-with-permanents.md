@@ -17,7 +17,7 @@ To merge an object with a permanent, place that object on top of or under that p
 - g. A face-down merged permanent that contains an instant or sorcery card can’t be turned face up. If such a permanent would turn face up, its controller reveals it and leaves it face down. Abilities that trigger when a permanent is turned face up won’t trigger.
 - h. If a merged permanent contains a flip card (see rule 710), that component’s alternative characteristics are used instead of its normal characteristics if the merged permanent is flipped.
 - i. A merged permanent is not a double-faced permanent even if it contains one or more double-faced components. If a merged permanent contains one or more double-faced components that can transform (see rule 712), transforming or converting that permanent causes each of those double-faced components to turn so that its other face is up.
-- j. A face-up merged permanent that contains a double-faced component can’t be turned face down.
+- j. A face-up merged permanent that contains a double-faced component can’t be turned face down. If a spell or ability tries to turn a face-up merged permanent that contains a double-faced component face down, nothing happens and that effect doesn’t change any of its characteristics or their copiable values.
 
 ## 730.3
 

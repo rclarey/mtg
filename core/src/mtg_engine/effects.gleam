@@ -1,3 +1,4 @@
+import gleam/string
 import mtg_engine/card_type
 import mtg_engine/color
 import mtg_engine/filters
@@ -28,11 +29,16 @@ pub type Keyword {
   Haste
   Vigilance
   Deathtouch
+  Lifelink
+  Reach
+  Menace
   Mountainwalk
   Hexproof
   Shroud
   ProtectionFromColor(color.Color)
   ProtectionFromType(card_type.CardType)
+  CanBlockAnyNumber
+  CanBlockAdditional
 }
 
 pub type TokenDefinition {
@@ -171,6 +177,52 @@ pub fn layer_priority(layer: Layer) -> Int {
   }
 }
 
+pub fn string_to_keyword(s: String) -> Keyword {
+  case s {
+    "Flying" -> Flying
+    "Trample" -> Trample
+    "First strike" -> FirstStrike
+    "Double strike" -> DoubleStrike
+    "Haste" -> Haste
+    "Vigilance" -> Vigilance
+    "Deathtouch" -> Deathtouch
+    "Lifelink" -> Lifelink
+    "Reach" -> Reach
+    "Menace" -> Menace
+    "Mountainwalk" -> Mountainwalk
+    "Hexproof" -> Hexproof
+    "Shroud" -> Shroud
+    "can_block_any_number" -> CanBlockAnyNumber
+    "can_block_additional" -> CanBlockAdditional
+    _ -> {
+      // Handle protection strings
+      case string.starts_with(s, "Protection from ") {
+        True -> {
+          let subject = string.drop_start(s, 17)
+          case string.lowercase(subject) {
+            "white" -> ProtectionFromColor(color.White)
+            "blue" -> ProtectionFromColor(color.Blue)
+            "black" -> ProtectionFromColor(color.Black)
+            "red" -> ProtectionFromColor(color.Red)
+            "green" -> ProtectionFromColor(color.Green)
+            "colorless" -> ProtectionFromColor(color.Colorless)
+            "lands" -> ProtectionFromType(card_type.Land)
+            "creatures" -> ProtectionFromType(card_type.Creature)
+            "instants" -> ProtectionFromType(card_type.Instant)
+            "sorceries" -> ProtectionFromType(card_type.Sorcery)
+            "artifacts" -> ProtectionFromType(card_type.Artifact)
+            "enchantments" -> ProtectionFromType(card_type.Enchantment)
+            _ -> Flying
+            // fallback
+          }
+        }
+        False -> Flying
+        // fallback
+      }
+    }
+  }
+}
+
 pub fn keyword_to_string(keyword: Keyword) -> String {
   case keyword {
     Flying -> "Flying"
@@ -180,12 +232,17 @@ pub fn keyword_to_string(keyword: Keyword) -> String {
     Haste -> "Haste"
     Vigilance -> "Vigilance"
     Deathtouch -> "Deathtouch"
+    Lifelink -> "Lifelink"
+    Reach -> "Reach"
+    Menace -> "Menace"
     Mountainwalk -> "Mountainwalk"
     Hexproof -> "Hexproof"
     Shroud -> "Shroud"
     ProtectionFromColor(color) -> "Protection from " <> color_to_string(color)
     ProtectionFromType(card_type) ->
       "Protection from " <> card_type_to_protection_string(card_type)
+    CanBlockAnyNumber -> "can_block_any_number"
+    CanBlockAdditional -> "can_block_additional"
   }
 }
 

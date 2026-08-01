@@ -77,8 +77,115 @@ fn resolve_spell_effect(
   case find_spell_effect(item, item.card.abilities) {
     None -> Ok(state)
     Some(effect) -> {
+      // Rule 608.2b: Check target legality
+      use _ <- result.try(check_targets_still_legal(state, item))
+
+      // Rule 603.4: Re-check intervening-if for triggered abilities
+      use _ <- result.try(check_intervening_if_on_resolution(state, item))
+
       use #(new_state, _) <- result.try(resolve_effect(state, item, effect))
       Ok(new_state)
+    }
+  }
+}
+
+// Rule 608.2b: If all targets are illegal (no longer in valid zone or
+// don't match the target filter), the spell/ability doesn't resolve.
+fn check_targets_still_legal(
+  state: state.State,
+  item: stack.StackItem,
+) -> Result(Nil, error.Error) {
+  // If the spell has no targets, it can always resolve
+  case item.chosen_targets {
+    [] -> Ok(Nil)
+    targets -> {
+      // Check each target group — if ANY group still has a legal target,
+      // the spell can resolve (illegal targets are just unaffected).
+      // If ALL chosen targets are illegal, don't resolve.
+      let all_illegal =
+        list.all(targets, fn(ct) {
+          list.all(ct.targets, fn(target) {
+            case target {
+              targeting.TargetCard(card_id) -> {
+                case find_card_in_any_zone(state, card_id) {
+                  None -> True
+                  Some(#(_, _, _)) -> {
+                    // Check if it's still a legal target (hexproof etc.)
+                    case
+                      check_target_legality(
+                        state,
+                        card_id,
+                        item.card,
+                        item.controller_id,
+                      )
+                    {
+                      Ok(_) -> False
+                      Error(_) -> True
+                    }
+                  }
+                }
+              }
+              targeting.TargetPlayer(_) -> {
+                // Player targets are always legal
+                False
+              }
+            }
+          })
+        })
+      case all_illegal {
+        True ->
+          Error(error.InvalidAction(
+            "All targets are illegal — spell does not resolve",
+          ))
+        False -> Ok(Nil)
+      }
+    }
+  }
+}
+
+// Rule 603.4: If a triggered ability has an intervening-if clause,
+// it must be true both when the trigger is put on the stack AND when
+// it resolves. Re-check here.
+fn check_intervening_if_on_resolution(
+  state: state.State,
+  item: stack.StackItem,
+) -> Result(Nil, error.Error) {
+  case item.effect_override {
+    None -> Ok(Nil)
+    Some(effect) -> {
+      // Find the triggered ability with this effect on the source card
+      case
+        list.find_map(item.card.abilities, fn(a) {
+          case a {
+            ability.Triggered(ta) if ta.effect == effect -> Ok(ta)
+            _ -> Error(Nil)
+          }
+        })
+      {
+        Ok(ta) -> {
+          case ta.intervening_if {
+            Some(filter) -> {
+              let is_tapped = find_tapped_option(state, item.card.id)
+              let ctx =
+                filter_context_for_controller(
+                  state,
+                  item.controller_id,
+                  is_tapped,
+                  zone.Battlefield,
+                )
+              case filter_matcher.matches(item.card, filter, ctx) {
+                True -> Ok(Nil)
+                False ->
+                  Error(error.InvalidAction(
+                    "Intervening-if condition no longer true — trigger does not resolve",
+                  ))
+              }
+            }
+            None -> Ok(Nil)
+          }
+        }
+        Error(_) -> Ok(Nil)
+      }
     }
   }
 }
@@ -209,10 +316,10 @@ fn resolve_ref_as_card(
   Ok(card_id)
 }
 
-/// Check that a target card is a legal target for a spell or ability.
-/// Returns Ok(Nil) if the target is legal or not on the battlefield.
-/// Returns an Error if the target has hexproof (and is controlled by an opponent),
-/// shroud, or protection from the source's qualities.
+// Check that a target card is a legal target for a spell or ability.
+// Returns Ok(Nil) if the target is legal or not on the battlefield.
+// Returns an Error if the target has hexproof (and is controlled by an opponent),
+// shroud, or protection from the source's qualities.
 pub fn check_target_legality(
   state: state.State,
   target_card_id: String,
@@ -225,13 +332,13 @@ pub fn check_target_legality(
     Ok(#(perm, permanent_controller_id)) -> {
       // Check shroud: can't be targeted at all
       use <- util.guard(
-        !list.contains(perm.granted_keywords, "Shroud"),
+        !list.contains(perm.granted_keywords, effects.Shroud),
         Error(error.InvalidAction("Can't target a permanent with shroud")),
       )
 
       // Check hexproof: can't be targeted by opponents
       use <- util.guard(
-        !list.contains(perm.granted_keywords, "Hexproof")
+        !list.contains(perm.granted_keywords, effects.Hexproof)
           || source_controller_id == permanent_controller_id,
         Error(error.InvalidAction(
           "Can't target opponent's permanent with hexproof",
@@ -242,9 +349,11 @@ pub fn check_target_legality(
       let source_colors = get_card_colors(source_card.mana_cost)
       use _ <- result.try(
         list.try_each(source_colors, fn(c) {
-          let prot_str = "Protection from " <> color_to_string(c)
           use <- util.guard(
-            !list.contains(perm.granted_keywords, prot_str),
+            !list.contains(
+              perm.granted_keywords,
+              effects.ProtectionFromColor(c),
+            ),
             Error(error.InvalidAction(
               "Target has protection from source's colors",
             )),
@@ -254,11 +363,11 @@ pub fn check_target_legality(
       )
 
       // Check protection from card types
-      let type_prot_str =
-        "Protection from "
-        <> card_type_to_protection_string(source_card.card_type)
       use <- util.guard(
-        !list.contains(perm.granted_keywords, type_prot_str),
+        !list.contains(
+          perm.granted_keywords,
+          effects.ProtectionFromType(source_card.card_type),
+        ),
         Error(error.InvalidAction(
           "Target has protection from source's card type",
         )),
@@ -281,7 +390,7 @@ fn opponents_of(state: state.State, player_id: Int) -> List(Int) {
   list.filter(player_ids(state), fn(id) { id != player_id })
 }
 
-/// Resolve the primary target as a player id, if the spell/ability has one.
+// Resolve the primary target as a player id, if the spell/ability has one.
 fn resolve_target_player(item: stack.StackItem) -> Option(Int) {
   case item.chosen_targets {
     [first, ..] ->
@@ -293,8 +402,8 @@ fn resolve_target_player(item: stack.StackItem) -> Option(Int) {
   }
 }
 
-/// Build a FilterContext for a card controlled by `controller_id`, evaluated
-/// from the perspective of `item.controller_id` (the "you" reference).
+// Build a FilterContext for a card controlled by `controller_id`, evaluated
+// from the perspective of `item.controller_id` (the "you" reference).
 fn filter_context_for_item(
   state: state.State,
   item: stack.StackItem,
@@ -302,38 +411,36 @@ fn filter_context_for_item(
   is_tapped: Option(Bool),
   zone: zone.Zone,
 ) -> filter_matcher.FilterContext {
-  filter_matcher.FilterContext(
-    controller_id:,
-    active_player: item.controller_id,
-    target_player: resolve_target_player(item),
-    opponent_ids: opponents_of(state, item.controller_id),
-    is_tapped:,
-    zone:,
-    chosen_color: None,
+  filter_matcher.filter_context(
+    controller_id,
+    item.controller_id,
+    resolve_target_player(item),
+    opponents_of(state, item.controller_id),
+    is_tapped,
+    zone,
   )
 }
 
-/// Build a FilterContext where the active player ("you") is `controller_id`
-/// itself — used by trigger checks where the trigger controller is the
-/// reference point and there is no separate spell controller.
+// Build a FilterContext where the active player ("you") is `controller_id`
+// itself — used by trigger checks where the trigger controller is the
+// reference point and there is no separate spell controller.
 fn filter_context_for_controller(
   state: state.State,
   controller_id: Int,
   is_tapped: Option(Bool),
   zone: zone.Zone,
 ) -> filter_matcher.FilterContext {
-  filter_matcher.FilterContext(
-    controller_id:,
-    active_player: controller_id,
-    target_player: None,
-    opponent_ids: opponents_of(state, controller_id),
-    is_tapped:,
-    zone:,
-    chosen_color: None,
+  filter_matcher.filter_context(
+    controller_id,
+    controller_id,
+    None,
+    opponents_of(state, controller_id),
+    is_tapped,
+    zone,
   )
 }
 
-/// Look up a permanent's tapped state on the battlefield by card id.
+// Look up a permanent's tapped state on the battlefield by card id.
 fn find_tapped_option(state: state.State, card_id: String) -> Option(Bool) {
   case find_permanent_on_battlefield(state, card_id) {
     Ok(#(perm, _)) -> Some(perm.tapped)
@@ -505,6 +612,7 @@ fn put_triggers_on_stack(
   controller_id: Int,
   source_card: card.Card,
   trigger_subject: Option(targeting.TargetIdentifier),
+  condition_card: card.Card,
 ) -> state.State {
   // Separate optional and non-optional triggers
   let #(optional, non_optional) =
@@ -515,7 +623,7 @@ fn put_triggers_on_stack(
     list.fold(non_optional, state, fn(s, ta) {
       case ta.intervening_if {
         Some(filter) -> {
-          let is_tapped = find_tapped_option(s, source_card.id)
+          let is_tapped = find_tapped_option(s, condition_card.id)
           let ctx =
             filter_context_for_controller(
               s,
@@ -523,7 +631,7 @@ fn put_triggers_on_stack(
               is_tapped,
               zone.Battlefield,
             )
-          case filter_matcher.matches(source_card, filter, ctx) {
+          case filter_matcher.matches(condition_card, filter, ctx) {
             True ->
               put_trigger_on_stack(
                 s,
@@ -546,14 +654,12 @@ fn put_triggers_on_stack(
       }
     })
 
-  // Handle the first optional trigger by setting a pending trigger
-  case optional {
-    [] -> state
-    [first_optional, ..] -> {
-      // Check intervening_if for the optional trigger
-      case first_optional.intervening_if {
+  // Handle optional triggers by storing them as pending (rule 603.5)
+  let filtered_optional =
+    list.filter_map(optional, fn(ta) {
+      case ta.intervening_if {
         Some(filter) -> {
-          let is_tapped = find_tapped_option(state, source_card.id)
+          let is_tapped = find_tapped_option(state, condition_card.id)
           let ctx =
             filter_context_for_controller(
               state,
@@ -561,34 +667,37 @@ fn put_triggers_on_stack(
               is_tapped,
               zone.Battlefield,
             )
-          case filter_matcher.matches(source_card, filter, ctx) {
+          case filter_matcher.matches(condition_card, filter, ctx) {
             True ->
-              state.State(
-                ..state,
-                pending_optional_trigger: Some(state.PendingTrigger(
-                  source_card:,
-                  controller: controller_id,
-                  ability: first_optional,
-                  trigger_subject:,
-                )),
-                choice_player: Some(controller_id),
-              )
-            False -> state
+              Ok(state.PendingTrigger(
+                source_card:,
+                controller: controller_id,
+                ability: ta,
+                trigger_subject:,
+              ))
+            False -> Error(Nil)
           }
         }
         None ->
-          state.State(
-            ..state,
-            pending_optional_trigger: Some(state.PendingTrigger(
-              source_card:,
-              controller: controller_id,
-              ability: first_optional,
-              trigger_subject:,
-            )),
-            choice_player: Some(controller_id),
-          )
+          Ok(state.PendingTrigger(
+            source_card:,
+            controller: controller_id,
+            ability: ta,
+            trigger_subject:,
+          ))
       }
-    }
+    })
+  case filtered_optional {
+    [] -> state
+    _ ->
+      state.State(
+        ..state,
+        pending_optional_triggers: list.append(
+          filtered_optional,
+          state.pending_optional_triggers,
+        ),
+        choice_player: Some(controller_id),
+      )
   }
 }
 
@@ -596,18 +705,37 @@ fn check_enters_battlefield_triggers(
   state: state.State,
   resolved_item: stack.StackItem,
 ) -> state.State {
-  let triggered =
-    find_triggered_abilities(
-      resolved_item.card.abilities,
-      trigger.EntersBattlefield,
-    )
-  put_triggers_on_stack(
+  let subject = targeting.TargetCard(resolved_item.card.id)
+  scan_battlefield_for_triggers(
     state,
-    triggered,
-    resolved_item.controller_id,
+    trigger.EntersBattlefield,
     resolved_item.card,
-    Some(targeting.TargetCard(resolved_item.card.id)),
+    subject,
   )
+}
+
+fn scan_battlefield_for_triggers(
+  state: state.State,
+  trigger_event: trigger.Trigger,
+  subject_card: card.Card,
+  subject: targeting.TargetIdentifier,
+) -> state.State {
+  // Rule 603.3b: APNAP order - active player's triggers go on stack first
+  state.players_in_apnap_order(state)
+  |> list.fold(state, fn(s, player) {
+    dict.fold(player.battlefield, s, fn(acc, _card_id, perm) {
+      let triggered =
+        find_triggered_abilities(perm.card.abilities, trigger_event)
+      put_triggers_on_stack(
+        acc,
+        triggered,
+        player.id,
+        perm.card,
+        Some(subject),
+        subject_card,
+      )
+    })
+  })
 }
 
 pub fn check_leaves_battlefield_triggers(
@@ -615,15 +743,8 @@ pub fn check_leaves_battlefield_triggers(
   card: card.Card,
   controller_id: Int,
 ) -> state.State {
-  let triggered =
-    find_triggered_abilities(card.abilities, trigger.LeavesBattlefield)
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    card,
-    Some(targeting.TargetCard(card.id)),
-  )
+  let subject = targeting.TargetCard(card.id)
+  scan_battlefield_for_triggers(state, trigger.LeavesBattlefield, card, subject)
 }
 
 pub fn check_dies_triggers(
@@ -631,19 +752,8 @@ pub fn check_dies_triggers(
   card: card.Card,
   controller_id: Int,
 ) -> state.State {
-  case card.card_type {
-    card_type.Creature -> {
-      let triggered = find_triggered_abilities(card.abilities, trigger.Dies)
-      put_triggers_on_stack(
-        state,
-        triggered,
-        controller_id,
-        card,
-        Some(targeting.TargetCard(card.id)),
-      )
-    }
-    _ -> state
-  }
+  let subject = targeting.TargetCard(card.id)
+  scan_battlefield_for_triggers(state, trigger.Dies, card, subject)
 }
 
 pub fn check_attacks_triggers(
@@ -651,14 +761,8 @@ pub fn check_attacks_triggers(
   card: card.Card,
   controller_id: Int,
 ) -> state.State {
-  let triggered = find_triggered_abilities(card.abilities, trigger.Attacks)
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    card,
-    Some(targeting.TargetCard(card.id)),
-  )
+  let subject = targeting.TargetCard(card.id)
+  scan_battlefield_for_triggers(state, trigger.Attacks, card, subject)
 }
 
 pub fn check_blocks_triggers(
@@ -666,19 +770,42 @@ pub fn check_blocks_triggers(
   card: card.Card,
   controller_id: Int,
 ) -> state.State {
-  let triggered = find_triggered_abilities(card.abilities, trigger.Blocks)
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    card,
-    Some(targeting.TargetCard(card.id)),
-  )
+  let subject = targeting.TargetCard(card.id)
+  scan_battlefield_for_triggers(state, trigger.Blocks, card, subject)
 }
 
-/// Information about a candidate target card, used to evaluate `Color` and
-/// `Zone` target filters precisely. When `None`, the coarse fallback
-/// (`!target_is_player`) is used for `Color`/`Zone`.
+// Scan all permanents for state triggers (rule 603.8)
+// State triggers are checked before a player would receive priority.
+pub fn check_state_triggers(state: state.State) -> state.State {
+  state.players_in_apnap_order(state)
+  |> list.fold(state, fn(s, player) {
+    dict.fold(player.battlefield, s, fn(acc, _card_id, perm) {
+      let triggered =
+        list.filter_map(perm.card.abilities, fn(a) {
+          case a {
+            ability.Triggered(ta) ->
+              case ta.trigger {
+                trigger.StateTrigger -> Ok(ta)
+                _ -> Error(Nil)
+              }
+            _ -> Error(Nil)
+          }
+        })
+      put_triggers_on_stack(
+        acc,
+        triggered,
+        player.id,
+        perm.card,
+        None,
+        perm.card,
+      )
+    })
+  })
+}
+
+// Information about a candidate target card, used to evaluate `Color` and
+// `Zone` target filters precisely. When `None`, the coarse fallback
+// (`!target_is_player`) is used for `Color`/`Zone`.
 pub type TargetCandidate {
   TargetCandidate(card: card.Card, controller_id: Int, zone: zone.Zone)
 }
@@ -727,9 +854,9 @@ fn target_filter_matches(
   }
 }
 
-/// Evaluate `Single(target_type)` against a candidate card. When a
-/// candidate is available, check the card's type precisely; otherwise fall
-/// back to the coarse `!target_is_player` heuristic.
+// Evaluate `Single(target_type)` against a candidate card. When a
+// candidate is available, check the card's type precisely; otherwise fall
+// back to the coarse `!target_is_player` heuristic.
 fn single_card_type(
   candidate: Option(TargetCandidate),
   expected: card_type.CardType,
@@ -744,14 +871,13 @@ fn single_card_type(
 fn filter_context_for_color(
   c: TargetCandidate,
 ) -> filter_matcher.FilterContext {
-  filter_matcher.FilterContext(
-    controller_id: c.controller_id,
-    active_player: c.controller_id,
-    target_player: None,
-    opponent_ids: [],
-    is_tapped: None,
-    zone: c.zone,
-    chosen_color: None,
+  filter_matcher.filter_context(
+    c.controller_id,
+    c.controller_id,
+    None,
+    [],
+    None,
+    c.zone,
   )
 }
 
@@ -771,89 +897,20 @@ fn color_ref_matches(
   }
 }
 
-fn check_deals_damage_triggers_inner(
-  state: state.State,
-  source_card: card.Card,
-  controller_id: Int,
-  target_is_player: Bool,
-) -> state.State {
-  let triggered =
-    list.filter_map(source_card.abilities, fn(a) {
-      case a {
-        ability.Triggered(ta) -> {
-          case ta.trigger {
-            trigger.DealsDamage(filter) -> {
-              case filter {
-                None -> Ok(ta)
-                Some(tf) ->
-                  case target_filter_matches(tf, target_is_player, None) {
-                    True -> Ok(ta)
-                    False -> Error(Nil)
-                  }
-              }
-            }
-            _ -> Error(Nil)
-          }
-        }
-        _ -> Error(Nil)
-      }
-    })
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    source_card,
-    Some(targeting.TargetCard(source_card.id)),
-  )
-}
-
 pub fn check_deals_damage_triggers(
   state: state.State,
   source_card: card.Card,
   controller_id: Int,
   target_is_player: Bool,
 ) -> state.State {
-  check_deals_damage_triggers_inner(
+  let subject = targeting.TargetCard(source_card.id)
+  scan_battlefield_for_damage_triggers(
     state,
+    False,
     source_card,
     controller_id,
     target_is_player,
-  )
-}
-
-fn check_deals_combat_damage_triggers_inner(
-  state: state.State,
-  source_card: card.Card,
-  controller_id: Int,
-  target_is_player: Bool,
-) -> state.State {
-  let triggered =
-    list.filter_map(source_card.abilities, fn(a) {
-      case a {
-        ability.Triggered(ta) -> {
-          case ta.trigger {
-            trigger.DealsCombatDamage(filter) -> {
-              case filter {
-                None -> Ok(ta)
-                Some(tf) ->
-                  case target_filter_matches(tf, target_is_player, None) {
-                    True -> Ok(ta)
-                    False -> Error(Nil)
-                  }
-              }
-            }
-            _ -> Error(Nil)
-          }
-        }
-        _ -> Error(Nil)
-      }
-    })
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    source_card,
-    Some(targeting.TargetCard(source_card.id)),
+    subject,
   )
 }
 
@@ -863,12 +920,71 @@ pub fn check_deals_combat_damage_triggers(
   controller_id: Int,
   target_is_player: Bool,
 ) -> state.State {
-  check_deals_combat_damage_triggers_inner(
+  let subject = targeting.TargetCard(source_card.id)
+  scan_battlefield_for_damage_triggers(
     state,
+    True,
     source_card,
     controller_id,
     target_is_player,
+    subject,
   )
+}
+
+fn is_damage_trigger(
+  t: trigger.Trigger,
+  is_combat: Bool,
+) -> Result(Option(targeting.TargetFilter), Nil) {
+  case t, is_combat {
+    trigger.DealsDamage(filter), False -> Ok(filter)
+    trigger.DealsCombatDamage(filter), True -> Ok(filter)
+    _, _ -> Error(Nil)
+  }
+}
+
+fn scan_battlefield_for_damage_triggers(
+  state: state.State,
+  is_combat: Bool,
+  source_card: card.Card,
+  _controller_id: Int,
+  target_is_player: Bool,
+  subject: targeting.TargetIdentifier,
+) -> state.State {
+  // Rule 603.3b: APNAP order - active player's triggers go on stack first
+  state.players_in_apnap_order(state)
+  |> list.fold(state, fn(s, player) {
+    dict.fold(player.battlefield, s, fn(acc, _card_id, perm) {
+      let triggered =
+        list.filter_map(perm.card.abilities, fn(a) {
+          case a {
+            ability.Triggered(ta) -> {
+              case is_damage_trigger(ta.trigger, is_combat) {
+                Ok(filter) -> {
+                  case filter {
+                    None -> Ok(ta)
+                    Some(tf) ->
+                      case target_filter_matches(tf, target_is_player, None) {
+                        True -> Ok(ta)
+                        False -> Error(Nil)
+                      }
+                  }
+                }
+                Error(_) -> Error(Nil)
+              }
+            }
+            _ -> Error(Nil)
+          }
+        })
+      put_triggers_on_stack(
+        acc,
+        triggered,
+        player.id,
+        perm.card,
+        Some(subject),
+        source_card,
+      )
+    })
+  })
 }
 
 pub fn check_discarded_triggers(
@@ -877,6 +993,7 @@ pub fn check_discarded_triggers(
   controller_id: Int,
 ) -> state.State {
   let ctx = filter_context_for_controller(state, controller_id, None, zone.Hand)
+  // Check source card's own Discarded triggers
   let triggered =
     list.filter_map(card.abilities, fn(a) {
       case a {
@@ -894,13 +1011,46 @@ pub fn check_discarded_triggers(
         _ -> Error(Nil)
       }
     })
-  put_triggers_on_stack(
-    state,
-    triggered,
-    controller_id,
-    card,
-    Some(targeting.TargetPlayer(controller_id)),
-  )
+  let state =
+    put_triggers_on_stack(
+      state,
+      triggered,
+      controller_id,
+      card,
+      Some(targeting.TargetPlayer(controller_id)),
+      card,
+    )
+  // Also scan all permanents on the battlefield for Discarded triggers
+  // Rule 603.3b: APNAP order
+  state.players_in_apnap_order(state)
+  |> list.fold(state, fn(s, player) {
+    dict.fold(player.battlefield, s, fn(acc, _card_id, perm) {
+      let triggered =
+        list.filter_map(perm.card.abilities, fn(a) {
+          case a {
+            ability.Triggered(ta) -> {
+              case ta.trigger {
+                trigger.Discarded(filter) ->
+                  case filter_matcher.matches(card, filter, ctx) {
+                    True -> Ok(ta)
+                    False -> Error(Nil)
+                  }
+                _ -> Error(Nil)
+              }
+            }
+            _ -> Error(Nil)
+          }
+        })
+      put_triggers_on_stack(
+        acc,
+        triggered,
+        player.id,
+        perm.card,
+        Some(targeting.TargetPlayer(controller_id)),
+        card,
+      )
+    })
+  })
 }
 
 fn resolve_all_of(
@@ -1044,9 +1194,9 @@ fn search_library(
   }
 }
 
-/// Shuffle a player's library using the PRNG seed threaded through state
-/// (rule 701.18a). The seed is advanced so subsequent random effects are
-/// independent.
+// Shuffle a player's library using the PRNG seed threaded through state
+// (rule 701.18a). The seed is advanced so subsequent random effects are
+// independent.
 fn shuffle_library(state: state.State, player_id: Int) -> state.State {
   case player.find(state.players, player_id) {
     Ok(p) -> {
@@ -1104,8 +1254,8 @@ pub fn check_state_based_actions(state: state.State) -> state.State {
   check_state_based_actions_loop(state, 0)
 }
 
-/// Check that tokens in non-battlefield zones cease to exist (rule 704.5d).
-/// A token that is in a zone other than the battlefield is removed from that zone.
+// Check that tokens in non-battlefield zones cease to exist (rule 704.5d).
+// A token that is in a zone other than the battlefield is removed from that zone.
 fn check_tokens_in_non_battlefield_zones(
   state: state.State,
 ) -> #(state.State, Bool) {
@@ -1229,17 +1379,43 @@ fn check_legend_rule(state: state.State) -> #(state.State, Bool) {
   #(state, changed)
 }
 
-/// Check if a permanent is an Aura
+// Check if a permanent is an Aura
 fn is_aura(perm: permanent.Permanent) -> Bool {
   list.contains(perm.card.subtypes, "Aura")
 }
 
-/// Check if a permanent is an Equipment
+// Check if a permanent is an Equipment
 fn is_equipment(perm: permanent.Permanent) -> Bool {
   list.contains(perm.card.subtypes, "Equipment")
 }
 
-/// Find a permanent on any player's battlefield by card ID
+// Clear the `attached_to` field on all permanents attached to `card_id`
+fn clear_attachments_to(state: state.State, card_id: String) -> state.State {
+  list.fold(state.players, state, fn(s, p) {
+    let attached_ids =
+      dict.fold(p.battlefield, [], fn(ids, id, perm) {
+        case perm.attached_to {
+          Some(a) if a == card_id -> [id, ..ids]
+          _ -> ids
+        }
+      })
+    list.fold(attached_ids, s, fn(s, id) {
+      state.State(
+        ..s,
+        players: player.update(s.players, p.id, fn(pl) {
+          player.Player(
+            ..pl,
+            battlefield: permanent.update(pl.battlefield, id, fn(perm) {
+              permanent.Permanent(..perm, attached_to: None)
+            }),
+          )
+        }),
+      )
+    })
+  })
+}
+
+// Find a permanent on any player's battlefield by card ID
 fn find_permanent_on_battlefield(
   state: state.State,
   card_id: String,
@@ -1252,10 +1428,10 @@ fn find_permanent_on_battlefield(
   })
 }
 
-/// Find a card in any zone (battlefield, hand, graveyard, library, exile,
-/// stack), returning the card, its zone, and the owning player's id.
-/// For battlefield, the owner is the permanent's controller. For the stack,
-/// the owner is the spell's controller.
+// Find a card in any zone (battlefield, hand, graveyard, library, exile,
+// stack), returning the card, its zone, and the owning player's id.
+// For battlefield, the owner is the permanent's controller. For the stack,
+// the owner is the spell's controller.
 pub fn find_card_in_any_zone(
   state: state.State,
   card_id: String,
@@ -1315,10 +1491,10 @@ fn find_in_player_zone(
   }
 }
 
-/// Check that a card in a non-battlefield, non-stack zone is in the spell
-/// controller's corresponding zone (the "your" implicit rule, plan §Target
-/// Filter). Battlefield and Stack are shared zones with no implicit
-/// controller restriction.
+// Check that a card in a non-battlefield, non-stack zone is in the spell
+// controller's corresponding zone (the "your" implicit rule, plan §Target
+// Filter). Battlefield and Stack are shared zones with no implicit
+// controller restriction.
 fn check_zone_controller(
   item: stack.StackItem,
   card_zone: zone.Zone,
@@ -1331,8 +1507,8 @@ fn check_zone_controller(
   }
 }
 
-/// Validate a chosen target against a `TargetInfo` filter and zone rules.
-/// Called from `action.validate_chosen_targets` during `ChooseTargets`.
+// Validate a chosen target against a `TargetInfo` filter and zone rules.
+// Called from `action.validate_chosen_targets` during `ChooseTargets`.
 pub fn validate_target(
   state: state.State,
   item: stack.StackItem,
@@ -1394,9 +1570,9 @@ fn zone_to_string(z: zone.Zone) -> String {
   }
 }
 
-/// Check Aura illegal attachment (rule 704.5m):
-/// If an Aura is attached to an illegal object or player, or is not attached
-/// to anything, put it into its owner's graveyard.
+// Check Aura illegal attachment (rule 704.5m):
+// If an Aura is attached to an illegal object or player, or is not attached
+// to anything, put it into its owner's graveyard.
 fn check_aura_illegal_attachment(state: state.State) -> #(state.State, Bool) {
   list.fold(state.players, #(state, False), fn(acc, p) {
     let #(s, any) = acc
@@ -1424,9 +1600,9 @@ fn check_aura_illegal_attachment(state: state.State) -> #(state.State, Bool) {
   })
 }
 
-/// Check Equipment illegal attachment (rule 704.5n):
-/// If an Equipment is attached to an illegal permanent, it becomes unattached
-/// (remains on battlefield but unattached).
+// Check Equipment illegal attachment (rule 704.5n):
+// If an Equipment is attached to an illegal permanent, it becomes unattached
+// (remains on battlefield but unattached).
 fn check_equipment_illegal_attachment(
   state: state.State,
 ) -> #(state.State, Bool) {
@@ -1519,7 +1695,7 @@ fn create_token(
   token: effects.TokenDefinition,
 ) -> state.State {
   let token_id =
-    "token_" <> token.name <> "_" <> int.to_string(state.turn_index)
+    "token_" <> token.name <> "_" <> int.to_string(state.turn_index) <> "_" <> int.to_string(state.next_token_id)
   let token_card =
     card.Card(
       id: token_id,
@@ -1544,10 +1720,15 @@ fn create_token(
       is_token: True,
     )
   let current_cycle = state.turn_cycle(state)
-  let token_perm = permanent.from_card(token_card, player_id, current_cycle)
+  let token_perm =
+    permanent.Permanent(
+      ..permanent.from_card(token_card, player_id, current_cycle),
+      granted_keywords: token.keywords,
+    )
 
   state.State(
     ..state,
+    next_token_id: state.next_token_id + 1,
     players: player.update(state.players, player_id, fn(p) {
       player.Player(
         ..p,
@@ -1560,16 +1741,14 @@ fn create_token(
 fn destroy_card(state: state.State, card_id: String) -> state.State {
   case find_card_on_battlefield(state, card_id) {
     Ok(#(perm, owner_id)) -> {
+      let state = clear_attachments_to(state, card_id)
       let state =
         state.State(..state, pending_removed_sources: [
           card_id,
           ..state.pending_removed_sources
         ])
       let state = check_leaves_battlefield_triggers(state, perm.card, owner_id)
-      let state = case perm.card.card_type {
-        card_type.Creature -> check_dies_triggers(state, perm.card, owner_id)
-        _ -> state
-      }
+      let state = check_dies_triggers(state, perm.card, owner_id)
       state.State(
         ..state,
         players: player.update(state.players, owner_id, fn(p) {
@@ -1585,10 +1764,10 @@ fn destroy_card(state: state.State, card_id: String) -> state.State {
   }
 }
 
-/// Try to destroy a card, consulting regeneration shields if
-/// `cant_regenerate` is False. If a shield is available, the permanent
-/// survives: remove one shield, tap it, remove all marked damage, and
-/// remove it from combat (rule 701.9).
+// Try to destroy a card, consulting regeneration shields if
+// `cant_regenerate` is False. If a shield is available, the permanent
+// survives: remove one shield, tap it, remove all marked damage, and
+// remove it from combat (rule 701.9).
 fn try_destroy_card(
   state: state.State,
   card_id: String,
@@ -1615,8 +1794,8 @@ fn try_destroy_card(
   }
 }
 
-/// Apply regeneration to a permanent: tap it, remove marked damage, and
-/// remove it from combat (rule 701.9).
+// Apply regeneration to a permanent: tap it, remove marked damage, and
+// remove it from combat (rule 701.9).
 fn regenerate_permanent(state: state.State, card_id: String) -> state.State {
   state.State(
     ..state,
@@ -1641,6 +1820,7 @@ fn regenerate_permanent(state: state.State, card_id: String) -> state.State {
 fn bounce_card(state: state.State, card_id: String) -> state.State {
   case find_card_on_battlefield(state, card_id) {
     Ok(#(perm, owner_id)) -> {
+      let state = clear_attachments_to(state, card_id)
       let state =
         state.State(..state, pending_removed_sources: [
           card_id,
@@ -2152,7 +2332,7 @@ fn resolve_step(
   }
 }
 
-/// Deal a single divided-damage allocation to a target (player or creature).
+// Deal a single divided-damage allocation to a target (player or creature).
 fn deal_divided_damage_to_target(
   state: state.State,
   _item: stack.StackItem,
@@ -2167,69 +2347,45 @@ fn deal_divided_damage_to_target(
   }
 }
 
-/// Mana Clash loop: flip coins for both players until both get heads.
-/// Each tails result deals 1 damage from that player to the other. Coin
-/// flips advance the PRNG seed threaded through state.
+// Mana Clash loop: flip coins for both players until both get heads.
+// Each tails result deals 1 damage from that player to the other. Coin
+// flips advance the PRNG seed threaded through state. Limited to 1000
+// iterations to prevent stack overflow from pathological RNG sequences.
 fn mana_clash_loop(
   state: state.State,
   controller_id: Int,
   target_player_id: Int,
 ) -> state.State {
-  let coin = random.choose(effects.Heads, effects.Tails)
-  let #(controller_flip, seed1) = random.step(coin, state.seed)
-  let #(target_flip, seed2) = random.step(coin, seed1)
-  let state = state.State(..state, seed: seed2)
-  let state = case controller_flip {
-    effects.Tails -> deal_damage_to_player(state, target_player_id, 1)
-    effects.Heads -> state
-  }
-  let state = case target_flip {
-    effects.Tails -> deal_damage_to_player(state, controller_id, 1)
-    effects.Heads -> state
-  }
-  case controller_flip == effects.Heads && target_flip == effects.Heads {
+  mana_clash_loop_depth(state, controller_id, target_player_id, 0)
+}
+
+fn mana_clash_loop_depth(
+  state: state.State,
+  controller_id: Int,
+  target_player_id: Int,
+  depth: Int,
+) -> state.State {
+  case depth >= 1000 {
     True -> state
-    False -> mana_clash_loop(state, controller_id, target_player_id)
-  }
-}
-
-fn keyword_to_string(keyword: effects.Keyword) -> String {
-  case keyword {
-    effects.Flying -> "Flying"
-    effects.Trample -> "Trample"
-    effects.FirstStrike -> "First strike"
-    effects.DoubleStrike -> "Double strike"
-    effects.Haste -> "Haste"
-    effects.Vigilance -> "Vigilance"
-    effects.Deathtouch -> "Deathtouch"
-    effects.Mountainwalk -> "Mountainwalk"
-    effects.Hexproof -> "Hexproof"
-    effects.Shroud -> "Shroud"
-    effects.ProtectionFromColor(c) -> "Protection from " <> color_to_string(c)
-    effects.ProtectionFromType(ct) ->
-      "Protection from " <> card_type_to_protection_string(ct)
-  }
-}
-
-fn color_to_string(c: color.Color) -> String {
-  case c {
-    color.White -> "White"
-    color.Blue -> "Blue"
-    color.Black -> "Black"
-    color.Red -> "Red"
-    color.Green -> "Green"
-    color.Colorless -> "Colorless"
-  }
-}
-
-fn card_type_to_protection_string(ct: card_type.CardType) -> String {
-  case ct {
-    card_type.Land -> "lands"
-    card_type.Creature -> "creatures"
-    card_type.Instant -> "instants"
-    card_type.Sorcery -> "sorceries"
-    card_type.Artifact -> "artifacts"
-    card_type.Enchantment -> "enchantments"
+    False -> {
+      let coin = random.choose(effects.Heads, effects.Tails)
+      let #(controller_flip, seed1) = random.step(coin, state.seed)
+      let #(target_flip, seed2) = random.step(coin, seed1)
+      let state = state.State(..state, seed: seed2)
+      let state = case controller_flip {
+        effects.Tails -> deal_damage_to_player(state, target_player_id, 1)
+        effects.Heads -> state
+      }
+      let state = case target_flip {
+        effects.Tails -> deal_damage_to_player(state, controller_id, 1)
+        effects.Heads -> state
+      }
+      case controller_flip == effects.Heads && target_flip == effects.Heads {
+        True -> state
+        False ->
+          mana_clash_loop_depth(state, controller_id, target_player_id, depth + 1)
+      }
+    }
   }
 }
 
@@ -2240,7 +2396,6 @@ fn pump_creature(
   toughness_bonus: Int,
   keywords: List(effects.Keyword),
 ) -> state.State {
-  let keyword_strings = list.map(keywords, keyword_to_string)
   list.fold(state.players, state, fn(acc_state, p) {
     case permanent.find(p.battlefield, card_id) {
       Ok(_) ->
@@ -2257,7 +2412,7 @@ fn pump_creature(
                     ..perm,
                     granted_keywords: list.append(
                       perm.granted_keywords,
-                      keyword_strings,
+                      keywords,
                     ),
                     card: card.Card(
                       ..perm.card,
@@ -2336,8 +2491,8 @@ fn move_card(
     zone.Exile, zone.Library ->
       move_card_between_players(state, card_id, zone.Exile, zone.Library)
 
-    // Stack zone (not stored per-player, skip for now)
-    zone.Stack, _ -> state
+    // Stack zone
+    zone.Stack, _ -> move_from_stack(state, card_id, to_zone)
     _, zone.Stack -> state
 
     // Same zone — no-op
@@ -2355,6 +2510,7 @@ fn move_from_battlefield_to_library(
 ) -> state.State {
   case find_card_on_battlefield(state, card_id) {
     Ok(#(perm, owner_id)) -> {
+      let state = clear_attachments_to(state, card_id)
       let state =
         state.State(..state, pending_removed_sources: [
           card_id,
@@ -2376,12 +2532,37 @@ fn move_from_battlefield_to_library(
   }
 }
 
+fn move_from_stack(
+  state: state.State,
+  card_id: String,
+  to_zone: zone.Zone,
+) -> state.State {
+  case
+    list.find_map(state.stack, fn(si) {
+      case si.card.id == card_id {
+        True -> Ok(#(si.card, si.controller_id))
+        False -> Error(Nil)
+      }
+    })
+  {
+    Ok(#(card, controller_id)) -> {
+      let state = state.State(
+        ..state,
+        stack: list.filter(state.stack, fn(si) { si.card.id != card_id }),
+      )
+      add_to_zone(state, controller_id, card, to_zone)
+    }
+    Error(_) -> state
+  }
+}
+
 fn move_from_battlefield_to_exile(
   state: state.State,
   card_id: String,
 ) -> state.State {
   case find_card_on_battlefield(state, card_id) {
     Ok(#(perm, owner_id)) -> {
+      let state = clear_attachments_to(state, card_id)
       let state =
         state.State(..state, pending_removed_sources: [
           card_id,

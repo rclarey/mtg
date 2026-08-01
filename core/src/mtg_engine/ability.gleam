@@ -17,7 +17,7 @@ pub type CostComponent {
   SacrificeThis
   Sacrifice(filters.CardFilter)
   SacrificeAny(filters.CardFilter)
-  PayLife(effects.Amount)
+  PayLife(Int)
 }
 
 pub type SpellAbility {
@@ -82,9 +82,9 @@ pub fn tap_sacrifice_this_cost() -> ActivationCost {
 }
 
 pub fn life_cost(life: Int) -> ActivationCost {
-  Costs([PayLife(effects.Fixed(life))])
+  Costs([PayLife(life)])
 }
 
 pub fn mana_life_cost(cost: mana.Cost, life: Int) -> ActivationCost {
-  Costs([Mana(cost), PayLife(effects.Fixed(life))])
+  Costs([Mana(cost), PayLife(life)])
 }
